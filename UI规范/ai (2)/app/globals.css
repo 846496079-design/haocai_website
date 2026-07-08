@@ -1,0 +1,137 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-inter), 'PingFang SC', 'Inter Fallback', ui-sans-serif,
+    system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, 'Geist Mono Fallback';
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+
+  /* 文字层级 */
+  --color-text-tertiary: var(--text-tertiary);
+
+  /* 状态色 */
+  --color-status-online: var(--status-online);
+  --color-status-running: var(--status-running);
+  --color-status-waiting: var(--status-waiting);
+  --color-status-warning: var(--status-warning);
+  --color-status-error: var(--status-error);
+
+  /* 品牌渐变 */
+  --color-brand-from: var(--brand-from);
+  --color-brand-to: var(--brand-to);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+
+  /* 中性色 */
+  --background: #f7f9fc; /* 页面背景 */
+  --foreground: #18243d; /* 一级文字 */
+  --card: #ffffff; /* 卡片背景 */
+  --card-foreground: #18243d;
+  --popover: #ffffff;
+  --popover-foreground: #18243d;
+
+  /* 品牌色 */
+  --primary: #5b6cff;
+  --primary-foreground: #ffffff;
+  --brand-from: #4f7bff; /* 渐变起始 */
+  --brand-to: #6c5cff; /* 渐变结束 */
+
+  /* 浅品牌 / 悬停面 */
+  --secondary: #f3f6ff; /* 悬停背景 */
+  --secondary-foreground: #5b6cff;
+  --muted: #f3f6ff;
+  --muted-foreground: #667085; /* 二级文字 */
+  --accent: #f3f6ff; /* 悬停背景 */
+  --accent-foreground: #18243d;
+  --text-tertiary: #98a2b3; /* 三级文字 */
+
+  /* 状态色 */
+  --status-online: #22c55e;
+  --status-running: #3b82f6;
+  --status-waiting: #98a2b3;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --destructive: #ef4444;
+
+  /* 描边 / 输入 / 聚焦环 */
+  --border: #e6eaf2; /* 分割线 */
+  --input: #e6eaf2;
+  --ring: #5b6cff;
+
+  /* 图表 */
+  --chart-1: #5b6cff;
+  --chart-2: #3b82f6;
+  --chart-3: #22c55e;
+  --chart-4: #f59e0b;
+  --chart-5: #98a2b3;
+
+  --radius: 0.625rem;
+
+  /* 侧边栏 */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #18243d;
+  --sidebar-primary: #5b6cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f6ff;
+  --sidebar-accent-foreground: #5b6cff;
+  --sidebar-border: #e6eaf2;
+  --sidebar-ring: #5b6cff;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}

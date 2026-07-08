@@ -203,9 +203,6 @@ export default function OfficialSite({ site }: { site: SiteContent }) {
                     {site.hero.primaryCta}
                     <ArrowRight className="ml-2 size-4" />
                   </TrialButton>
-                  <TrialLink href={contactHref} variant="secondary">
-                    {site.hero.secondaryCta}
-                  </TrialLink>
                 </div>
                 <div className="mt-8 grid gap-3 sm:grid-cols-2">
                   {site.metrics.map((metric) => (

@@ -72,12 +72,6 @@ export default function Navbar({ site }: NavbarProps) {
 
         <div className="hidden items-center gap-3 md:flex">
           <a
-            href={site.loginUrl}
-            className="inline-flex h-10 items-center justify-center rounded-xl px-4 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            {site.actions.login}
-          </a>
-          <a
             href={site.trialUrl}
             className="inline-flex h-10 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-4 text-sm font-semibold text-white"
           >
@@ -126,16 +120,10 @@ export default function Navbar({ site }: NavbarProps) {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <a
-                href={site.loginUrl}
-                className="inline-flex h-11 items-center justify-center rounded-xl border border-border text-sm font-semibold"
-              >
-                {site.actions.login}
-              </a>
+            <div className="pt-2">
               <a
                 href={site.trialUrl}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] text-sm font-semibold text-white"
+                className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] text-sm font-semibold text-white"
               >
                 {site.actions.trial}
               </a>

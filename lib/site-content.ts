@@ -33,7 +33,6 @@ export interface SiteContent {
     titleAccent: string
     description: string
     primaryCta: string
-    secondaryCta: string
   }
   metrics: { value: string; label: string; note: string }[]
   painTitle: string
@@ -127,7 +126,6 @@ export const sites: Record<SiteCode, SiteContent> = {
       description:
         '不用被复杂表格和月底催资料拖住。好财账大师帮你归集工资、发票、流水，自动整理做账材料，生成税额测算、报表和待办提醒，让老板、财务、代账会计都能在一套流程里协同。',
       primaryCta: '立即免费试用',
-      secondaryCta: '咨询专属客服',
     },
     metrics: [
       { value: '0.98 元/天', label: '低成本管账', note: '360 元/年，折合每天不到 1 元' },
@@ -393,7 +391,6 @@ export const sites: Record<SiteCode, SiteContent> = {
       description:
         '給与、請求書、銀行明細、照合、申告資料作成を一つの流れで管理し、経営者と財務担当者が同じ画面で状況を確認できます。',
       primaryCta: '試用開始',
-      secondaryCta: '問い合わせ',
     },
     metrics: [
       { value: '360 元', label: '年間料金', note: '中国站と同一の試用入口' },
@@ -481,7 +478,6 @@ export const sites: Record<SiteCode, SiteContent> = {
       description:
         '把工資、發票、銀行流水、核對和報表資料放進同一套流程，讓企業主、財務和服務團隊都能看清楚進度。',
       primaryCta: '開始試用',
-      secondaryCta: '聯繫我們',
     },
     metrics: [
       { value: '360 元', label: '年費', note: '首期沿用統一定價' },

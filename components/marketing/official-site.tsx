@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import type { FormEvent, ReactNode } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import FadeInSection from '@/components/ui/fade-in-section'
@@ -185,6 +185,8 @@ const uiCopy = {
     customerScale: '客户资源规模',
     unsure: '暂不确定',
     cooperationType: '合作方式',
+    inviteCode: '邀请码/邀请人电话',
+    inviteCodePlaceholder: '如邀请码 A12345，或邀请人手机号',
     message: '补充说明',
     messagePlaceholder: '可以补充客户类型、合作诉求、希望对接时间等',
     submit: '提交合作意向',
@@ -214,6 +216,8 @@ const uiCopy = {
     customerScale: '顧客リソース規模',
     unsure: '未定',
     cooperationType: '協業方式',
+    inviteCode: '招待コード/紹介者電話番号',
+    inviteCodePlaceholder: '例：招待コード A12345、または紹介者の電話番号',
     message: '補足',
     messagePlaceholder: '顧客タイプ、協業希望、連絡希望時間など',
     submit: '協業意向を送信',
@@ -243,6 +247,8 @@ const uiCopy = {
     customerScale: '客戶資源規模',
     unsure: '暫不確定',
     cooperationType: '合作方式',
+    inviteCode: '邀請碼/邀請人電話',
+    inviteCodePlaceholder: '如邀請碼 A12345，或邀請人手機號',
     message: '補充說明',
     messagePlaceholder: '可補充客戶類型、合作訴求、希望對接時間等',
     submit: '提交合作意向',
@@ -419,6 +425,7 @@ type PartnerField =
   | 'role'
   | 'customerScale'
   | 'cooperationType'
+  | 'inviteCode'
   | 'message'
 
 const requiredPartnerFields: PartnerField[] = ['name', 'phone', 'city']
@@ -442,9 +449,17 @@ export default function OfficialSite({ site, page = 'product' }: { site: SiteCon
     role: '',
     customerScale: '',
     cooperationType: '',
+    inviteCode: '',
     message: '',
   })
   const [partnerErrors, setPartnerErrors] = useState<Partial<Record<PartnerField, string>>>({})
+
+  useEffect(() => {
+    const inviteCode = new URLSearchParams(window.location.search).get('inviteCode')
+    if (inviteCode) {
+      setPartnerForm((form) => ({ ...form, inviteCode }))
+    }
+  }, [])
 
   function updatePartnerField(field: PartnerField, value: string) {
     setPartnerForm((form) => ({ ...form, [field]: value }))
@@ -486,17 +501,16 @@ export default function OfficialSite({ site, page = 'product' }: { site: SiteCon
     setPartnerApiError('')
     setPartnerSubmitting(true)
 
-    const inviteCode = new URLSearchParams(window.location.search).get('inviteCode') || undefined
+    const inviteCode =
+      partnerForm.inviteCode.trim() ||
+      new URLSearchParams(window.location.search).get('inviteCode') ||
+      undefined
     const companyName = trimPartnerLeadField(partnerForm.company)
     const position = trimPartnerLeadField(partnerForm.role)
     const city = trimPartnerLeadField(partnerForm.city)
     const cooperationMode = trimPartnerLeadField(partnerForm.cooperationType)
-    const remark = [
-      `${ui.customerScale}：${partnerForm.customerScale || ui.unsure}`,
-      `${ui.message}：${partnerForm.message || ui.unsure}`,
-      `来源站点：${site.name}`,
-      `页面地址：${window.location.href}`,
-    ].join('\n')
+    const customerScale = trimPartnerLeadField(partnerForm.customerScale)
+    const remark = partnerForm.message.trim()
 
     try {
       const response = await fetch(partnerLeadApiUrl, {
@@ -509,8 +523,9 @@ export default function OfficialSite({ site, page = 'product' }: { site: SiteCon
           ...(position ? { position } : {}),
           ...(city ? { city } : {}),
           ...(cooperationMode ? { cooperationMode } : {}),
+          ...(customerScale ? { customerScale } : {}),
           ...(inviteCode ? { inviteCode } : {}),
-          remark,
+          ...(remark ? { remark } : {}),
         }),
       })
 
@@ -611,6 +626,16 @@ export default function OfficialSite({ site, page = 'product' }: { site: SiteCon
                 <option key={option} value={option}>{option}</option>
               ))}
             </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium md:col-span-2">
+            {ui.inviteCode}
+            <input
+              value={partnerForm.inviteCode}
+              onChange={(event) => updatePartnerField('inviteCode', event.target.value)}
+              className={`h-12 ${fieldClass('inviteCode')}`}
+              placeholder={ui.inviteCodePlaceholder}
+              maxLength={partnerLeadMaxLength}
+            />
           </label>
           <div className="md:col-span-2">
             <p className="text-sm font-medium">{ui.cooperationType}</p>

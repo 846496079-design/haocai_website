@@ -160,7 +160,7 @@
 
 ### 代理合作意向
 
-代理合作意向表单采用代理线索池资料提交接口完成线索回传：`POST https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit`。前端校验必填项后，以 JSON 方式提交 `contactName`、`contactPhone`、`companyName`、`position`、`city`、`cooperationMode`、可选 `inviteCode` 和 `remark`。必填项只包括姓名、电话、城市；公司/团队、角色身份、合作方式、客户资源规模和补充说明均为选填。`companyName`、`position`、`city`、`cooperationMode` 按接口要求限制在 50 个字符以内。客户资源规模、补充说明、来源站点和页面地址写入 `remark`。必填项未填写时，在对应字段下方展示红字“该项为必填项”，不触发浏览器默认“请填写此字段”提示。提交成功后页面弹出姚经理电话和企业微信二维码，弹窗使用“合作意向已收到”作为标题；接口返回 IP 超限或失败提示时，在表单底部展示接口提示。
+代理合作意向表单采用代理线索池资料提交接口完成线索回传：`POST https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit`。前端校验必填项后，以 JSON 方式提交 `contactName`、`contactPhone`、`companyName`、`position`、`city`、`cooperationMode`、`customerScale`、可选 `inviteCode` 和 `remark`。必填项只包括姓名、电话、城市；公司/团队、角色身份、合作方式、客户资源规模、邀请码/邀请人电话和补充说明均为选填。字段映射为：姓名对应 `contactName`，电话对应 `contactPhone`，城市对应 `city`，公司/团队对应 `companyName`，角色身份对应 `position`，客户资源规模对应 `customerScale`，合作方式对应 `cooperationMode`，邀请码/邀请人电话对应 `inviteCode`，补充说明对应 `remark`。`companyName`、`position`、`city`、`cooperationMode`、`customerScale`、`inviteCode` 按接口要求限制在 50 个字符以内。若 URL 中存在 `inviteCode` 参数，表单自动预填，用户可修改。必填项未填写时，在对应字段下方展示红字“该项为必填项”，不触发浏览器默认“请填写此字段”提示。提交成功后页面弹出姚经理电话和企业微信二维码，弹窗使用“合作意向已收到”作为标题；接口返回 IP 超限或失败提示时，在表单底部展示接口提示。
 
 ## 6. 视觉与交互规范
 

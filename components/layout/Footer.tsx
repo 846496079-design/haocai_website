@@ -94,7 +94,7 @@ export default function Footer({ site }: FooterProps) {
         </div>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
-          <p>© 2026 {site.company.name}。页面宣传以当前产品能力和 PRD 边界为准。</p>
+          <p>© 2026 {site.company.name}。页面信息仅用于产品介绍，具体服务以实际开通和双方确认为准。</p>
           <div className="flex gap-5">
             <span>用户协议</span>
             <span>隐私政策</span>

@@ -26,6 +26,7 @@ export interface SiteContent {
   loginUrl: string
   trialUrl: string
   nav: { label: string; href: string }[]
+  productNav: { label: string; href: string }[]
   actions: { login: string; trial: string }
   hero: {
     eyebrow: string
@@ -68,13 +69,20 @@ export interface SiteContent {
     safe: string[]
     limited: string[]
   }
+  companyIntro: {
+    eyebrow: string
+    title: string
+    description: string
+    stats: { value: string; label: string; note: string }[]
+    focusTitle: string
+    focus: string[]
+  }
   faqTitle: string
   faqs: { q: string; a: string }[]
   finalCta: {
     title: string
     description: string
     primary: string
-    secondary: string
   }
   company: {
     name: string
@@ -111,11 +119,15 @@ export const sites: Record<SiteCode, SiteContent> = {
     loginUrl,
     trialUrl: `${loginUrl}?trial=7d&utm_source=official_site&utm_campaign=trial_package`,
     nav: [
+      { label: '产品介绍', href: '/cn/' },
+      { label: '公司介绍', href: '/cn/company/' },
+      { label: '代理合作意向', href: '/cn/partners/' },
+    ],
+    productNav: [
       { label: '核心功能', href: '#features' },
       { label: '适用角色', href: '#roles' },
       { label: '工作流程', href: '#workflow' },
       { label: '定价', href: '#pricing' },
-      { label: '代理合作', href: '#partners' },
       { label: '常见问题', href: '#faq' },
     ],
     actions: { login: '登录', trial: '开始试用' },
@@ -240,7 +252,7 @@ export const sites: Record<SiteCode, SiteContent> = {
         icon: 'headphones',
         title: '专属客服有人管',
         description: '试用、开通、使用问题都有客服承接，企业不用自己摸索所有流程。',
-        details: ['姚经理', '电话咨询', '企业微信', '邮件沟通'],
+        details: ['姚经理', '企业微信', '邮件沟通', '合作对接'],
       },
     ],
     rolesTitle: '不同角色，都能找到自己的入口',
@@ -310,13 +322,13 @@ export const sites: Record<SiteCode, SiteContent> = {
         '系统帮助整理材料、测算税额和生成报表',
         '重要财税结果建议由企业或会计最终确认',
         '需要人工服务时可联系专属客服',
-        '后续自动化能力会随产品迭代逐步开放',
+        '更多自动化服务将持续升级',
       ],
       cta: '开始试用',
     },
     compliance: {
-      title: '既敢宣传价值，也把服务讲清楚',
-      subtitle: '我们大胆讲省钱、省心、效率和服务，但不把企业的最终财税责任模糊掉。',
+      title: '价值清楚，服务说明也清楚',
+      subtitle: '账大师帮助企业提高资料整理、税额测算和报表查看效率，同时保留必要的人工复核与确认。',
       safe: [
         'AI 帮你整理工资、发票、流水和待办。',
         '系统帮你生成税额测算、报表和凭证视图。',
@@ -325,7 +337,26 @@ export const sites: Record<SiteCode, SiteContent> = {
       limited: [
         '企业和会计仍需确认业务真实性、票据完整性和申报结果。',
         '银行、税局等外部系统能力以产品实际开通情况为准。',
-        '页面不使用无法证明的客户数量、准确率和赔付承诺。',
+        '客户数量、准确率和服务承诺以双方确认的服务内容为准。',
+      ],
+    },
+    companyIntro: {
+      eyebrow: '公司介绍',
+      title: '好财集团的财税服务经验，落到一套 AI 记账产品里',
+      description:
+        '好财集团成立于 2014 年，总部位于上海，长期服务企业财税场景。账大师把票据管理、智能记账、报表生成和辅助报税整理成清晰流程，帮助小微企业用更低门槛完成月度财税管理。',
+      stats: [
+        { value: '2014 年', label: '集团成立', note: '多年企业财税服务经验沉淀' },
+        { value: '20000+', label: '服务客户', note: '累计企业客户服务规模' },
+        { value: '3000+', label: '合作伙伴', note: '覆盖财税与企业服务渠道资源' },
+        { value: '上海', label: '总部所在地', note: '虹桥国际展汇南区设有总部办公' },
+      ],
+      focusTitle: '专注小微企业高频财税场景',
+      focus: [
+        '围绕票据管理、智能记账、报表生成和辅助报税提供产品能力',
+        '将工资、发票、银行流水、企业基础信息整理为月度账务流程',
+        '服务中小企业、门店、个体经营者和财税机构的日常管理需求',
+        '总部提供产品、品牌、服务资料和培训支持，帮助渠道更快完成客户启动',
       ],
     },
     faqTitle: '常见问题',
@@ -356,14 +387,13 @@ export const sites: Record<SiteCode, SiteContent> = {
       },
       {
         q: '如何开始试用？',
-        a: '点击页面中的“开始试用”或“登录”即可进入产品。需要人工沟通可联系姚经理，电话 17511647049，邮箱 shangjiacheng2@creya.cn。',
+        a: '点击页面中的“开始试用”即可进入 7 天体验套餐流程。系统会引导你完成手机号注册或登录、创建企业账套，并保存试用数据。',
       },
     ],
     finalCta: {
       title: '今天开始，把账管清楚',
       description: '一年 360 元，先从一个企业、一个申报周期开始试。看得懂账、找得到资料、知道下一步该处理什么。',
       primary: '立即免费试用',
-      secondary: '电话咨询姚经理',
     },
     company: commonCompany,
   },
@@ -376,11 +406,15 @@ export const sites: Record<SiteCode, SiteContent> = {
     loginUrl,
     trialUrl: `${loginUrl}?trial=7d&utm_source=official_site&utm_campaign=trial_package_jp`,
     nav: [
+      { label: '製品紹介', href: '/jp/' },
+      { label: '会社紹介', href: '/jp/company/' },
+      { label: '代理連携', href: '/jp/partners/' },
+    ],
+    productNav: [
       { label: '主な機能', href: '#features' },
       { label: '利用者別', href: '#roles' },
       { label: '業務フロー', href: '#workflow' },
       { label: '料金', href: '#pricing' },
-      { label: '代理連携', href: '#partners' },
       { label: 'FAQ', href: '#faq' },
     ],
     actions: { login: 'ログイン', trial: '試用開始' },
@@ -393,7 +427,7 @@ export const sites: Record<SiteCode, SiteContent> = {
       primaryCta: '試用開始',
     },
     metrics: [
-      { value: '360 元', label: '年間料金', note: '中国站と同一の試用入口' },
+      { value: '360 元', label: '年間料金', note: '低コストで標準フローを体験' },
       { value: '5 Step', label: '標準フロー', note: '給与、請求書、銀行、照合、申告資料' },
       { value: 'Web + Mobile', label: '両端対応', note: '担当者と経営者の協同' },
       { value: 'AI Assist', label: '補助説明', note: '照合、要約、次の対応' },
@@ -407,7 +441,7 @@ export const sites: Record<SiteCode, SiteContent> = {
       { icon: 'users', title: '複数会社の協同', description: '複数企業、担当者、権限の整理を支援します。' },
     ],
     workflowTitle: '5 Step の標準フロー',
-    workflowSubtitle: '中国站と同一の業務構造を利用します。',
+    workflowSubtitle: '給与、発票、銀行明細、照合、申告資料までを一つの流れで管理します。',
     workflow: [
       { step: '01', title: '給与', description: '従業員と給与データを管理します。', output: '給与コストと個税計算の確認。' },
       { step: '02', title: '請求書', description: '売上、仕入、費用関連の請求書を整理します。', output: '金額、税額、状態の確認。' },
@@ -415,8 +449,8 @@ export const sites: Record<SiteCode, SiteContent> = {
       { step: '04', title: 'データ照合', description: '申告前の不整合を確認します。', output: '確認リストと AI 提案。' },
       { step: '05', title: '申告資料', description: '確認済みデータから資料を作成します。', output: '税額試算と資料プレビュー。' },
     ],
-    featuresTitle: '同じ機能、同じ構造',
-    featuresSubtitle: '価格、効率、リスク確認、サービス対応を分かりやすく伝えます。',
+    featuresTitle: '財税管理に必要な機能を、一つの流れに集約',
+    featuresSubtitle: '給与、発票、銀行明細、照合、帳票確認をまとめ、経営者と担当者が同じ情報を確認できます。',
     features: [],
     rolesTitle: '利用者別フロー',
     rolesSubtitle: '経営者、財務担当、代行担当者が同じフローで協同します。',
@@ -426,31 +460,49 @@ export const sites: Record<SiteCode, SiteContent> = {
     proofItems: [],
     pricing: {
       title: '料金',
-      subtitle: '現在は中国站と同じ試用入口を利用します。',
+      subtitle: '年間 360 元で、標準フローを低コストで試せます。',
       price: '360 元',
       period: '/ 年',
       description: '標準フローを先に試すための単一価格です。',
       includedTitle: '含まれる内容',
       included: ['企業管理', '給与、請求書、銀行明細', 'データ照合', 'AI 補助', '資料プレビュー'],
-      boundaryTitle: '現在の制限',
-      boundaries: ['税務局への自動提出は宣伝しません', '銀行直連と OCR は計画能力として扱います'],
+      boundaryTitle: 'サービス説明',
+      boundaries: ['申告前の資料整理、税額試算、帳票確認を支援します', '重要な申告内容は企業または担当者による確認をおすすめします'],
       cta: '試用開始',
     },
     compliance: {
-      title: 'コンプライアンス表現',
-      subtitle: '過度な自動化表現を避けます。',
+      title: '価値と確認事項を分かりやすく',
+      subtitle: '日常の財税業務を効率化しながら、重要な確認事項を明確にします。',
       safe: ['補助計算、資料作成、照合支援として説明します。'],
       limited: ['最終確認は利用者側で行う必要があります。'],
     },
+    companyIntro: {
+      eyebrow: '会社紹介',
+      title: '財税サービス経験を AI 記帳プロダクトへ',
+      description:
+        '好财集团は上海を拠点に企業財税サービスを展開し、その実務経験を账大师の AI 財税ワークフローへ反映しています。',
+      stats: [
+        { value: '2014', label: '設立', note: '企業財税サービスの経験' },
+        { value: '20000+', label: '顧客規模', note: '累計企業顧客サービス規模' },
+        { value: '3000+', label: 'パートナー', note: '企業サービス領域の協力先' },
+        { value: '上海', label: '本部', note: '上海を拠点に展開' },
+      ],
+      focusTitle: '小規模企業の高頻度な財税業務に集中',
+      focus: [
+        '発票管理、智能記帳、帳票生成、補助申告を一つの流れに整理',
+        '給与、発票、銀行明細、企業情報を月次フローへ集約',
+        '中小企業、店舗、個人事業者、財税機構の日常管理を支援',
+        '製品資料、導入方法、研修支援を通じてチャネルの立ち上げを支援',
+      ],
+    },
     faqTitle: 'FAQ',
     faqs: [
-      { q: '日本站は独立実装ですか？', a: 'いいえ。同じコンポーネントと内容構造を利用し、言語と地域説明のみを差し替えます。' },
+      { q: '試用を開始するには登録が必要ですか？', a: 'はい。企業データと試用情報を保存するため、携帯番号で登録またはログインしてから体験フローに進みます。' },
     ],
     finalCta: {
       title: 'まずは標準フローを試す',
-      description: '同一入口から製品試用を開始できます。',
+      description: 'まずは一社、一つの申告期間から標準フローをお試しください。',
       primary: '試用開始',
-      secondary: '問い合わせ',
     },
     company: commonCompany,
   },
@@ -463,11 +515,15 @@ export const sites: Record<SiteCode, SiteContent> = {
     loginUrl,
     trialUrl: `${loginUrl}?trial=7d&utm_source=official_site&utm_campaign=trial_package_hk`,
     nav: [
+      { label: '產品介紹', href: '/hk/' },
+      { label: '公司介紹', href: '/hk/company/' },
+      { label: '代理合作意向', href: '/hk/partners/' },
+    ],
+    productNav: [
       { label: '核心功能', href: '#features' },
       { label: '適用角色', href: '#roles' },
       { label: '工作流程', href: '#workflow' },
       { label: '定價', href: '#pricing' },
-      { label: '代理合作', href: '#partners' },
       { label: '常見問題', href: '#faq' },
     ],
     actions: { login: '登入', trial: '開始試用' },
@@ -494,7 +550,7 @@ export const sites: Record<SiteCode, SiteContent> = {
       { icon: 'users', title: '協同複雜', description: '多公司、多角色需要清晰權限。' },
     ],
     workflowTitle: '五步標準流程',
-    workflowSubtitle: '與中國站共用同一套組件和字段。',
+    workflowSubtitle: '由資料整理到報表查看，企業主、財務和服務團隊都能按同一流程協同。',
     workflow: [
       { step: '01', title: '員工工資', description: '維護員工與工資資料。', output: '輸出工資成本和個稅測算。' },
       { step: '02', title: '發票資料', description: '整理收入、成本和費用資料。', output: '輸出金額、稅額和狀態。' },
@@ -502,8 +558,8 @@ export const sites: Record<SiteCode, SiteContent> = {
       { step: '04', title: '數據核對', description: '檢查申報前異常。', output: '輸出待辦清單。' },
       { step: '05', title: '申報資料', description: '生成測算與資料預覽。', output: '輸出申報前資料。' },
     ],
-    featuresTitle: '同一套功能結構',
-    featuresSubtitle: '價格、效率、風險提醒和客服承接都說清楚。',
+    featuresTitle: '把財稅管理需要的能力，集中到一套流程',
+    featuresSubtitle: '工資、發票、銀行流水、核對與報表集中管理，讓不同角色看到同一套資料。',
     features: [],
     rolesTitle: '角色流程',
     rolesSubtitle: '企業主、財務、代賬和被授權人共用流程。',
@@ -513,41 +569,245 @@ export const sites: Record<SiteCode, SiteContent> = {
     proofItems: [],
     pricing: {
       title: '定價',
-      subtitle: '首期僅展示一個價格。',
+      subtitle: '統一定價，低成本先跑通一個標準流程。',
       price: '360 元',
       period: '/ 年',
       description: '用於先試跑一個標準流程。',
       includedTitle: '包含內容',
       included: ['企業管理', '工資、發票、流水', '數據核對', 'AI 輔助', '資料預覽'],
-      boundaryTitle: '目前不承諾',
-      boundaries: ['不宣傳自動提交稅局', '銀行直連與 OCR 按規劃能力處理'],
+      boundaryTitle: '服務說明',
+      boundaries: ['系統協助整理資料、測算稅額和生成報表', '重要申報內容建議由企業或會計最終確認'],
       cta: '開始試用',
     },
     compliance: {
-      title: '合規說明',
-      subtitle: '避免過度承諾。',
+      title: '價值清楚，確認事項也清楚',
+      subtitle: '賬大師協助提升資料整理、稅額測算和報表查看效率，同時保留必要人工復核。',
       safe: ['以輔助測算、資料生成和流程核對描述能力。'],
       limited: ['最終申報和資料真實性仍需用戶確認。'],
     },
+    companyIntro: {
+      eyebrow: '公司介紹',
+      title: '把企業財稅服務經驗，沉澱到 AI 記賬流程',
+      description:
+        '好財集團總部位於上海，長期服務企業財稅場景。賬大師聚焦 AI 財稅智能化，將票據、流水、工資、報表和輔助報稅整合為可上手流程。',
+      stats: [
+        { value: '2014 年', label: '集團成立', note: '企業財稅服務經驗沉澱' },
+        { value: '20000+', label: '服務客戶', note: '累計企業客戶服務規模' },
+        { value: '3000+', label: '合作夥伴', note: '企業服務渠道資源' },
+        { value: '上海', label: '總部所在地', note: '以上海為總部展開服務' },
+      ],
+      focusTitle: '專注小微企業高頻財稅場景',
+      focus: [
+        '票據自動識別、智能記賬、一鍵生成報表、AI 輔助報稅',
+        '將工資、發票、銀行流水整理為月度賬務流程',
+        '服務中小企業、門店、個體經營者與財稅機構',
+        '總部提供產品、品牌、服務資料和培訓支持，協助渠道更快完成客戶啟動',
+      ],
+    },
     faqTitle: '常見問題',
     faqs: [
-      { q: '香港站是否重新開發？', a: '不是。香港站復用中國站母版，只替換語言、地區化字段和合規說明。' },
+      { q: '開始試用需要先註冊嗎？', a: '需要。為了保存企業賬套和試用資料，請先用手機號完成註冊或登入，再進入體驗流程。' },
     ],
     finalCta: {
       title: '先試用同一套標準流程',
       description: '從產品登錄頁開始體驗。',
       primary: '開始試用',
-      secondary: '電話諮詢',
     },
     company: commonCompany,
   },
 }
 
-for (const code of ['jp', 'hk'] as const) {
-  sites[code].features = sites.cn.features
-  sites[code].roles = sites.cn.roles
-  sites[code].proofItems = sites.cn.proofItems
-}
+sites.jp.features = [
+  {
+    icon: 'building',
+    title: '複数企業を一つの入口で管理',
+    description: '経営者の複数主体、代行担当者の複数顧客管理に対応し、切り替えと権限を分かりやすくします。',
+    details: ['複数企業', '権限管理', '顧客タスク', 'サービス期間'],
+  },
+  {
+    icon: 'calculator',
+    title: '給与と個税を整理',
+    description: '給与、社会保険、公積金などの情報を整理し、個税試算と確認作業を支援します。',
+    details: ['従業員給与', '社会保険', '個税試算', '履歴管理'],
+  },
+  {
+    icon: 'file',
+    title: '発票と費用をまとめて管理',
+    description: '売上、仕入、費用、未発票支出を同じ画面で確認し、収入とコストを把握しやすくします。',
+    details: ['売上発票', '仕入発票', '費用管理', '確認事項'],
+  },
+  {
+    icon: 'landmark',
+    title: '銀行明細を見える化',
+    description: '銀行口座と入出金明細を管理し、発票や費用との照合を進めやすくします。',
+    details: ['複数口座', '入金確認', '支払記録', '照合待ち'],
+  },
+  {
+    icon: 'shield',
+    title: '確認事項を先に提示',
+    description: '申告前に影響しやすい発票、明細、コストの確認事項を早めに提示します。',
+    details: ['発票確認', '明細照合', 'コスト確認', 'AI 提案'],
+  },
+  {
+    icon: 'chart',
+    title: '帳票と税額を随時確認',
+    description: '税額試算、損益、貸借、凭证ビューをまとめて確認できます。',
+    details: ['税額試算', '損益表', '貸借対照表', '凭证ビュー'],
+  },
+  {
+    icon: 'message',
+    title: 'AI 財税アシスタント',
+    description: '税額、異常、コスト構成が分かりにくい時に、説明と処理順序の確認を支援します。',
+    details: ['税額説明', '異常確認', 'タスク要約', '処理提案'],
+  },
+  {
+    icon: 'headphones',
+    title: '専任サポート',
+    description: '試用、開通、利用中の問い合わせを担当者がサポートします。',
+    details: ['担当者対応', '企業微信', 'メール', '協業相談'],
+  },
+]
+
+sites.jp.roles = [
+  {
+    icon: 'wallet',
+    title: '小規模企業の経営者',
+    user: 'コストを抑え、状況を分かりやすく確認したい',
+    journey: ['年間 360 元', 'スマートフォンで進捗確認', '税額と帳票を確認', '必要時にサポートへ相談'],
+    cta: '複雑な財務知識がなくても、企業の帳務状況を把握できます。',
+  },
+  {
+    icon: 'calculator',
+    title: '財務/出納担当',
+    user: '入力、照合、説明の負担を減らしたい',
+    journey: ['給与を管理', '発票を整理', '銀行明細を照合', '帳票と資料を出力'],
+    cta: '反復作業を減らし、確認に時間を使えます。',
+  },
+  {
+    icon: 'layers',
+    title: '代行記帳担当',
+    user: '複数顧客の進捗とタスクを管理したい',
+    journey: ['顧客を切り替え', 'タスクを確認', '異常を処理', '帳票と凭证を蓄積'],
+    cta: '一つの入口で複数企業を管理し、コミュニケーションコストを下げます。',
+  },
+  {
+    icon: 'chart',
+    title: '経営管理者',
+    user: '資金、税額、経営結果を確認したい',
+    journey: ['収入とコストを確認', '税額見込みを確認', 'タスクを把握', '必要時に担当者へ共有'],
+    cta: '管理画面に詳しくなくても、経営状況を把握できます。',
+  },
+  {
+    icon: 'users',
+    title: '権限付与された担当者',
+    user: '担当範囲を明確にして協同したい',
+    journey: ['権限を受ける', '対象企業へ入る', '指定資料を処理', '月次タスクを完了'],
+    cta: 'アカウント共有を減らし、協同を明確にします。',
+  },
+]
+
+sites.jp.proofItems = [
+  { label: '低コスト', value: '0.98 元/日', description: '年間 360 元で、小規模企業も始めやすい料金です。' },
+  { label: '随時確認', value: 'いつでも帳務確認', description: 'スマートフォンと PC で収入、コスト、税額、タスクを確認できます。' },
+  { label: '効率向上', value: 'AI リマインド', description: '発票、銀行明細、給与の確認事項を早めに提示します。' },
+  { label: '標準化', value: '帳票と凭证', description: '給与、発票、銀行明細から帳票と凭证ビューを整理します。' },
+]
+
+sites.hk.features = [
+  {
+    icon: 'building',
+    title: '一個賬號管理多家公司',
+    description: '適合老闆多主體經營、代賬會計多客戶管理，企業切換和授權協同更清楚。',
+    details: ['多企業切換', '授權協同', '客戶待辦', '服務有效期'],
+  },
+  {
+    icon: 'calculator',
+    title: '工資個稅輔助測算',
+    description: '錄入工資和五險一金，系統輔助測算個稅，減少手工公式和重複核對。',
+    details: ['員工工資', '五險一金', '個稅測算', '工資歷史'],
+  },
+  {
+    icon: 'file',
+    title: '發票費用統一管理',
+    description: '收入票、成本票、費用票、無票支出放在一起，收入成本更清晰。',
+    details: ['銷項進項', '費用票', '無票支出', '異常提醒'],
+  },
+  {
+    icon: 'landmark',
+    title: '銀行流水看得清',
+    description: '銀行流水和發票、費用關聯起來，收入支出不再只靠月底翻賬單。',
+    details: ['多銀行賬戶', '回款核對', '付款記錄', '待匹配提醒'],
+  },
+  {
+    icon: 'shield',
+    title: '風險提醒先處理',
+    description: '把影響做賬報稅的事項提前列出來，減少漏項、錯項和逾期風險。',
+    details: ['發票待確認', '流水待匹配', '成本缺口', 'AI 建議'],
+  },
+  {
+    icon: 'chart',
+    title: '報表稅額隨時看',
+    description: '匯總稅額測算、資產負債表、利潤表和憑證視圖，讓經營結果更直觀。',
+    details: ['稅額測算', '利潤表', '資產負債表', '憑證視圖'],
+  },
+  {
+    icon: 'message',
+    title: 'AI 財稅助手',
+    description: '看不懂稅額、異常、成本構成時，可先獲得解釋和處理建議。',
+    details: ['稅額解釋', '異常定位', '待辦總結', '處理建議'],
+  },
+  {
+    icon: 'headphones',
+    title: '專屬客服承接',
+    description: '試用、開通、使用問題都有客服承接，企業不用自己摸索全部流程。',
+    details: ['姚經理', '企業微信', '郵件溝通', '合作對接'],
+  },
+]
+
+sites.hk.roles = [
+  {
+    icon: 'wallet',
+    title: '小微企業主',
+    user: '關心少花錢、少操心、看得懂',
+    journey: ['一年 360 元', '手機看進度', '查看稅額和報表', '有問題找客服'],
+    cta: '不用懂複雜財務，也能掌握企業賬本。',
+  },
+  {
+    icon: 'calculator',
+    title: '企業財務/出納',
+    user: '關心少錄表、少核對、少解釋',
+    journey: ['維護工資', '整理發票', '核對流水', '生成報表和資料'],
+    cta: '把重複整理工作交給系統，把時間留給復核。',
+  },
+  {
+    icon: 'layers',
+    title: '代賬會計',
+    user: '關心多客戶管理和服務效率',
+    journey: ['切換客戶', '查看待辦', '處理異常', '沉澱報表憑證'],
+    cta: '一個入口服務多家企業，降低重複溝通成本。',
+  },
+  {
+    icon: 'chart',
+    title: '老闆/經營者',
+    user: '關心現金流、稅額和經營結果',
+    journey: ['查看收入成本', '查看預計稅額', '查看待辦提醒', '需要時轉給財務'],
+    cta: '不用進複雜後台，也能知道企業經營狀態。',
+  },
+  {
+    icon: 'users',
+    title: '被授權人',
+    user: '關心授權清楚、協作方便',
+    journey: ['接受授權', '進入對應企業', '處理指定資料', '協同完成本月任務'],
+    cta: '不用共用賬號，協同更清楚。',
+  },
+]
+
+sites.hk.proofItems = [
+  { label: '更便宜', value: '0.98 元/天', description: '360 元/年，適合小微企業先低成本用起來。' },
+  { label: '更實時', value: '隨時查賬', description: '手機和電腦都能看本月收入、成本、稅額和待辦。' },
+  { label: '更省心', value: 'AI 提醒', description: '發票、流水、工資異常提前提醒，減少月底補資料。' },
+  { label: '更規範', value: '報表憑證', description: '按工資、發票、流水沉澱報表和憑證視圖。' },
+]
 
 export function getSiteContent(code: SiteCode) {
   return sites[code]

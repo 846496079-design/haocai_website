@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>好财账大师 · 用 AI 帮你做账报税</title>
+<style>
+  :root {
+    --background: #f7f9fc;
+    --foreground: #18243d;
+    --card: #ffffff;
+    --primary: #5b6cff;
+    --brand-from: #4f7bff;
+    --brand-to: #6c5cff;
+    --secondary: #f3f6ff;
+    --muted-foreground: #667085;
+    --text-tertiary: #98a2b3;
+    --status-online: #22c55e;
+    --border: #e6eaf2;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont,
+      'Segoe UI', Roboto, ui-sans-serif, system-ui, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  .container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    padding: 0 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s ease;
+    border: none;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(91,108,255,.22);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(91,108,255,.3); }
+  .btn-ghost {
+    background: var(--card);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: rgba(91,108,255,.4); background: var(--secondary); }
+  .btn-sm { height: 40px; padding: 0 16px; }
+
+  .arrow { margin-left: 8px; }
+
+  /* ---------- Navbar ---------- */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,.9);
+    backdrop-filter: blur(12px);
+  }
+  .nav-inner {
+    display: flex;
+    height: 64px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-logo {
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 700; font-size: 20px; letter-spacing: -.5px;
+  }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 800;
+  }
+  .brand-locale { font-size: 12px; color: var(--muted-foreground); }
+  .nav-links { display: flex; align-items: center; gap: 20px; }
+  .nav-links a {
+    font-size: 14px; font-weight: 500; color: var(--muted-foreground);
+    white-space: nowrap; transition: color .2s;
+  }
+  .nav-links a:hover { color: var(--foreground); }
+  .nav-actions { display: flex; align-items: center; gap: 12px; }
+  .nav-toggle { display: none; background: none; border: none; cursor: pointer; }
+
+  /* ---------- Section shared ---------- */
+  section { padding: 80px 0; }
+  .section-head { max-width: 768px; margin: 0 auto; text-align: center; }
+  .section-head.left { margin: 0; text-align: left; }
+  .eyebrow { color: var(--primary); font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .section-head h2 { font-size: 30px; font-weight: 600; line-height: 1.25; }
+  .section-head p { margin-top: 16px; font-size: 17px; line-height: 1.6; color: var(--muted-foreground); }
+  @media (min-width: 768px) { .section-head h2 { font-size: 36px; } }
+
+  .bg-card { background: var(--card); }
+
+  /* ---------- Hero ---------- */
+  .hero { position: relative; overflow: hidden; padding: 80px 0; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(91,108,255,.16), transparent 34%),
+      radial-gradient(circle at 82% 10%, rgba(34,197,94,.10), transparent 28%);
+  }
+  .hero-grid {
+    display: grid; gap: 48px; align-items: center;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 1024px) { .hero-grid { grid-template-columns: 1fr 480px; } }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border); background: var(--card);
+    padding: 8px 16px; border-radius: 999px;
+    font-size: 14px; color: var(--muted-foreground);
+    box-shadow: 0 4px 18px rgba(38,67,104,.05);
+    margin-bottom: 24px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--status-online); }
+  .hero h1 {
+    font-size: 40px; font-weight: 600; line-height: 1.15; letter-spacing: -.5px;
+    max-width: 640px;
+  }
+  @media (min-width: 768px) { .hero h1 { font-size: 56px; } }
+  .hero-desc { margin-top: 24px; max-width: 640px; font-size: 18px; line-height: 1.7; color: var(--muted-foreground); }
+  .hero-cta { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; }
+
+  .product-card {
+    border-radius: 32px; border: 1px solid var(--border);
+    background: var(--card); padding: 20px;
+    box-shadow: 0 24px 70px rgba(24,36,61,.12);
+  }
+  .product-card .logo-row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 22px; font-weight: 700;
+  }
+  .product-inner { margin-top: 24px; border-radius: 24px; background: var(--background); padding: 20px; }
+  .status-tag { font-size: 14px; font-weight: 600; color: var(--primary); }
+  .product-inner h2 { margin-top: 8px; font-size: 30px; font-weight: 600; }
+  .product-inner p { margin-top: 16px; font-size: 14px; line-height: 1.7; color: var(--muted-foreground); }
+  .bullets { margin-top: 20px; display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+  .bullet {
+    border: 1px solid var(--border); background: var(--card);
+    padding: 8px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 500; color: var(--muted-foreground);
+    text-align: center;
+  }
+  .product-link {
+    margin-top: 24px; display: inline-flex; width: 100%;
+    height: 44px; align-items: center; justify-content: center;
+    border-radius: 12px; border: 1px solid rgba(91,108,255,.2);
+    background: rgba(91,108,255,.1); color: var(--primary);
+    font-size: 14px; font-weight: 600;
+  }
+
+  /* ---------- Card grids ---------- */
+  .grid { display: grid; gap: 20px; }
+  .grid-4 { grid-template-columns: repeat(1, 1fr); }
+  .grid-3 { grid-template-columns: repeat(1, 1fr); }
+  @media (min-width: 768px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  }
+  .mt-12 { margin-top: 48px; }
+
+  .card {
+    height: 100%;
+    border-radius: 24px; border: 1px solid var(--border);
+    background: var(--card); padding: 24px;
+  }
+  section.bg-card .card { background: var(--background); }
+  .card h3 { margin-top: 20px; font-size: 18px; font-weight: 600; }
+  .card p { margin-top: 12px; font-size: 14px; line-height: 1.6; color: var(--muted-foreground); }
+  .card .tag-small { font-size: 12px; font-weight: 600; color: var(--primary); }
+  .card .pain-mark { margin-top: 20px; font-size: 12px; font-weight: 600; color: var(--primary); }
+
+  .icon-box {
+    width: 44px; height: 44px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(91,108,255,.15); background: rgba(91,108,255,.1);
+    color: var(--primary);
+  }
+  .icon-box svg { width: 20px; height: 20px; }
+
+  /* ---------- 3-card links ---------- */
+  .link-card {
+    border-radius: 28px; border: 1px solid var(--border);
+    background: var(--card); padding: 28px; height: 100%;
+  }
+  .link-card h2 { font-size: 22px; font-weight: 600; }
+  .link-card p { margin-top: 16px; font-size: 14px; line-height: 1.7; color: var(--muted-foreground); }
+  .link-card .more { margin-top: 24px; display: inline-flex; font-size: 14px; font-weight: 600; color: var(--primary); }
+  .chips { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { border-radius: 999px; background: var(--background); padding: 4px 12px; font-size: 12px; color: var(--muted-foreground); }
+
+  /* ---------- Footer ---------- */
+  footer { border-top: 1px solid var(--border); background: var(--card); }
+  .footer-grid {
+    display: grid; gap: 40px; padding: 56px 0;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 1024px) {
+    .footer-grid { grid-template-columns: 1.4fr .8fr .8fr 1fr; }
+  }
+  .footer-info { font-size: 14px; line-height: 1.7; color: var(--muted-foreground); }
+  .footer-info .slogan { margin-top: 12px; }
+  .footer-info .meta { margin-top: 20px; display: grid; gap: 8px; }
+  footer h4 { font-size: 14px; font-weight: 600; }
+  footer ul { list-style: none; margin-top: 16px; display: grid; gap: 12px; font-size: 14px; color: var(--muted-foreground); }
+  footer ul a:hover { color: var(--foreground); }
+  .footer-label { display: block; font-size: 12px; color: var(--text-tertiary); }
+  .footer-bottom {
+    margin-top: 48px; border-top: 1px solid var(--border); padding: 24px 0;
+    display: flex; flex-direction: column; gap: 12px;
+    font-size: 12px; color: var(--muted-foreground);
+  }
+  .footer-bottom .links { display: flex; gap: 20px; }
+  @media (min-width: 768px) {
+    .footer-bottom { flex-direction: row; align-items: center; justify-content: space-between; }
+  }
+
+  @media (max-width: 767px) {
+    .nav-links, .nav-actions .btn { display: none; }
+    .hero h1 { font-size: 34px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== Navbar ==================== -->
+<header>
+  <div class="container nav-inner">
+    <a href="#" class="brand">
+      <span class="brand-logo"><span class="brand-mark">账</span>好财账大师</span>
+      <span class="brand-locale">中国站</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#">首页</a>
+      <a href="#product">产品中心</a>
+      <a href="#news">新闻中心</a>
+      <a href="#">公司介绍</a>
+      <a href="#">代理合作</a>
+      <a href="#">加入我们</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-primary btn-sm">开始试用</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ==================== Hero ==================== -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <div class="badge">
+          <span class="dot"></span>
+          AI 财税从高频痛点开始落地
+        </div>
+        <h1>老板不想等月底，财务不想反复催资料</h1>
+        <p class="hero-desc">
+          工资、发票、流水、税额和报表散在不同人手里，月底才开始补材料、对异常、问结果。好财从真实财税工作流切入，用账大师先把小微企业最频繁的记账报税协同做清楚。
+        </p>
+        <div class="hero-cta">
+          <a href="#product" class="btn btn-primary">看账大师怎么解决<span class="arrow">→</span></a>
+          <a href="#news" class="btn btn-ghost">查看新闻中心</a>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="logo-row"><span class="brand-mark">账</span>好财集团 · 账大师</div>
+        <div class="product-inner">
+          <p class="status-tag">主推产品</p>
+          <h2>好财账大师</h2>
+          <p>面向小微企业、财务人员和代账机构，把工资、发票、银行流水、核对、报表和待办提醒统一到一套流程里。</p>
+          <div class="bullets">
+            <span class="bullet">360 元/年</span>
+            <span class="bullet">AI 三步智能记账</span>
+            <span class="bullet">移动端与电脑端协同</span>
+            <span class="bullet">适合财税和代账场景</span>
+          </div>
+        </div>
+        <a href="#product" class="product-link">进入产品中心<span class="arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== Pain points ==================== -->
+  <section>
+    <div class="container">
+      <div class="section-head">
+        <h2>你是否也遇到这些财税烦恼？</h2>
+        <p>小企业最怕的不是做账本身，而是资料散、时间紧、看不懂、问不到人。账大师把重复整理工作交给系统，把关键结果讲清楚。</p>
+      </div>
+      <div class="grid grid-4 mt-12">
+        <div class="card">
+          <div class="icon-box">📄</div>
+          <h3>月底才发现资料缺一堆</h3>
+          <p>工资、发票、银行流水分散在不同人手里，月底补资料、补说明，既慢又容易漏。</p>
+          <p class="pain-mark">账大师对应处理 1</p>
+        </div>
+        <div class="card">
+          <div class="icon-box">🧮</div>
+          <h3>老板看不懂账，财务解释很累</h3>
+          <p>收入、成本、税额、现金流没有放在一起看，每次沟通都要重新翻表格。</p>
+          <p class="pain-mark">账大师对应处理 2</p>
+        </div>
+        <div class="card">
+          <div class="icon-box">⏰</div>
+          <h3>怕漏报、错报、逾期</h3>
+          <p>发票待确认、流水待匹配、无票支出没说明，往往到最后才变成风险。</p>
+          <p class="pain-mark">账大师对应处理 3</p>
+        </div>
+        <div class="card">
+          <div class="icon-box">👥</div>
+          <h3>代账和多公司管理很琐碎</h3>
+          <p>一个会计管多家公司，一个老板管多个主体，待办分散就很难判断先处理什么。</p>
+          <p class="pain-mark">账大师对应处理 4</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== Product suite ==================== -->
+  <section id="product" class="bg-card">
+    <div class="container">
+      <div class="section-head">
+        <h2>以账大师为核心，构建一站式 B 端企业智能解决方案</h2>
+        <p>账大师是当前主推产品，围绕财税管理先落地；好财还将逐步推出外呼、客服、内容运营、招聘、渠道管理、桌面自动化和 AI 中台能力，帮助企业把重复工作系统化。</p>
+      </div>
+      <div class="grid grid-4 mt-12">
+        <div class="card">
+          <p class="tag-small">好财 AI 外呼</p>
+          <h3>好财大模型 AI 语音外呼</h3>
+          <p>用于客户回访、政策触达、线索跟进和标准化电话任务。</p>
+        </div>
+        <div class="card">
+          <p class="tag-small">好财智服</p>
+          <h3>好财全渠道智能客户服务系统</h3>
+          <p>统一承接企业微信、电话、网页和工单咨询，沉淀客户服务记录。</p>
+        </div>
+        <div class="card">
+          <p class="tag-small">好财新媒通</p>
+          <h3>好财新媒体内容运营管理系统</h3>
+          <p>管理选题、素材、发布、复盘和销售转发，服务企业获客。</p>
+        </div>
+        <div class="card">
+          <p class="tag-small">好财桌面助手</p>
+          <h3>好财 Future-AI 桌面自动化任务助手软件</h3>
+          <p>面向桌面端重复任务执行，辅助资料整理、表格处理和流程操作。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== Three link cards ==================== -->
+  <section id="news">
+    <div class="container">
+      <div class="grid grid-3">
+        <div class="link-card">
+          <h2>继续看完整产品中心</h2>
+          <p>了解账大师主推能力，以及好财即将推出的一站式 B 端企业产品矩阵。</p>
+          <a href="#product" class="more">产品中心<span class="arrow">→</span></a>
+        </div>
+        <div class="link-card">
+          <h2>好财动态与 AI 财税观察</h2>
+          <p>先搭建静态栏目结构，后续可接入 CMS 发布产品动态、财税知识、代理政策和行业观察。</p>
+          <div class="chips">
+            <span class="chip">产品动态</span>
+            <span class="chip">财税知识</span>
+            <span class="chip">代理政策</span>
+            <span class="chip">行业观察</span>
+          </div>
+          <a href="#" class="more">新闻中心<span class="arrow">→</span></a>
+        </div>
+        <div class="link-card">
+          <h2>加入我们</h2>
+          <p>财务疑难处理与全栈开发两个方向正在招募，欢迎直接投递简历。</p>
+          <a href="#" class="more">加入我们<span class="arrow">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ==================== Footer ==================== -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="brand-logo"><span class="brand-mark">账</span>好财账大师</div>
+        <p class="footer-info slogan">让天下企业拥有一个 AI 财务专家</p>
+        <div class="footer-info meta">
+          <p>企业主体：上海尚加澄企业管理有限公司</p>
+          <p>统一社会信用代码：91310113MAK48LTU8M</p>
+          <p>注册地址：上海市宝山区泰和西路3389号</p>
+          <p>企业总部：上海市闵行区虹桥国际展汇南区-11号楼</p>
+        </div>
+      </div>
+      <div>
+        <h4>产品服务</h4>
+        <ul>
+          <li><a href="#">首页</a></li>
+          <li><a href="#product">产品中心</a></li>
+          <li><a href="#news">新闻中心</a></li>
+          <li><a href="#">公司介绍</a></li>
+          <li><a href="#">代理合作</a></li>
+          <li><a href="#">加入我们</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>站点</h4>
+        <ul>
+          <li><a href="#">中国站</a></li>
+          <li><a href="#">日本站</a></li>
+          <li><a href="#">香港站</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>联系我们</h4>
+        <ul>
+          <li><span class="footer-label">联系人</span>姚经理</li>
+          <li><span class="footer-label">电话</span><a href="tel:17511647049">17511647049</a></li>
+          <li><span class="footer-label">邮箱</span><a href="mailto:shangjiacheng2@creya.cn">shangjiacheng2@creya.cn</a></li>
+          <li><span class="footer-label">工作时间</span>工作日 9:00-18:00</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 上海尚加澄企业管理有限公司。页面信息仅用于产品介绍，具体服务以实际开通和双方确认为准。</p>
+      <div class="links">
+        <span>用户协议</span>
+        <span>隐私政策</span>
+        <span>关于我们</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

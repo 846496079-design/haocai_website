@@ -1924,13 +1924,18 @@ export default function OfficialSite({
       </main>
 
       {trialOpen && (
-        <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-[#18243D]/45 px-4 py-4 backdrop-blur-sm sm:items-center sm:py-6">
-          <div className="w-full max-w-[620px] rounded-[28px] bg-card p-6 shadow-[0_24px_80px_rgba(24,36,61,.24)]">
+        <div className="fixed inset-0 z-[80] flex min-h-[100dvh] items-start justify-center overflow-y-auto overscroll-contain bg-[#18243D]/45 px-3 py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="trial-dialog-title"
+            className="w-full max-w-[620px] overflow-y-auto rounded-3xl bg-card p-5 shadow-[0_24px_80px_rgba(24,36,61,.24)] sm:max-h-[calc(100dvh-3rem)] sm:rounded-[28px] sm:p-6"
+          >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-primary">{trial.eyebrow}</p>
-                <h3 className="mt-2 text-2xl font-semibold">{trial.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                <h3 id="trial-dialog-title" className="mt-2 text-xl font-semibold leading-tight sm:text-2xl">{trial.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground sm:leading-7">
                   {trial.desc}
                 </p>
               </div>
@@ -1960,21 +1965,21 @@ export default function OfficialSite({
               </div>
             ) : (
               <>
-                <div className="mt-6 grid gap-3">
+                <div className="mt-5 grid gap-2 sm:mt-6 sm:gap-3">
                   {trial.steps.map(([index, title, desc]) => (
-                    <div key={index} className="flex gap-3 rounded-2xl bg-background p-4">
+                    <div key={index} className="flex gap-3 rounded-2xl bg-background p-3 sm:p-4">
                       <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
                         {index}
                       </span>
                       <div>
                         <p className="font-semibold">{title}</p>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">{desc}</p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">{desc}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <form noValidate onSubmit={submitTrialForm} className="mt-6 grid gap-4">
+                <form noValidate onSubmit={submitTrialForm} className="mt-5 grid gap-4 sm:mt-6">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="grid gap-2 text-sm font-medium">
                       <span className="inline-flex w-fit items-baseline gap-1 whitespace-nowrap">
@@ -1984,7 +1989,7 @@ export default function OfficialSite({
                       <input
                         value={trialForm.contactName}
                         onChange={(event) => updateTrialField('contactName', event.target.value)}
-                        className={`h-12 ${trialFieldClass('contactName')}`}
+                        className={`h-12 text-base sm:text-sm ${trialFieldClass('contactName')}`}
                         placeholder={trial.contactNamePlaceholder}
                       />
                       {trialFieldError('contactName')}
@@ -1997,7 +2002,7 @@ export default function OfficialSite({
                       <input
                         value={trialForm.contactPhone}
                         onChange={(event) => updateTrialField('contactPhone', event.target.value)}
-                        className={`h-12 ${trialFieldClass('contactPhone')}`}
+                        className={`h-12 text-base sm:text-sm ${trialFieldClass('contactPhone')}`}
                         placeholder={trial.contactPhonePlaceholder}
                       />
                       {trialFieldError('contactPhone')}
@@ -2008,7 +2013,7 @@ export default function OfficialSite({
                     <input
                       value={trialForm.inviteCode}
                       onChange={(event) => updateTrialField('inviteCode', event.target.value)}
-                      className={`h-12 ${trialFieldClass('inviteCode')}`}
+                      className={`h-12 text-base sm:text-sm ${trialFieldClass('inviteCode')}`}
                       placeholder={trial.inviteCodePlaceholder}
                     />
                   </label>
@@ -2020,7 +2025,7 @@ export default function OfficialSite({
                   <button
                     type="submit"
                     disabled={trialSubmitting}
-                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-6 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-6 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm"
                   >
                     {trialSubmitting ? ui.submitting : trial.submit}
                     <Send className="ml-2 size-4" />

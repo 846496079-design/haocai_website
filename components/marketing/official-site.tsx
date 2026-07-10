@@ -52,8 +52,10 @@ const icons: Record<IconKey, typeof Building2> = {
 }
 
 const partnerLeadApiUrl = 'https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit'
-const trialLeadApiUrl = ''
+const trialLeadApiUrl = 'https://hcagent.ai-hc.cn/api/v1/customer-lead-pool-leads/submit'
 const partnerLeadMaxLength = 50
+const trialContactNameMaxLength = 50
+const trialContactPhoneMaxLength = 20
 
 const companyImages = [
   { src: '/images/company/scene-01.jpg' },
@@ -486,6 +488,8 @@ const jobCopy = {
 const uiCopy = {
   cn: {
     requiredError: '该项为必填项',
+    contactNameLengthError: '联系人请填写 1 至 50 个字符',
+    contactPhoneLengthError: '电话请填写 1 至 20 个字符',
     requiredInfo: '必填信息',
     requiredHint: '先留下最基础的联系方式，方便商务经理快速判断区域和对接节奏。',
     name: '姓名',
@@ -517,6 +521,8 @@ const uiCopy = {
   },
   jp: {
     requiredError: '必須項目です',
+    contactNameLengthError: '担当者名は 1〜50 文字で入力してください',
+    contactPhoneLengthError: '電話番号は 1〜20 文字で入力してください',
     requiredInfo: '必須情報',
     requiredHint: 'まず連絡に必要な基本情報をご入力ください。',
     name: '氏名',
@@ -548,6 +554,8 @@ const uiCopy = {
   },
   hk: {
     requiredError: '此項為必填項',
+    contactNameLengthError: '聯絡人請填寫 1 至 50 個字符',
+    contactPhoneLengthError: '電話請填寫 1 至 20 個字符',
     requiredInfo: '必填資料',
     requiredHint: '先留下基本聯絡方式，方便商務經理判斷區域和對接節奏。',
     name: '姓名',
@@ -779,6 +787,7 @@ export default function OfficialSite({
   const [trialSubmitted, setTrialSubmitted] = useState(false)
   const [trialSubmitting, setTrialSubmitting] = useState(false)
   const [trialApiError, setTrialApiError] = useState('')
+  const [trialSuccessMessage, setTrialSuccessMessage] = useState('')
   const [trialForm, setTrialForm] = useState({
     contactName: '',
     contactPhone: '',
@@ -843,12 +852,18 @@ export default function OfficialSite({
   async function submitTrialForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const nextErrors: Partial<Record<TrialField, string>> = {}
+    const contactName = trialForm.contactName.trim()
+    const contactPhone = trialForm.contactPhone.trim()
 
-    if (!trialForm.contactName.trim()) {
+    if (!contactName) {
       nextErrors.contactName = ui.requiredError
+    } else if (contactName.length > trialContactNameMaxLength) {
+      nextErrors.contactName = ui.contactNameLengthError
     }
-    if (!trialForm.contactPhone.trim()) {
+    if (!contactPhone) {
       nextErrors.contactPhone = ui.requiredError
+    } else if (contactPhone.length > trialContactPhoneMaxLength) {
+      nextErrors.contactPhone = ui.contactPhoneLengthError
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -861,23 +876,24 @@ export default function OfficialSite({
     setTrialSubmitting(true)
 
     try {
-      if (trialLeadApiUrl) {
-        const response = await fetch(trialLeadApiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contactName: trialForm.contactName.trim(),
-            contactPhone: trialForm.contactPhone.trim(),
-            inviteCode: trialForm.inviteCode.trim() || undefined,
-          }),
-        })
+      const response = await fetch(trialLeadApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contactName,
+          contactPhone,
+          ...(trialForm.inviteCode ? { referrerCode: trialForm.inviteCode } : {}),
+        }),
+      })
+      const result = await response.json().catch(() => ({}))
+      const message = result?.message || result?.msg || result?.detail
 
-        if (!response.ok) {
-          setTrialApiError(ui.submitError)
-          return
-        }
+      if (!response.ok) {
+        setTrialApiError(message || ui.submitError)
+        return
       }
 
+      setTrialSuccessMessage(message || trial.successDesc)
       setTrialSubmitted(true)
     } catch {
       setTrialApiError(ui.submitError)
@@ -1945,6 +1961,7 @@ export default function OfficialSite({
                   setTrialOpen(false)
                   setTrialSubmitted(false)
                   setTrialApiError('')
+                  setTrialSuccessMessage('')
                 }}
                 className="rounded-full p-2 text-muted-foreground hover:bg-muted"
                 aria-label="关闭"
@@ -1960,7 +1977,7 @@ export default function OfficialSite({
                 </div>
                 <h4 className="mt-4 text-xl font-semibold">{trial.successTitle}</h4>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                  {trial.successDesc}
+                  {trialSuccessMessage || trial.successDesc}
                 </p>
               </div>
             ) : (
@@ -1991,6 +2008,7 @@ export default function OfficialSite({
                         onChange={(event) => updateTrialField('contactName', event.target.value)}
                         className={`h-12 text-base sm:text-sm ${trialFieldClass('contactName')}`}
                         placeholder={trial.contactNamePlaceholder}
+                        maxLength={trialContactNameMaxLength}
                       />
                       {trialFieldError('contactName')}
                     </label>
@@ -2004,6 +2022,7 @@ export default function OfficialSite({
                         onChange={(event) => updateTrialField('contactPhone', event.target.value)}
                         className={`h-12 text-base sm:text-sm ${trialFieldClass('contactPhone')}`}
                         placeholder={trial.contactPhonePlaceholder}
+                        maxLength={trialContactPhoneMaxLength}
                       />
                       {trialFieldError('contactPhone')}
                     </label>

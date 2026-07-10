@@ -2,16 +2,18 @@
 
 import { useState } from 'react'
 import { ChevronDown, Globe, Menu, X } from 'lucide-react'
+import Image from 'next/image'
 import type { SiteContent } from '@/lib/site-content'
 import { sites } from '@/lib/site-content'
 
 interface NavbarProps {
   site: SiteContent
+  onTrialClick?: () => void
 }
 
 const siteList = [sites.cn, sites.jp, sites.hk]
 
-export default function Navbar({ site }: NavbarProps) {
+export default function Navbar({ site, onTrialClick }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [globalOpen, setGlobalOpen] = useState(false)
 
@@ -19,21 +21,23 @@ export default function Navbar({ site }: NavbarProps) {
     <header className="sticky top-0 z-50 border-b border-border bg-card/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-6">
         <a href={site.path} className="flex items-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))]">
-            <span className="text-lg font-bold text-white">账</span>
-          </div>
-          <div>
-            <span className="block text-base font-semibold leading-tight text-foreground">{site.name}</span>
-            <span className="block text-xs leading-tight text-muted-foreground">{site.localeName}</span>
-          </div>
+          <Image
+            src="/images/brand/haocai-zds-logo-horizontal.png"
+            alt="好财集团 账大师"
+            width={220}
+            height={52}
+            className="h-9 w-auto"
+            priority
+          />
+          <span className="hidden text-xs leading-tight text-muted-foreground lg:block">{site.localeName}</span>
         </a>
 
-        <nav className="hidden items-center gap-7 md:flex">
+        <nav className="hidden items-center gap-4 md:flex lg:gap-5">
           {site.nav.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
             >
               {item.label}
             </a>
@@ -71,12 +75,13 @@ export default function Navbar({ site }: NavbarProps) {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <a
-            href={site.trialUrl}
+          <button
+            type="button"
+            onClick={onTrialClick}
             className="inline-flex h-10 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-4 text-sm font-semibold text-white"
           >
             {site.actions.trial}
-          </a>
+          </button>
         </div>
 
         <button
@@ -121,12 +126,16 @@ export default function Navbar({ site }: NavbarProps) {
               </div>
             </div>
             <div className="pt-2">
-              <a
-                href={site.trialUrl}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false)
+                  onTrialClick?.()
+                }}
                 className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] text-sm font-semibold text-white"
               >
                 {site.actions.trial}
-              </a>
+              </button>
             </div>
           </nav>
         </div>

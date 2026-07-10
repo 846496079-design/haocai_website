@@ -107,6 +107,23 @@ const commonCompany = {
   hours: '工作日 9:00-18:00',
 }
 
+const jpCompany = {
+  ...commonCompany,
+  name: '上海尚加澄企業管理有限公司',
+  registeredAddress: '上海市宝山区泰和西路3389号',
+  headquarters: '上海市閔行区虹橋国際展匯南区 11号棟',
+  manager: '姚マネージャー',
+  hours: '平日 9:00-18:00',
+}
+
+const hkCompany = {
+  ...commonCompany,
+  name: '上海尚加澄企業管理有限公司',
+  registeredAddress: '上海市寶山區泰和西路3389號',
+  headquarters: '上海市閔行區虹橋國際展匯南區-11號樓',
+  manager: '姚經理',
+}
+
 const loginUrl = 'https://finance-ai.haocai360.cn/sign-in'
 
 export const sites: Record<SiteCode, SiteContent> = {
@@ -119,9 +136,12 @@ export const sites: Record<SiteCode, SiteContent> = {
     loginUrl,
     trialUrl: `${loginUrl}?trial=7d&utm_source=official_site&utm_campaign=trial_package`,
     nav: [
-      { label: '产品介绍', href: '/cn/' },
+      { label: '首页', href: '/cn/' },
+      { label: '产品中心', href: '/cn/product/' },
+      { label: '新闻中心', href: '/cn/news/' },
       { label: '公司介绍', href: '/cn/company/' },
-      { label: '代理合作意向', href: '/cn/partners/' },
+      { label: '代理合作', href: '/cn/partners/' },
+      { label: '加入我们', href: '/cn/join/' },
     ],
     productNav: [
       { label: '核心功能', href: '#features' },
@@ -342,28 +362,28 @@ export const sites: Record<SiteCode, SiteContent> = {
     },
     companyIntro: {
       eyebrow: '公司介绍',
-      title: '好财集团的财税服务经验，落到一套 AI 记账产品里',
+      title: 'AI 时代企业财务智能化探索者',
       description:
-        '好财集团成立于 2014 年，总部位于上海，长期服务企业财税场景。账大师把票据管理、智能记账、报表生成和辅助报税整理成清晰流程，帮助小微企业用更低门槛完成月度财税管理。',
+        '账大师（上海）人工智能技术有限公司专注于人工智能、大数据、云计算与企业财务服务融合创新，致力于让企业财务管理更智能、更高效、更易协同。',
       stats: [
-        { value: '2014 年', label: '集团成立', note: '多年企业财税服务经验沉淀' },
-        { value: '20000+', label: '服务客户', note: '累计企业客户服务规模' },
-        { value: '3000+', label: '合作伙伴', note: '覆盖财税与企业服务渠道资源' },
-        { value: '上海', label: '总部所在地', note: '虹桥国际展汇南区设有总部办公' },
+        { value: '2014', label: '成立时间', note: '长期关注企业财税服务场景' },
+        { value: 'AI', label: '技术方向', note: '大模型、智能 Agent 与自动化工作流' },
+        { value: '财税', label: '核心场景', note: '围绕高频财务工作持续打磨产品' },
+        { value: '生态', label: '合作理念', note: '与企业服务伙伴共同探索新场景' },
       ],
-      focusTitle: '专注小微企业高频财税场景',
+      focusTitle: '从高频财务工作，走向更清晰的经营协同',
       focus: [
-        '围绕票据管理、智能记账、报表生成和辅助报税提供产品能力',
-        '将工资、发票、银行流水、企业基础信息整理为月度账务流程',
-        '服务中小企业、门店、个体经营者和财税机构的日常管理需求',
-        '总部提供产品、品牌、服务资料和培训支持，帮助渠道更快完成客户启动',
+        '围绕工资、发票、银行流水、数据核对和报表分析等高频场景持续迭代',
+        '通过 AI 大模型、智能 Agent 与自动化工作流，减少重复整理与核对成本',
+        '为企业管理者、财务人员和企业服务伙伴提供更易理解的协同方式',
+        '以产品、技术、服务和渠道协同，探索企业 AI 服务生态的长期价值',
       ],
     },
     faqTitle: '常见问题',
     faqs: [
       {
         q: '领取 7 天体验套餐需要先注册吗？',
-        a: '需要。为了给企业创建独立账套并保存试用数据，用户需要先用手机号完成注册或登录。完成后进入企业创建和 7 天体验套餐领取流程。',
+        a: '当前官网先介绍试用政策优惠并收集联系人、电话和邀请码或邀请人电话，后续由工作人员对接开通方式和使用范围。',
       },
       {
         q: '好财账大师适合谁？',
@@ -387,7 +407,7 @@ export const sites: Record<SiteCode, SiteContent> = {
       },
       {
         q: '如何开始试用？',
-        a: '点击页面中的“开始试用”即可进入 7 天体验套餐流程。系统会引导你完成手机号注册或登录、创建企业账套，并保存试用数据。',
+        a: '点击页面中的“开始试用”会弹出 7 天体验套餐说明和留资表单。提交后由工作人员对接试用政策、优惠和开通指引。',
       },
     ],
     finalCta: {
@@ -406,9 +426,12 @@ export const sites: Record<SiteCode, SiteContent> = {
     loginUrl,
     trialUrl: `${loginUrl}?trial=7d&utm_source=official_site&utm_campaign=trial_package_jp`,
     nav: [
-      { label: '製品紹介', href: '/jp/' },
+      { label: 'ホーム', href: '/jp/' },
+      { label: '製品センター', href: '/jp/product/' },
+      { label: 'ニュース', href: '/jp/news/' },
       { label: '会社紹介', href: '/jp/company/' },
       { label: '代理連携', href: '/jp/partners/' },
+      { label: '採用情報', href: '/jp/join/' },
     ],
     productNav: [
       { label: '主な機能', href: '#features' },
@@ -478,21 +501,21 @@ export const sites: Record<SiteCode, SiteContent> = {
     },
     companyIntro: {
       eyebrow: '会社紹介',
-      title: '財税サービス経験を AI 記帳プロダクトへ',
+      title: 'AI 時代の企業財務インテリジェンスを探求',
       description:
-        '好财集团は上海を拠点に企業財税サービスを展開し、その実務経験を账大师の AI 財税ワークフローへ反映しています。',
+        '账大师（上海）人工智能技术有限公司は、AI、大数据、クラウドと企業財務サービスの融合を探求しています。',
       stats: [
-        { value: '2014', label: '設立', note: '企業財税サービスの経験' },
-        { value: '20000+', label: '顧客規模', note: '累計企業顧客サービス規模' },
-        { value: '3000+', label: 'パートナー', note: '企業サービス領域の協力先' },
-        { value: '上海', label: '本部', note: '上海を拠点に展開' },
+        { value: '2014', label: '設立', note: '企業財税サービス領域への継続的な取り組み' },
+        { value: 'AI', label: '技術方向', note: '大模型、智能 Agent、自動化ワークフロー' },
+        { value: '財税', label: '主要シーン', note: '高頻度な財務業務を継続的に改善' },
+        { value: '協業', label: '理念', note: '企業サービスパートナーと新しい場面を探求' },
       ],
-      focusTitle: '小規模企業の高頻度な財税業務に集中',
+      focusTitle: '高頻度な財務業務から、経営協同へ',
       focus: [
-        '発票管理、智能記帳、帳票生成、補助申告を一つの流れに整理',
-        '給与、発票、銀行明細、企業情報を月次フローへ集約',
-        '中小企業、店舗、個人事業者、財税機構の日常管理を支援',
-        '製品資料、導入方法、研修支援を通じてチャネルの立ち上げを支援',
+        '給与、発票、銀行流水、照合、分析などの高頻度業務を整理',
+        'AI 大模型、智能 Agent、自動化ワークフローで反復作業を削減',
+        '経営者、財務担当者、企業サービスパートナーの協同を支援',
+        '製品、技術、サービス、チャネルを連携させて長期価値を探求',
       ],
     },
     faqTitle: 'FAQ',
@@ -504,7 +527,7 @@ export const sites: Record<SiteCode, SiteContent> = {
       description: 'まずは一社、一つの申告期間から標準フローをお試しください。',
       primary: '試用開始',
     },
-    company: commonCompany,
+    company: jpCompany,
   },
   hk: {
     code: 'hk',
@@ -515,9 +538,12 @@ export const sites: Record<SiteCode, SiteContent> = {
     loginUrl,
     trialUrl: `${loginUrl}?trial=7d&utm_source=official_site&utm_campaign=trial_package_hk`,
     nav: [
-      { label: '產品介紹', href: '/hk/' },
+      { label: '首頁', href: '/hk/' },
+      { label: '產品中心', href: '/hk/product/' },
+      { label: '新聞中心', href: '/hk/news/' },
       { label: '公司介紹', href: '/hk/company/' },
-      { label: '代理合作意向', href: '/hk/partners/' },
+      { label: '代理合作', href: '/hk/partners/' },
+      { label: '加入我們', href: '/hk/join/' },
     ],
     productNav: [
       { label: '核心功能', href: '#features' },
@@ -587,21 +613,21 @@ export const sites: Record<SiteCode, SiteContent> = {
     },
     companyIntro: {
       eyebrow: '公司介紹',
-      title: '把企業財稅服務經驗，沉澱到 AI 記賬流程',
+      title: 'AI 時代企業財務智能化探索者',
       description:
-        '好財集團總部位於上海，長期服務企業財稅場景。賬大師聚焦 AI 財稅智能化，將票據、流水、工資、報表和輔助報稅整合為可上手流程。',
+        '賬大師（上海）人工智能技術有限公司專注人工智能、大數據、雲計算與企業財務服務融合創新，致力讓企業財務管理更智能、更高效、更易協同。',
       stats: [
-        { value: '2014 年', label: '集團成立', note: '企業財稅服務經驗沉澱' },
-        { value: '20000+', label: '服務客戶', note: '累計企業客戶服務規模' },
-        { value: '3000+', label: '合作夥伴', note: '企業服務渠道資源' },
-        { value: '上海', label: '總部所在地', note: '以上海為總部展開服務' },
+        { value: '2014', label: '成立時間', note: '長期關注企業財稅服務場景' },
+        { value: 'AI', label: '技術方向', note: '大模型、智能 Agent 與自動化工作流' },
+        { value: '財稅', label: '核心場景', note: '圍繞高頻財務工作持續打磨產品' },
+        { value: '生態', label: '合作理念', note: '與企業服務夥伴共同探索新場景' },
       ],
-      focusTitle: '專注小微企業高頻財稅場景',
+      focusTitle: '從高頻財務工作，走向更清晰的經營協同',
       focus: [
-        '票據自動識別、智能記賬、一鍵生成報表、AI 輔助報稅',
-        '將工資、發票、銀行流水整理為月度賬務流程',
-        '服務中小企業、門店、個體經營者與財稅機構',
-        '總部提供產品、品牌、服務資料和培訓支持，協助渠道更快完成客戶啟動',
+        '圍繞工資、發票、銀行流水、數據核對和報表分析等高頻場景持續迭代',
+        '透過 AI 大模型、智能 Agent 與自動化工作流，減少重複整理與核對成本',
+        '為企業管理者、財務人員和企業服務夥伴提供更易理解的協同方式',
+        '以產品、技術、服務和渠道協同，探索企業 AI 服務生態的長期價值',
       ],
     },
     faqTitle: '常見問題',
@@ -613,7 +639,7 @@ export const sites: Record<SiteCode, SiteContent> = {
       description: '從產品登錄頁開始體驗。',
       primary: '開始試用',
     },
-    company: commonCompany,
+    company: hkCompany,
   },
 }
 

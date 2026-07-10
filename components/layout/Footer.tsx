@@ -15,14 +15,15 @@ export default function Footer({ site }: FooterProps) {
         <div className="grid gap-10 lg:grid-cols-[1.4fr_0.8fr_0.8fr_1fr]">
           <div>
             <div className="flex items-center gap-2">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))]">
-                <span className="text-lg font-bold text-white">账</span>
-              </div>
-              <div>
-                <p className="font-semibold">{site.name}</p>
-                <p className="text-xs text-muted-foreground">让天下企业拥有一个 AI 财务专家</p>
-              </div>
+              <Image
+                src="/images/brand/haocai-zds-logo-horizontal.png"
+                alt="好财集团 账大师"
+                width={240}
+                height={56}
+                className="h-10 w-auto"
+              />
             </div>
+            <p className="mt-3 text-sm text-muted-foreground">让天下企业拥有一个 AI 财务专家</p>
             <div className="mt-5 space-y-2 text-sm leading-6 text-muted-foreground">
               <p>企业主体：{site.company.name}</p>
               <p>统一社会信用代码：{site.company.creditCode}</p>

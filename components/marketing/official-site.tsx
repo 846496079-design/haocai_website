@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import {
   ArrowRight,
@@ -31,6 +31,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import FadeInSection from '@/components/ui/fade-in-section'
 import type { IconKey, SiteContent } from '@/lib/site-content'
+import { getNewsArticle, newsArticles } from '@/lib/news-content'
 
 const icons: Record<IconKey, typeof Building2> = {
   building: Building2,
@@ -51,6 +52,7 @@ const icons: Record<IconKey, typeof Building2> = {
 }
 
 const partnerLeadApiUrl = 'https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit'
+const trialLeadApiUrl = ''
 const partnerLeadMaxLength = 50
 
 const companyImages = [
@@ -69,17 +71,17 @@ function trimPartnerLeadField(value: string) {
 const pageCopy = {
   cn: {
     sideNavTitle: '本页导览',
-    companyHeroTitle: '用专业财税服务经验，打磨一套更易用的 AI 记账系统',
+    companyHeroTitle: '让天下企业拥有一个 AI 财税大脑',
     companyHeroDesc:
-      '好财集团长期深耕企业财税服务，账大师把工资、发票、银行流水、报表和申报资料整理成清晰流程，让小微企业、财务人员和代账机构都能更高效地完成月度财税工作。',
+      '账大师（上海）人工智能技术有限公司成立于 2014 年，专注于人工智能、大数据、云计算与企业财务服务的融合创新。我们以账大师为产品载体，持续探索更智能、更高效、更易协同的企业财务管理方式。',
     professionalEyebrow: '专业能力',
-    professionalTitle: '我们把财税专业性，落实到每一个可执行步骤',
+    professionalTitle: '以 AI 技术，连接财务流程与经营决策',
     professionalDesc:
-      '从资料采集、规则配置、异常核对到报表输出，账大师不是只展示结果，而是帮助用户看清楚每一步为什么要做、谁来确认、下一步处理什么。',
+      '从资料归集、智能处理、数据核对到经营分析，账大师帮助企业把高频财务工作沉淀为清晰流程，并为管理者提供更及时的经营信息参考。',
     cards: [
-      ['财税服务经验', '围绕工资、发票、流水、报表和申报资料，沉淀小微企业高频财税流程。'],
-      ['产品化方法', '把专业财务动作拆成普通用户能理解的任务，降低使用门槛。'],
-      ['交付支持', '围绕演示、开通、导入、培训和复盘形成标准服务方法。'],
+      ['AI 财务智能化', '围绕 AI 大模型、智能 Agent 与自动化工作流，探索企业财务服务的新一代产品形态。'],
+      ['产品、技术与服务协同', '以产品承接高频场景，以技术持续迭代，以服务支持企业与合作伙伴更好地落地使用。'],
+      ['开放合作生态', '与企业服务伙伴保持长期协同，共同探索 AI 在企业经营管理中的更多应用场景。'],
     ],
     focusTitle: '专业但不复杂：让客户拿到可看、可查、可复核的财税结果',
     focusSubtitle:
@@ -101,17 +103,17 @@ const pageCopy = {
   },
   jp: {
     sideNavTitle: 'ページ案内',
-    companyHeroTitle: '財税サービスの実務経験を、使いやすい AI 記帳システムへ',
+    companyHeroTitle: 'すべての企業に AI 財税ブレーンを',
     companyHeroDesc:
-      '好财集团は企業財税サービスの現場経験をもとに、給与、発票、銀行流水、帳票、申告資料を分かりやすい業務フローへ整理しています。',
+      '账大师（上海）人工智能技术有限公司は 2014 年に設立され、AI、大数据、クラウドと企業財務サービスの融合を探求しています。',
     professionalEyebrow: '専門性',
-    professionalTitle: '財税業務を、実行しやすいステップに落とし込む',
+    professionalTitle: 'AI で財務プロセスと経営判断をつなぐ',
     professionalDesc:
-      '資料収集、ルール設定、異常確認、帳票出力まで、各ステップの目的と確認事項を明確にします。',
+      '情報収集、照合、分析までの高頻度な業務を整理し、企業が経営情報をより早く把握できるよう支援します。',
     cards: [
-      ['財税サービス経験', '給与、発票、銀行流水、帳票、申告資料の高頻度業務を整理。'],
-      ['プロダクト化', '専門的な財務作業を、利用者が理解しやすいタスクへ分解。'],
-      ['導入支援', 'デモ、開通、導入、研修、振り返りを標準化。'],
+      ['AI 財務の進化', 'AI 大模型、智能 Agent、自動化ワークフローを活用した新しい財務サービスを探求。'],
+      ['製品・技術・サービス', '製品、技術、サービスを連携させ、利用定着を支援。'],
+      ['協業エコシステム', '企業サービスのパートナーとともに、AI の活用場面を広げます。'],
     ],
     focusTitle: '専門的でありながら、分かりやすい財税結果へ',
     focusSubtitle:
@@ -133,17 +135,17 @@ const pageCopy = {
   },
   hk: {
     sideNavTitle: '本頁導覽',
-    companyHeroTitle: '以專業財稅服務經驗，打磨更易用的 AI 記賬系統',
+    companyHeroTitle: '讓天下企業擁有一個 AI 財稅大腦',
     companyHeroDesc:
-      '好財集團長期深耕企業財稅服務，賬大師把工資、發票、銀行流水、報表和申報資料整理為清晰流程，協助小微企業、財務人員和代賬機構提升月度財稅效率。',
+      '賬大師（上海）人工智能技術有限公司成立於 2014 年，專注人工智能、大數據、雲計算與企業財務服務的融合創新，持續探索更智能、更高效、更易協同的企業財務管理方式。',
     professionalEyebrow: '專業能力',
-    professionalTitle: '把財稅專業性，落實到每一個可執行步驟',
+    professionalTitle: '以 AI 技術，連接財務流程與經營決策',
     professionalDesc:
-      '從資料採集、規則配置、異常核對到報表輸出，賬大師協助用戶看清每一步目的、確認責任和下一步處理事項。',
+      '從資料歸集、智能處理、數據核對到經營分析，賬大師協助企業把高頻財務工作沉澱為清晰流程，並提供更及時的經營信息參考。',
     cards: [
-      ['財稅服務經驗', '圍繞工資、發票、流水、報表和申報資料，沉澱高頻財稅流程。'],
-      ['產品化方法', '把專業財務動作拆成普通用戶可理解的任務，降低使用門檻。'],
-      ['交付支持', '圍繞演示、開通、導入、培訓和復盤形成標準服務方法。'],
+      ['AI 財務智能化', '圍繞 AI 大模型、智能 Agent 與自動化工作流，探索企業財務服務的新一代產品形態。'],
+      ['產品、技術與服務協同', '以產品承接高頻場景，以技術持續迭代，以服務支持企業與合作夥伴落地使用。'],
+      ['開放合作生態', '與企業服務夥伴保持長期協同，共同探索 AI 在企業經營管理中的更多應用場景。'],
     ],
     focusTitle: '專業但不複雜：讓客戶拿到可看、可查、可復核的財稅結果',
     focusSubtitle:
@@ -161,6 +163,322 @@ const pageCopy = {
       ['總部支持什麼', '提供產品、品牌、資料清單、演示素材和合作政策對接。'],
       ['先從哪裡開始', '從存量小微企業中篩選高頻財稅需求客戶，先跑通樣板。'],
       ['如何降低決策', '360 元/年和 7 天體驗套餐，讓客戶更容易先試用。'],
+    ],
+  },
+}
+
+const productSuiteCopy = {
+  cn: {
+    eyebrow: '产品中心',
+    title: '以账大师为核心，构建一站式 B 端企业智能解决方案',
+    subtitle:
+      '账大师是当前主推产品，围绕财税管理先落地；好财还将逐步推出外呼、客服、内容运营、招聘、渠道管理、桌面自动化和 AI 中台能力，帮助企业把重复工作系统化。',
+    primaryProduct: {
+      name: '好财账大师',
+      shortName: '账大师',
+      status: '主推产品',
+      description:
+        '面向小微企业、财务人员和代账机构，把工资、发票、银行流水、核对、报表和待办提醒统一到一套流程里。',
+      bullets: ['360 元/年', 'AI 三步智能记账', '移动端与电脑端协同', '适合财税和代账场景'],
+    },
+    products: [
+      ['好财大模型 AI 语音外呼', '好财 AI 外呼', '用于客户回访、政策触达、线索跟进和标准化电话任务。'],
+      ['好财全渠道智能客户服务系统', '好财智服', '统一承接企业微信、电话、网页和工单咨询，沉淀客户服务记录。'],
+      ['好财新媒体内容运营管理系统', '好财新媒通', '管理选题、素材、发布、复盘和销售转发，服务企业获客。'],
+      ['好财 Future-AI 桌面自动化任务助手软件', '好财桌面助手', '面向桌面端重复任务执行，辅助资料整理、表格处理和流程操作。'],
+      ['好财合作伙伴与代理商综合管理系统', '好财渠道通', '管理代理线索、渠道政策、客户资源、开通进度和合作复盘。'],
+      ['好财 AI 人才甄选与招聘管理系统', '好财智聘', '支持简历筛选、候选人跟进、面试排期和招聘协同。'],
+      ['好财 Future-AI 企业级人工智能中台系统', '好财 AI 中台', '为企业内部系统提供模型能力、Agent 编排和自动化任务支撑。'],
+    ],
+    solutionTitle: '解决方案不再单独拆页，统一放在产品中心',
+    solutionCards: [
+      ['财税管理', '账大师承接工资、发票、流水、报表和税额测算，先解决小微企业最频繁的财税协同。'],
+      ['客户经营', 'AI 外呼、智能客服和新媒体工作台承接获客、跟进、咨询和内容转化。'],
+      ['组织效率', '智能招聘、桌面助手和 AI 中台面向内部效能系统，减少重复劳动。'],
+      ['渠道合作', '渠道通与代理合作线索池衔接，帮助合作伙伴管理客户资源和开通进度。'],
+    ],
+  },
+  jp: {
+    eyebrow: '製品センター',
+    title: '账大师を中心に、B 向け企業智能ソリューションを展開',
+    subtitle:
+      '账大师は現在の主力製品です。財税管理から始め、外呼、客服、内容運営、採用、チャネル管理、デスクトップ自動化、AI 中台へ段階的に拡張します。',
+    primaryProduct: {
+      name: '好财账大师',
+      shortName: '账大师',
+      status: '主力製品',
+      description: '給与、発票、銀行流水、照合、帳票、タスク確認を一つのフローにまとめます。',
+      bullets: ['360 元/年', 'AI 三步智能記帳', 'Web と Mobile', '財税と代行記帳向け'],
+    },
+    products: [
+      ['好财大模型 AI 语音外呼', '好财 AI 外呼', '顧客フォロー、政策案内、リード追跡、標準電話業務を支援。'],
+      ['好财全渠道智能客户服务系统', '好财智服', '複数チャネルの問い合わせとサービス記録を統合。'],
+      ['好财新媒体内容运营管理系统', '好财新媒通', '企画、素材、配信、振り返り、営業転送を管理。'],
+      ['好财 Future-AI 桌面自动化任务助手软件', '好财桌面助手', 'デスクトップ上の反復作業と資料整理を支援。'],
+      ['好财合作伙伴与代理商综合管理系统', '好财渠道通', '代理リード、政策、顧客資源、開通進捗を管理。'],
+      ['好财 AI 人才甄选与招聘管理系统', '好财智聘', '履歴書選別、候補者フォロー、面接調整を支援。'],
+      ['好财 Future-AI 企业级人工智能中台系统', '好财 AI 中台', 'モデル能力、Agent 編排、自動化タスクの基盤。'],
+    ],
+    solutionTitle: 'ソリューションは製品センターに統合',
+    solutionCards: [
+      ['財税管理', '账大师が給与、発票、銀行流水、帳票、税額試算を支援。'],
+      ['顧客運営', 'AI 外呼、智能客服、新媒体工作台で獲客と問い合わせを支援。'],
+      ['組織効率', '智能招聘、桌面助手、AI 中台で反復作業を削減。'],
+      ['チャネル協業', '渠道通と代理リード池で顧客資源と開通進捗を管理。'],
+    ],
+  },
+  hk: {
+    eyebrow: '產品中心',
+    title: '以賬大師為核心，構建一站式 B 端企業智能解決方案',
+    subtitle:
+      '賬大師是目前主推產品，圍繞財稅管理先落地；好財將逐步推出外呼、客服、內容運營、招聘、渠道管理、桌面自動化和 AI 中台能力。',
+    primaryProduct: {
+      name: '好財賬大師',
+      shortName: '賬大師',
+      status: '主推產品',
+      description: '面向小微企業、財務人員和代賬機構，把工資、發票、銀行流水、核對、報表和待辦提醒統一到一套流程裡。',
+      bullets: ['360 元/年', 'AI 三步智能記賬', '移動端與電腦端協同', '適合財稅和代賬場景'],
+    },
+    products: [
+      ['好財大模型 AI 語音外呼', '好財 AI 外呼', '用於客戶回訪、政策觸達、線索跟進和標準化電話任務。'],
+      ['好財全渠道智能客戶服務系統', '好財智服', '統一承接企業微信、電話、網頁和工單諮詢，沉澱客戶服務記錄。'],
+      ['好財新媒體內容運營管理系統', '好財新媒通', '管理選題、素材、發布、復盤和銷售轉發，服務企業獲客。'],
+      ['好財 Future-AI 桌面自動化任務助手軟件', '好財桌面助手', '面向桌面端重複任務執行，輔助資料整理、表格處理和流程操作。'],
+      ['好財合作夥伴與代理商綜合管理系統', '好財渠道通', '管理代理線索、渠道政策、客戶資源、開通進度和合作復盤。'],
+      ['好財 AI 人才甄選與招聘管理系統', '好財智聘', '支持簡歷篩選、候選人跟進、面試排期和招聘協同。'],
+      ['好財 Future-AI 企業級人工智能中台系統', '好財 AI 中台', '為企業內部系統提供模型能力、Agent 編排和自動化任務支撐。'],
+    ],
+    solutionTitle: '解決方案不再單獨拆頁，統一放在產品中心',
+    solutionCards: [
+      ['財稅管理', '賬大師承接工資、發票、流水、報表和稅額測算，先解決高頻財稅協同。'],
+      ['客戶經營', 'AI 外呼、智能客服和新媒體工作台承接獲客、跟進、諮詢和內容轉化。'],
+      ['組織效率', '智能招聘、桌面助手和 AI 中台面向內部效能系統，減少重複勞動。'],
+      ['渠道合作', '渠道通與代理合作線索池銜接，協助合作夥伴管理客戶資源和開通進度。'],
+    ],
+  },
+}
+
+const newsCopy = {
+  cn: {
+    eyebrow: '新闻中心',
+    title: '好财动态与 AI 财税观察',
+    subtitle: '关注好财账大师的产品实践、企业交流与 AI 财税观察。',
+    categories: ['公司动态', '产品动态', '行业观察'],
+    back: '返回新闻中心',
+    read: '阅读全文',
+  },
+  jp: {
+    eyebrow: 'ニュース',
+    title: '好财ニュースと AI 財税の観察',
+    subtitle: '好财账大师の製品実践、企業交流、AI 財税の取り組みを紹介します。',
+    categories: ['会社ニュース', '製品ニュース', '業界情報'],
+    back: 'ニュース一覧へ戻る',
+    read: '全文を読む',
+  },
+  hk: {
+    eyebrow: '新聞中心',
+    title: '好財動態與 AI 財稅觀察',
+    subtitle: '關注好財賬大師的產品實踐、企業交流與 AI 財稅觀察。',
+    categories: ['公司動態', '產品動態', '行業觀察'],
+    back: '返回新聞中心',
+    read: '閱讀全文',
+  },
+}
+
+const homeHookCopy = {
+  cn: {
+    eyebrow: 'AI 财税从高频痛点开始落地',
+    title: ['老板不想等月底', '财务不想反复催资料'],
+    description:
+      '工资、发票、流水、税额和报表散在不同人手里，月底才开始补材料、对异常、问结果。好财从真实财税工作流切入，用账大师先把小微企业最频繁的记账报税协同做清楚。',
+    primary: '看账大师怎么解决',
+    news: '查看新闻中心',
+    productTitle: '继续看完整产品中心',
+    productDesc: '了解账大师主推能力，以及好财即将推出的一站式 B 端企业产品矩阵。',
+    productLink: '产品中心',
+    joinTitle: '加入我们',
+    joinDesc: '财务疑难处理与全栈开发两个方向正在招募，欢迎直接投递简历。',
+    joinLink: '加入我们',
+  },
+  jp: {
+    eyebrow: 'AI 財税は高頻度な課題から実装',
+    title: ['経営者は月末まで待ちたくない', '財務担当は資料催促を減らしたい'],
+    description:
+      '給与、発票、銀行流水、税額、帳票が分散すると、月末に資料補完と確認が集中します。好财は実際の財税フローから始め、账大师で小規模企業の記帳協同を整理します。',
+    primary: '账大师を見る',
+    news: 'ニュースを見る',
+    productTitle: '製品センターを見る',
+    productDesc: '账大师の主力機能と、好财が展開予定の B 向け製品群を確認できます。',
+    productLink: '製品センター',
+    joinTitle: '採用情報',
+    joinDesc: '財務難題対応とフルスタック開発の二つの方向で募集しています。',
+    joinLink: '採用情報',
+  },
+  hk: {
+    eyebrow: 'AI 財稅從高頻痛點開始落地',
+    title: ['老闆不想等月底', '財務不想反覆催資料'],
+    description:
+      '工資、發票、流水、稅額和報表散在不同人手裡，月底才開始補材料、對異常、問結果。好財從真實財稅工作流切入，用賬大師先把小微企業最頻繁的記賬報稅協同做清楚。',
+    primary: '看賬大師怎麼解決',
+    news: '查看新聞中心',
+    productTitle: '繼續看完整產品中心',
+    productDesc: '了解賬大師主推能力，以及好財即將推出的一站式 B 端企業產品矩陣。',
+    productLink: '產品中心',
+    joinTitle: '加入我們',
+    joinDesc: '財務疑難處理與全棧開發兩個方向正在招募，歡迎直接投遞簡歷。',
+    joinLink: '加入我們',
+  },
+}
+
+const trialCopy = {
+  cn: {
+    eyebrow: '领取 7 天体验套餐',
+    title: '留下信息，获取试用政策和开通指引',
+    desc: '当前试用流程先介绍政策优惠并收集客户信息，后续由工作人员根据联系方式对接试用套餐、开通方式和使用范围。',
+    steps: [
+      ['1', '政策说明', '说明 7 天体验套餐、360 元/年定价和适用场景。'],
+      ['2', '资料登记', '留下联系人、电话和邀请码或邀请人电话，便于识别来源。'],
+      ['3', '人工对接', '工作人员确认需求后，再安排试用开通和使用指引。'],
+    ],
+    contactName: '联系人',
+    contactNamePlaceholder: '请填写联系人姓名',
+    contactPhone: '电话',
+    contactPhonePlaceholder: '手机号或座机',
+    inviteCode: '邀请人电话或邀请码',
+    inviteCodePlaceholder: '如邀请人手机号或邀请码 A12345',
+    submit: '提交试用申请',
+    successTitle: '试用申请已收到',
+    successDesc: '我们会根据你留下的信息安排人员对接试用政策、优惠和开通说明。',
+  },
+  jp: {
+    eyebrow: '7 日体験パッケージ',
+    title: '情報を残して、試用政策と開通案内を受け取る',
+    desc: '現在の試用フローは政策説明と顧客情報収集までです。担当者が試用内容、開通方法、利用範囲をご案内します。',
+    steps: [
+      ['1', '政策説明', '7 日体験、360 元/年料金、適用シーンを説明します。'],
+      ['2', '情報登録', '担当者名、電話、招待コードまたは紹介者電話番号を残します。'],
+      ['3', '担当者連絡', '確認後、試用開通と利用案内を行います。'],
+    ],
+    contactName: '担当者',
+    contactNamePlaceholder: '担当者名',
+    contactPhone: '電話',
+    contactPhonePlaceholder: '携帯または固定電話',
+    inviteCode: '紹介者電話番号または招待コード',
+    inviteCodePlaceholder: '例：紹介者電話番号、招待コード A12345',
+    submit: '試用申請を送信',
+    successTitle: '試用申請を受け付けました',
+    successDesc: '担当者より試用政策、優待、開通説明をご連絡します。',
+  },
+  hk: {
+    eyebrow: '領取 7 天體驗套餐',
+    title: '留下信息，獲取試用政策和開通指引',
+    desc: '目前試用流程先介紹政策優惠並收集客戶信息，後續由工作人員根據聯絡方式對接試用套餐、開通方式和使用範圍。',
+    steps: [
+      ['1', '政策說明', '說明 7 天體驗套餐、360 元/年定價和適用場景。'],
+      ['2', '資料登記', '留下聯絡人、電話和邀請碼或邀請人電話，便於識別來源。'],
+      ['3', '人工對接', '工作人員確認需求後，再安排試用開通和使用指引。'],
+    ],
+    contactName: '聯絡人',
+    contactNamePlaceholder: '請填寫聯絡人姓名',
+    contactPhone: '電話',
+    contactPhonePlaceholder: '手機號或座機',
+    inviteCode: '邀請人電話或邀請碼',
+    inviteCodePlaceholder: '如邀請人手機號或邀請碼 A12345',
+    submit: '提交試用申請',
+    successTitle: '試用申請已收到',
+    successDesc: '我們會根據你留下的信息安排人員對接試用政策、優惠和開通說明。',
+  },
+}
+
+const jobCopy = {
+  cn: {
+    eyebrow: '加入我们',
+    title: '两个方向，寻找能把复杂问题真正解决的人',
+    subtitle: '我们重视专业能力、解决复杂问题的韧性，以及把想法落成结果的执行力。',
+    manager: '人事经理电话',
+    phone: '18317138302',
+    email: 'haocaiwang2022@126.com',
+    emailLabel: '简历投递邮箱',
+    jobs: [
+      {
+        title: '财务疑难问题处理方向',
+        salary: '期望薪资面议',
+        responsibilities: [
+          '注册攻坚：解决新公司设立中的特殊行业审批、地址异常、税务核定受阻等复杂问题。',
+          '变更处理：处理跨区迁移、复杂股权调整、法人变更等引发的工商税务遗留问题。',
+          '注销清算：主导非正常户解除、税务稽查应对、吊销转注销等全流程疑难注销案件。',
+          '外部协调：对接工商、税务等政府部门，沟通疑难问题并推动解决。',
+        ],
+        requirements: [
+          '统招本科及以上，财税或法学相关专业，持中级会计师、税务师、CPA 优先。',
+          '至少 1 年以上财务经验。',
+          '熟悉各地工商税务实操政策，有处理非正常户、跨省迁移或复杂注销的实战案例。',
+          '沟通协调能力强，能独立撰写申诉材料，抗压能力强。',
+        ],
+      },
+      {
+        title: '全栈开发工程师',
+        salary: '期望薪资面议',
+        responsibilities: [
+          '需求深度拆解：深入理解内部业务痛点，将模糊需求转化为清晰系统产品方案。',
+          '从 0 到 1 构建：负责企业内部效能系统的前后端架构、核心代码和数据库设计。',
+          '自动化驱动：利用自动化脚本、API 集成或 AI 技术，帮助业务部门减少日常机械性工作。',
+          '全生命周期管理：独立负责需求、开发、测试、部署和后续迭代维护。',
+        ],
+        requirements: [
+          '5 年以上开发经验，熟练掌握 React/Vue、Node.js/Python/Java/Go 等技术栈和主流数据库。',
+          '具备产品思维，能主动站在业务视角思考工具如何更好用、更高效。',
+          '有独立主导 Web 应用或企业级 SaaS 系统从 0 到 1 上线经验，面试需提供项目演示或架构思路。',
+          '沟通能力强，能把复杂技术逻辑解释给非技术人员。',
+          '具备 LLM API、Agent 开发、AI 中间件架构经验，有开源项目或独立产品经验优先。',
+        ],
+      },
+    ],
+  },
+  jp: {
+    eyebrow: '採用情報',
+    title: '複雑な問題を実際に解決できる人を求めています',
+    subtitle: '専門性、複雑な課題を解決する粘り強さ、そして着実な実行力を大切にしています。',
+    manager: '採用担当電話',
+    phone: '18317138302',
+    email: 'haocaiwang2022@126.com',
+    emailLabel: '履歴書送付先',
+    jobs: [
+      {
+        title: '財務難題対応',
+        salary: '給与は面談にて相談',
+        responsibilities: ['特殊業種の設立、住所異常、税務認定などの複雑課題を処理。', '移転、持分調整、法人変更に伴う工商税務課題を処理。', '非正常户解除、税務調査対応、注销清算案件を推進。'],
+        requirements: ['本科以上、財税または法学関連専攻。', '1 年以上の財務経験。', '工商税務実務政策に詳しく、複雑案件の実務経験がある方。'],
+      },
+      {
+        title: 'フルスタック開発エンジニア',
+        salary: '給与は面談にて相談',
+        responsibilities: ['社内業務課題をシステム方案へ整理。', '企業効率化システムの前後端、DB、アーキテクチャを構築。', '自動化と AI 技術で反復作業を削減。'],
+        requirements: ['5 年以上の開発経験。', 'React/Vue、Node.js/Python/Java/Go、主流 DB に精通。', '0 から 1 の Web/SaaS 開発経験、LLM/Agent 経験歓迎。'],
+      },
+    ],
+  },
+  hk: {
+    eyebrow: '加入我們',
+    title: '兩個方向，尋找能把複雜問題真正解決的人',
+    subtitle: '我們重視專業能力、解決複雜問題的韌性，以及把想法落成結果的執行力。',
+    manager: '人事經理電話',
+    phone: '18317138302',
+    email: 'haocaiwang2022@126.com',
+    emailLabel: '簡歷投遞郵箱',
+    jobs: [
+      {
+        title: '財務疑難問題處理方向',
+        salary: '期望薪資面議',
+        responsibilities: ['註冊攻堅：解決特殊行業審批、地址異常、稅務核定受阻等問題。', '變更處理：處理跨區遷移、複雜股權調整、法人變更等遺留問題。', '註銷清算：主導非正常戶解除、稅務稽查應對、吊銷轉註銷等案件。', '外部協調：對接工商、稅務等政府部門並推動解決。'],
+        requirements: ['本科及以上，財稅或法學相關專業，中級會計師、稅務師、CPA 優先。', '至少 1 年以上財務經驗。', '熟悉工商稅務實操政策，有複雜案件實戰案例。', '溝通協調能力強，能獨立撰寫申訴材料，抗壓能力強。'],
+      },
+      {
+        title: '全棧開發工程師',
+        salary: '期望薪資面議',
+        responsibilities: ['深入理解內部業務痛點，將模糊需求轉化為清晰系統產品方案。', '負責企業內部效能系統的前後端架構、核心代碼和數據庫設計。', '利用自動化腳本、API 集成或 AI 技術，減少日常機械性工作。', '獨立負責需求、開發、測試、部署和後續迭代維護。'],
+        requirements: ['5 年以上開發經驗，熟悉 React/Vue、Node.js/Python/Java/Go 和主流數據庫。', '具備產品思維，能站在業務視角思考工具效率。', '有 Web 應用或企業級 SaaS 系統從 0 到 1 上線經驗。', '具備 LLM API、Agent 開發或 AI 中間件經驗優先。'],
+      },
     ],
   },
 }
@@ -324,20 +642,23 @@ function SectionHeading({
   title,
   subtitle,
   align = 'center',
+  level = 'h2',
 }: {
   eyebrow?: string
   title: string
   subtitle?: string
   align?: 'center' | 'left'
+  level?: 'h1' | 'h2'
 }) {
+  const HeadingTag = level
   return (
     <div className={align === 'center' ? 'mx-auto max-w-3xl text-center' : 'max-w-3xl'}>
       {eyebrow && (
         <p className="mb-3 text-sm font-semibold text-primary">{eyebrow}</p>
       )}
-      <h2 className="text-3xl font-semibold leading-tight text-foreground md:text-4xl">
+      <HeadingTag className="text-3xl font-semibold leading-tight text-foreground md:text-4xl">
         {title}
-      </h2>
+      </HeadingTag>
       {subtitle && (
         <p className="mt-4 text-base leading-7 text-muted-foreground md:text-lg">
           {subtitle}
@@ -430,14 +751,40 @@ type PartnerField =
 
 const requiredPartnerFields: PartnerField[] = ['name', 'phone', 'city']
 
-type OfficialPage = 'product' | 'company' | 'partners'
+type TrialField = 'contactName' | 'contactPhone' | 'inviteCode'
 
-export default function OfficialSite({ site, page = 'product' }: { site: SiteContent; page?: OfficialPage }) {
+type OfficialPage = 'home' | 'product' | 'company' | 'partners' | 'join' | 'news' | 'newsDetail'
+
+export default function OfficialSite({
+  site,
+  page = 'home',
+  articleSlug,
+}: {
+  site: SiteContent
+  page?: OfficialPage
+  articleSlug?: string
+}) {
   const contactHref = `tel:${site.company.contact}`
   const copy = pageCopy[site.code]
+  const productSuite = productSuiteCopy[site.code]
+  const news = newsCopy[site.code]
+  const articles = newsArticles[site.code]
+  const article = articleSlug ? getNewsArticle(site.code, articleSlug) : undefined
+  const homeHook = homeHookCopy[site.code]
+  const trial = trialCopy[site.code]
+  const jobs = jobCopy[site.code]
   const ui = uiCopy[site.code]
   const partnerOptions = partnerOptionCopy[site.code]
   const [trialOpen, setTrialOpen] = useState(false)
+  const [trialSubmitted, setTrialSubmitted] = useState(false)
+  const [trialSubmitting, setTrialSubmitting] = useState(false)
+  const [trialApiError, setTrialApiError] = useState('')
+  const [trialForm, setTrialForm] = useState({
+    contactName: '',
+    contactPhone: '',
+    inviteCode: '',
+  })
+  const [trialErrors, setTrialErrors] = useState<Partial<Record<TrialField, string>>>({})
   const [partnerSent, setPartnerSent] = useState(false)
   const [partnerSubmitting, setPartnerSubmitting] = useState(false)
   const [partnerApiError, setPartnerApiError] = useState('')
@@ -468,6 +815,74 @@ export default function OfficialSite({ site, page = 'product' }: { site: SiteCon
     }
     if (partnerErrors[field]) {
       setPartnerErrors((errors) => ({ ...errors, [field]: undefined }))
+    }
+  }
+
+  function updateTrialField(field: TrialField, value: string) {
+    setTrialForm((form) => ({ ...form, [field]: value }))
+    if (trialApiError) {
+      setTrialApiError('')
+    }
+    if (trialErrors[field]) {
+      setTrialErrors((errors) => ({ ...errors, [field]: undefined }))
+    }
+  }
+
+  function trialFieldClass(field: TrialField) {
+    return `rounded-xl border bg-card px-4 font-normal outline-none transition-colors focus:border-primary ${
+      trialErrors[field] ? 'border-red-400' : 'border-border'
+    }`
+  }
+
+  function trialFieldError(field: TrialField) {
+    return trialErrors[field] ? (
+      <p className="text-xs font-normal text-red-500">{trialErrors[field]}</p>
+    ) : null
+  }
+
+  async function submitTrialForm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const nextErrors: Partial<Record<TrialField, string>> = {}
+
+    if (!trialForm.contactName.trim()) {
+      nextErrors.contactName = ui.requiredError
+    }
+    if (!trialForm.contactPhone.trim()) {
+      nextErrors.contactPhone = ui.requiredError
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setTrialErrors(nextErrors)
+      return
+    }
+
+    setTrialErrors({})
+    setTrialApiError('')
+    setTrialSubmitting(true)
+
+    try {
+      if (trialLeadApiUrl) {
+        const response = await fetch(trialLeadApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contactName: trialForm.contactName.trim(),
+            contactPhone: trialForm.contactPhone.trim(),
+            inviteCode: trialForm.inviteCode.trim() || undefined,
+          }),
+        })
+
+        if (!response.ok) {
+          setTrialApiError(ui.submitError)
+          return
+        }
+      }
+
+      setTrialSubmitted(true)
+    } catch {
+      setTrialApiError(ui.submitError)
+    } finally {
+      setTrialSubmitting(false)
     }
   }
 
@@ -686,9 +1101,135 @@ export default function OfficialSite({ site, page = 'product' }: { site: SiteCon
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar site={site} />
+      <Navbar site={site} onTrialClick={() => setTrialOpen(true)} />
 
       <main className={page === 'product' ? 'xl:pl-44' : undefined}>
+        {page === 'home' && (
+          <>
+            <section className="relative overflow-hidden px-6 py-20 md:py-28">
+              <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_0%,rgba(91,108,255,0.16),transparent_34%),radial-gradient(circle_at_82%_10%,rgba(34,197,94,0.10),transparent_28%)]" />
+              <div className="mx-auto grid max-w-[1280px] items-center gap-12 lg:grid-cols-[1fr_480px]">
+                <FadeInSection>
+                  <div>
+                    <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground shadow-[0_4px_18px_rgba(38,67,104,.05)]">
+                      <span className="size-2 rounded-full bg-status-online" />
+                      {homeHook.eyebrow}
+                    </div>
+                    <h1 className="max-w-4xl text-4xl font-semibold leading-[1.12] tracking-tight text-foreground md:text-6xl">
+                      <span className="block">{homeHook.title[0]}</span>
+                      <span className="mt-2 block text-primary">{homeHook.title[1]}</span>
+                    </h1>
+                    <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">
+                      {homeHook.description}
+                    </p>
+                    <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                      <a href={`${site.path}product/`} className="inline-flex h-12 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-6 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5">
+                        {homeHook.primary}
+                        <ArrowRight className="ml-2 size-4" />
+                      </a>
+                      <a href={`${site.path}news/`} className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card px-6 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:bg-secondary">
+                        {homeHook.news}
+                      </a>
+                    </div>
+                  </div>
+                </FadeInSection>
+                <FadeInSection delay={120}>
+                  <div className="rounded-[32px] border border-border bg-card p-5 shadow-[0_24px_70px_rgba(24,36,61,.12)]">
+                    <Image
+                      src="/images/brand/haocai-zds-logo-horizontal.png"
+                      alt="好财集团 账大师"
+                      width={520}
+                      height={124}
+                      className="h-14 w-auto"
+                      priority
+                    />
+                    <div className="mt-6 rounded-3xl bg-background p-5">
+                      <p className="text-sm font-semibold text-primary">{productSuite.primaryProduct.status}</p>
+                      <h2 className="mt-2 text-3xl font-semibold">{productSuite.primaryProduct.name}</h2>
+                      <p className="mt-4 text-sm leading-7 text-muted-foreground">{productSuite.primaryProduct.description}</p>
+                      <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                        {productSuite.primaryProduct.bullets.map((item) => (
+                          <span key={item} className="rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground">
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <a href={`${site.path}product/`} className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-sm font-semibold text-primary">
+                      进入产品中心
+                      <ArrowRight className="ml-2 size-4" />
+                    </a>
+                  </div>
+                </FadeInSection>
+              </div>
+            </section>
+
+            <section className="px-6 py-20">
+              <div className="mx-auto max-w-[1280px]">
+                <SectionHeading title={site.painTitle} subtitle={site.painSubtitle} />
+                <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                  {site.pains.map((pain) => (
+                    <div key={pain.title} className="h-full rounded-3xl border border-border bg-card p-6">
+                      <IconBox icon={pain.icon} />
+                      <h3 className="mt-5 text-lg font-semibold">{pain.title}</h3>
+                      <p className="mt-3 text-sm leading-6 text-muted-foreground">{pain.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-card px-6 py-20">
+              <div className="mx-auto max-w-[1280px]">
+                <SectionHeading title={productSuite.title} subtitle={productSuite.subtitle} />
+                <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                  {productSuite.products.slice(0, 4).map(([fullName, shortName, desc]) => (
+                    <div key={shortName} className="rounded-3xl border border-border bg-background p-6">
+                      <p className="text-xs font-semibold text-primary">{shortName}</p>
+                      <h3 className="mt-3 text-lg font-semibold">{fullName}</h3>
+                      <p className="mt-3 text-sm leading-6 text-muted-foreground">{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="px-6 py-20">
+              <div className="mx-auto grid max-w-[1280px] gap-6 lg:grid-cols-3">
+                <div className="flex min-h-[264px] flex-col rounded-[28px] border border-border bg-card p-7">
+                  <h2 className="text-2xl font-semibold">{homeHook.productTitle}</h2>
+                  <p className="mt-4 text-sm leading-7 text-muted-foreground">{homeHook.productDesc}</p>
+                  <a href={`${site.path}product/`} className="mt-auto inline-flex pt-6 text-sm font-semibold text-primary">
+                    {homeHook.productLink}
+                    <ArrowRight className="ml-2 size-4" />
+                  </a>
+                </div>
+                <div className="flex min-h-[264px] flex-col rounded-[28px] border border-border bg-card p-7">
+                  <h2 className="text-2xl font-semibold">{news.title}</h2>
+                  <p className="mt-4 text-sm leading-7 text-muted-foreground">{news.subtitle}</p>
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    {news.categories.map((item) => (
+                      <span key={item} className="rounded-full bg-background px-3 py-1 text-xs text-muted-foreground">{item}</span>
+                    ))}
+                  </div>
+                  <a href={`${site.path}news/`} className="mt-auto inline-flex pt-6 text-sm font-semibold text-primary">
+                    新闻中心
+                    <ArrowRight className="ml-2 size-4" />
+                  </a>
+                </div>
+                <div className="flex min-h-[264px] flex-col rounded-[28px] border border-border bg-card p-7">
+                  <h2 className="text-2xl font-semibold">{homeHook.joinTitle}</h2>
+                  <p className="mt-4 text-sm leading-7 text-muted-foreground">{homeHook.joinDesc}</p>
+                  <a href={`${site.path}join/`} className="mt-auto inline-flex pt-6 text-sm font-semibold text-primary">
+                    {homeHook.joinLink}
+                    <ArrowRight className="ml-2 size-4" />
+                  </a>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
         {page === 'product' && <ProductSideNav site={site} />}
         {page === 'product' && (
           <>
@@ -770,6 +1311,51 @@ export default function OfficialSite({ site, page = 'product' }: { site: SiteCon
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="bg-card px-6 py-20">
+          <div className="mx-auto max-w-[1280px]">
+            <SectionHeading
+              eyebrow={productSuite.eyebrow}
+              title={productSuite.title}
+              subtitle={productSuite.subtitle}
+            />
+            <div className="mt-12 grid gap-6 lg:grid-cols-[1.05fr_1.35fr]">
+              <div className="rounded-[28px] border border-primary/20 bg-background p-7 shadow-[0_18px_54px_rgba(24,36,61,.08)]">
+                <p className="text-sm font-semibold text-primary">{productSuite.primaryProduct.status}</p>
+                <h2 className="mt-3 text-3xl font-semibold">{productSuite.primaryProduct.name}</h2>
+                <p className="mt-4 text-sm leading-7 text-muted-foreground">{productSuite.primaryProduct.description}</p>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {productSuite.primaryProduct.bullets.map((item) => (
+                    <div key={item} className="rounded-2xl border border-border bg-card p-4 text-sm font-medium">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                {productSuite.products.map(([fullName, shortName, desc]) => (
+                  <div key={shortName} className="rounded-3xl border border-border bg-background p-5">
+                    <p className="text-xs font-semibold text-primary">{shortName}</p>
+                    <h3 className="mt-2 text-base font-semibold">{fullName}</h3>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-12">
+              <SectionHeading title={productSuite.solutionTitle} />
+              <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                {productSuite.solutionCards.map(([title, desc]) => (
+                  <div key={title} className="rounded-3xl border border-border bg-background p-6">
+                    <IconBox icon="layers" />
+                    <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1154,6 +1740,7 @@ export default function OfficialSite({ site, page = 'product' }: { site: SiteCon
                     eyebrow="代理合作意向"
                     title={copy.partnerTitle}
                     subtitle={copy.partnerSubtitle}
+                    level="h1"
                   />
                   <div className="mt-8 grid gap-4 sm:grid-cols-2">
                     {copy.partnerCards.map(([title, desc]) => (
@@ -1172,54 +1759,275 @@ export default function OfficialSite({ site, page = 'product' }: { site: SiteCon
             </div>
           </section>
         )}
+
+        {page === 'news' && (
+          <section className="relative overflow-hidden px-6 py-20 md:py-24">
+            <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_16%_0%,rgba(91,108,255,0.14),transparent_34%),radial-gradient(circle_at_86%_12%,rgba(34,197,94,0.10),transparent_28%)]" />
+            <div className="mx-auto max-w-[1280px]">
+              <FadeInSection>
+                <SectionHeading
+                  eyebrow={news.eyebrow}
+                  title={news.title}
+                  subtitle={news.subtitle}
+                  level="h1"
+                />
+              </FadeInSection>
+              <div className="mt-10 flex flex-wrap justify-center gap-3">
+                {news.categories.map((category) => (
+                  <span key={category} className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">
+                    {category}
+                  </span>
+                ))}
+              </div>
+              <div className="mx-auto mt-12 grid max-w-4xl gap-6">
+                {articles.map((item, index) => (
+                  <FadeInSection key={item.slug} delay={index * 100}>
+                    <article className="overflow-hidden rounded-[28px] border border-border bg-card shadow-[0_18px_54px_rgba(24,36,61,.08)] md:grid md:grid-cols-[0.9fr_1.1fr]">
+                      <div className="relative min-h-64 bg-secondary">
+                        <Image src={item.cover} alt={item.title} fill className="object-cover" sizes="(min-width: 768px) 40vw, 100vw" />
+                      </div>
+                      <div className="flex min-h-64 flex-col p-7 md:p-9">
+                        <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-primary">
+                          <span>{item.category}</span>
+                          <span className="text-muted-foreground">{item.date}</span>
+                        </div>
+                        <h2 className="mt-4 text-2xl font-semibold leading-snug">{item.title}</h2>
+                        <p className="mt-4 text-sm leading-7 text-muted-foreground">{item.summary}</p>
+                        <a href={`${site.path}news/${item.slug}/`} className="mt-auto inline-flex pt-6 text-sm font-semibold text-primary">
+                          {news.read}
+                          <ArrowRight className="ml-2 size-4" />
+                        </a>
+                      </div>
+                    </article>
+                  </FadeInSection>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {page === 'newsDetail' && article && (
+          <section className="relative overflow-hidden px-6 py-16 md:py-24">
+            <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_16%_0%,rgba(91,108,255,0.14),transparent_34%),radial-gradient(circle_at_86%_12%,rgba(34,197,94,0.10),transparent_28%)]" />
+            <article className="mx-auto max-w-4xl">
+              <a href={`${site.path}news/`} className="inline-flex items-center text-sm font-semibold text-primary">
+                <ArrowRight className="mr-2 size-4 rotate-180" />
+                {news.back}
+              </a>
+              <header className="mt-8">
+                <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-primary">
+                  <span>{article.category}</span>
+                  <span className="text-muted-foreground">{article.date}</span>
+                </div>
+                <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">{article.title}</h1>
+                <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">{article.lead}</p>
+              </header>
+              <div className="relative mt-10 aspect-[16/9] overflow-hidden rounded-[30px] border border-border bg-secondary shadow-[0_18px_54px_rgba(24,36,61,.10)]">
+                <Image src={article.cover} alt={article.title} fill className="object-cover" priority sizes="(min-width: 1024px) 896px, 100vw" />
+              </div>
+              <div className="mx-auto mt-12 max-w-3xl space-y-12">
+                {article.sections.map((section) => (
+                  <section key={section.title}>
+                    <h2 className="text-2xl font-semibold leading-snug">{section.title}</h2>
+                    <div className="mt-5 space-y-4 text-base leading-8 text-muted-foreground">
+                      {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                    </div>
+                    {section.image && (
+                      <figure className="relative mt-7 aspect-[16/10] overflow-hidden rounded-3xl border border-border bg-secondary">
+                        <Image src={section.image} alt={section.title} fill className="object-cover" sizes="(min-width: 1024px) 768px, 100vw" />
+                      </figure>
+                    )}
+                  </section>
+                ))}
+                <footer className="border-t border-border pt-8 text-base leading-8 text-muted-foreground">
+                  {article.closing.map((paragraph) => <p key={paragraph} className="mt-4 first:mt-0">{paragraph}</p>)}
+                </footer>
+              </div>
+            </article>
+          </section>
+        )}
+
+        {page === 'join' && (
+          <>
+            <section className="relative overflow-hidden px-6 py-20 md:py-24">
+              <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_16%_0%,rgba(91,108,255,0.14),transparent_34%),radial-gradient(circle_at_86%_12%,rgba(34,197,94,0.10),transparent_28%)]" />
+              <div className="mx-auto max-w-[1280px]">
+                <FadeInSection>
+                  <SectionHeading
+                    eyebrow={jobs.eyebrow}
+                    title={jobs.title}
+                    subtitle={jobs.subtitle}
+                    level="h1"
+                  />
+                </FadeInSection>
+                <div className="mt-12 grid gap-6 lg:grid-cols-2">
+                  {jobs.jobs.map((job, index) => (
+                    <FadeInSection key={job.title} delay={index * 100}>
+                      <article className="h-full rounded-[30px] border border-border bg-card p-7 shadow-[0_18px_54px_rgba(24,36,61,.08)]">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-semibold text-primary">岗位 {index + 1}</p>
+                            <h2 className="mt-3 text-2xl font-semibold">{job.title}</h2>
+                          </div>
+                          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                            {job.salary}
+                          </span>
+                        </div>
+                        <div className="mt-6 grid gap-6">
+                          <div>
+                            <h3 className="text-sm font-semibold">岗位职责</h3>
+                            <ul className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
+                              {job.responsibilities.map((item) => (
+                                <li key={item} className="flex gap-3">
+                                  <CheckCircle2 className="mt-1 size-4 shrink-0 text-status-online" />
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-semibold">任职要求</h3>
+                            <ul className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
+                              {job.requirements.map((item) => (
+                                <li key={item} className="flex gap-3">
+                                  <BadgeCheck className="mt-1 size-4 shrink-0 text-primary" />
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </article>
+                    </FadeInSection>
+                  ))}
+                </div>
+                <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center justify-center gap-4 rounded-[28px] border border-border bg-card p-6 text-center shadow-[0_18px_54px_rgba(24,36,61,.08)] sm:flex-row sm:justify-between sm:text-left">
+                  <div>
+                    <p className="text-xs font-semibold text-primary">{jobs.manager}</p>
+                    <a href={`tel:${jobs.phone}`} className="mt-1 block text-2xl font-semibold text-foreground hover:text-primary">
+                      {jobs.phone}
+                    </a>
+                  </div>
+                  <div className="h-px w-full bg-border sm:h-12 sm:w-px" />
+                  <div>
+                    <p className="text-xs font-semibold text-primary">{jobs.emailLabel}</p>
+                    <a href={`mailto:${jobs.email}`} className="mt-1 block break-all text-2xl font-semibold text-foreground hover:text-primary">
+                      {jobs.email}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
       </main>
 
       {trialOpen && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#18243D]/45 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-[560px] rounded-[28px] bg-card p-6 shadow-[0_24px_80px_rgba(24,36,61,.24)]">
+        <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-[#18243D]/45 px-4 py-4 backdrop-blur-sm sm:items-center sm:py-6">
+          <div className="w-full max-w-[620px] rounded-[28px] bg-card p-6 shadow-[0_24px_80px_rgba(24,36,61,.24)]">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-primary">领取 7 天体验套餐</p>
-                <h3 className="mt-2 text-2xl font-semibold">先注册，再领取体验权益</h3>
+                <p className="text-sm font-semibold text-primary">{trial.eyebrow}</p>
+                <h3 className="mt-2 text-2xl font-semibold">{trial.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                  为了保存企业账套和试用数据，需要先用手机号完成注册或登录。进入产品后创建企业，即可按提示领取 7 天体验套餐。
+                  {trial.desc}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setTrialOpen(false)}
+                onClick={() => {
+                  setTrialOpen(false)
+                  setTrialSubmitted(false)
+                  setTrialApiError('')
+                }}
                 className="rounded-full p-2 text-muted-foreground hover:bg-muted"
                 aria-label="关闭"
               >
                 <X className="size-5" />
               </button>
             </div>
-            <div className="mt-6 grid gap-3">
-              {[
-                ['1', '手机号注册/登录', '进入产品登录页，用手机号创建或登录账号。'],
-                ['2', '创建企业账套', '填写企业名称、纳税人类型等基础信息，用于保存试用数据。'],
-                ['3', '领取 7 天体验套餐', '进入体验流程后，先跑通工资、发票、流水和报表。'],
-              ].map(([index, title, desc]) => (
-                <div key={index} className="flex gap-3 rounded-2xl bg-background p-4">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
-                    {index}
-                  </span>
-                  <div>
-                    <p className="font-semibold">{title}</p>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{desc}</p>
-                  </div>
+
+            {trialSubmitted ? (
+              <div className="mt-6 rounded-3xl bg-background p-6 text-center">
+                <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <CheckCircle2 className="size-6" />
                 </div>
-              ))}
-            </div>
-            <div className="mt-6">
-              <a
-                href={site.trialUrl}
-                className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-6 text-sm font-semibold text-white"
-              >
-                去注册并领取体验
-                <ArrowRight className="ml-2 size-4" />
-              </a>
-            </div>
+                <h4 className="mt-4 text-xl font-semibold">{trial.successTitle}</h4>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                  {trial.successDesc}
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="mt-6 grid gap-3">
+                  {trial.steps.map(([index, title, desc]) => (
+                    <div key={index} className="flex gap-3 rounded-2xl bg-background p-4">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
+                        {index}
+                      </span>
+                      <div>
+                        <p className="font-semibold">{title}</p>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <form noValidate onSubmit={submitTrialForm} className="mt-6 grid gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="grid gap-2 text-sm font-medium">
+                      <span className="inline-flex w-fit items-baseline gap-1 whitespace-nowrap">
+                        {trial.contactName}
+                        <span className="text-red-500">*</span>
+                      </span>
+                      <input
+                        value={trialForm.contactName}
+                        onChange={(event) => updateTrialField('contactName', event.target.value)}
+                        className={`h-12 ${trialFieldClass('contactName')}`}
+                        placeholder={trial.contactNamePlaceholder}
+                      />
+                      {trialFieldError('contactName')}
+                    </label>
+                    <label className="grid gap-2 text-sm font-medium">
+                      <span className="inline-flex w-fit items-baseline gap-1 whitespace-nowrap">
+                        {trial.contactPhone}
+                        <span className="text-red-500">*</span>
+                      </span>
+                      <input
+                        value={trialForm.contactPhone}
+                        onChange={(event) => updateTrialField('contactPhone', event.target.value)}
+                        className={`h-12 ${trialFieldClass('contactPhone')}`}
+                        placeholder={trial.contactPhonePlaceholder}
+                      />
+                      {trialFieldError('contactPhone')}
+                    </label>
+                  </div>
+                  <label className="grid gap-2 text-sm font-medium">
+                    {trial.inviteCode}
+                    <input
+                      value={trialForm.inviteCode}
+                      onChange={(event) => updateTrialField('inviteCode', event.target.value)}
+                      className={`h-12 ${trialFieldClass('inviteCode')}`}
+                      placeholder={trial.inviteCodePlaceholder}
+                    />
+                  </label>
+                  {trialApiError && (
+                    <p className="rounded-xl bg-red-50 px-4 py-3 text-sm leading-6 text-red-600">
+                      {trialApiError}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={trialSubmitting}
+                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-6 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {trialSubmitting ? ui.submitting : trial.submit}
+                    <Send className="ml-2 size-4" />
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -676,10 +676,22 @@ function SectionHeading({
   )
 }
 
+function MobileDisclosure({ title, actionLabel, children }: { title: string; actionLabel: string; children: ReactNode }) {
+  return (
+    <details className="rounded-2xl border border-border bg-card px-4 py-3 md:hidden">
+      <summary className="cursor-pointer list-none text-sm font-semibold text-foreground">
+        {title}
+        <span className="float-right text-xs font-normal text-primary">{actionLabel}</span>
+      </summary>
+      <div className="mt-4 border-t border-border pt-4">{children}</div>
+    </details>
+  )
+}
+
 function IconBox({ icon }: { icon: IconKey }) {
   const Icon = icons[icon]
   return (
-    <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
+    <div className="icon-box flex size-11 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary">
       <Icon className="size-5" />
     </div>
   )
@@ -763,6 +775,42 @@ type TrialField = 'contactName' | 'contactPhone' | 'inviteCode'
 
 type OfficialPage = 'home' | 'product' | 'company' | 'partners' | 'join' | 'news' | 'newsDetail'
 
+const mobileContentCopy = {
+  cn: {
+    expand: '展开查看',
+    faqExpand: '展开',
+    productMatrix: '查看完整产品矩阵',
+    features: '查看全部核心功能',
+    roles: '按角色查看使用方式',
+    workflow: '查看完整工作流程',
+    company: '查看公司定位与服务方式',
+    focus: '查看我们的专业服务重点',
+    output: '产出',
+  },
+  jp: {
+    expand: '表示',
+    faqExpand: '表示',
+    productMatrix: '製品一覧を表示',
+    features: '主な機能を表示',
+    roles: '役割別の利用方法を表示',
+    workflow: '全体の作業フローを表示',
+    company: '会社の位置づけとサービスを表示',
+    focus: '専門サービスの重点を表示',
+    output: 'アウトプット',
+  },
+  hk: {
+    expand: '展開查看',
+    faqExpand: '展開',
+    productMatrix: '查看完整產品矩陣',
+    features: '查看全部核心功能',
+    roles: '按角色查看使用方式',
+    workflow: '查看完整工作流程',
+    company: '查看公司定位與服務方式',
+    focus: '查看我們的專業服務重點',
+    output: '產出',
+  },
+} as const
+
 export default function OfficialSite({
   site,
   page = 'home',
@@ -782,6 +830,7 @@ export default function OfficialSite({
   const trial = trialCopy[site.code]
   const jobs = jobCopy[site.code]
   const ui = uiCopy[site.code]
+  const mobileContent = mobileContentCopy[site.code]
   const partnerOptions = partnerOptionCopy[site.code]
   const [trialOpen, setTrialOpen] = useState(false)
   const [trialSubmitted, setTrialSubmitted] = useState(false)
@@ -1119,7 +1168,7 @@ export default function OfficialSite({
     <div className="min-h-screen bg-background text-foreground">
       <Navbar site={site} onTrialClick={() => setTrialOpen(true)} />
 
-      <main className={page === 'product' ? 'xl:pl-44' : undefined}>
+      <main className={`official-main ${page === 'product' ? 'xl:pl-44' : ''}`}>
         {page === 'home' && (
           <>
             <section className="relative overflow-hidden px-6 py-20 md:py-28">
@@ -1183,9 +1232,9 @@ export default function OfficialSite({
             <section className="px-6 py-20">
               <div className="mx-auto max-w-[1280px]">
                 <SectionHeading title={site.painTitle} subtitle={site.painSubtitle} />
-                <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-8 grid grid-cols-2 gap-3 md:mt-12 md:gap-5 md:grid-cols-2 lg:grid-cols-4">
                   {site.pains.map((pain) => (
-                    <div key={pain.title} className="h-full rounded-3xl border border-border bg-card p-6">
+                    <div key={pain.title} className="mobile-compact-card h-full rounded-3xl border border-border bg-card p-6">
                       <IconBox icon={pain.icon} />
                       <h3 className="mt-5 text-lg font-semibold">{pain.title}</h3>
                       <p className="mt-3 text-sm leading-6 text-muted-foreground">{pain.description}</p>
@@ -1198,9 +1247,9 @@ export default function OfficialSite({
             <section className="bg-card px-6 py-20">
               <div className="mx-auto max-w-[1280px]">
                 <SectionHeading title={productSuite.title} subtitle={productSuite.subtitle} />
-                <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-8 grid grid-cols-2 gap-3 md:mt-12 md:gap-5 md:grid-cols-2 lg:grid-cols-4">
                   {productSuite.products.slice(0, 4).map(([fullName, shortName, desc]) => (
-                    <div key={shortName} className="rounded-3xl border border-border bg-background p-6">
+                    <div key={shortName} className="mobile-compact-card rounded-3xl border border-border bg-background p-6">
                       <p className="text-xs font-semibold text-primary">{shortName}</p>
                       <h3 className="mt-3 text-lg font-semibold">{fullName}</h3>
                       <p className="mt-3 text-sm leading-6 text-muted-foreground">{desc}</p>
@@ -1211,8 +1260,8 @@ export default function OfficialSite({
             </section>
 
             <section className="px-6 py-20">
-              <div className="mx-auto grid max-w-[1280px] gap-6 lg:grid-cols-3">
-                <div className="flex min-h-[264px] flex-col rounded-[28px] border border-border bg-card p-7">
+              <div className="mx-auto grid max-w-[1280px] gap-3 lg:gap-6 lg:grid-cols-3">
+                <div className="flex min-h-[180px] flex-col rounded-[28px] border border-border bg-card p-5 lg:min-h-[264px] lg:p-7">
                   <h2 className="text-2xl font-semibold">{homeHook.productTitle}</h2>
                   <p className="mt-4 text-sm leading-7 text-muted-foreground">{homeHook.productDesc}</p>
                   <a href={`${site.path}product/`} className="mt-auto inline-flex pt-6 text-sm font-semibold text-primary">
@@ -1220,7 +1269,7 @@ export default function OfficialSite({
                     <ArrowRight className="ml-2 size-4" />
                   </a>
                 </div>
-                <div className="flex min-h-[264px] flex-col rounded-[28px] border border-border bg-card p-7">
+                <div className="flex min-h-[180px] flex-col rounded-[28px] border border-border bg-card p-5 lg:min-h-[264px] lg:p-7">
                   <h2 className="text-2xl font-semibold">{news.title}</h2>
                   <p className="mt-4 text-sm leading-7 text-muted-foreground">{news.subtitle}</p>
                   <div className="mt-6 flex flex-wrap gap-2">
@@ -1233,7 +1282,7 @@ export default function OfficialSite({
                     <ArrowRight className="ml-2 size-4" />
                   </a>
                 </div>
-                <div className="flex min-h-[264px] flex-col rounded-[28px] border border-border bg-card p-7">
+                <div className="flex min-h-[180px] flex-col rounded-[28px] border border-border bg-card p-5 lg:min-h-[264px] lg:p-7">
                   <h2 className="text-2xl font-semibold">{homeHook.joinTitle}</h2>
                   <p className="mt-4 text-sm leading-7 text-muted-foreground">{homeHook.joinDesc}</p>
                   <a href={`${site.path}join/`} className="mt-auto inline-flex pt-6 text-sm font-semibold text-primary">
@@ -1273,11 +1322,11 @@ export default function OfficialSite({
                     <ArrowRight className="ml-2 size-4" />
                   </TrialButton>
                 </div>
-                <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-2">
                   {site.metrics.map((metric) => (
                     <div
                       key={metric.label}
-                      className="rounded-2xl border border-border bg-card p-4 shadow-[0_4px_18px_rgba(38,67,104,.05)]"
+                      className="mobile-compact-card rounded-2xl border border-border bg-card p-4 shadow-[0_4px_18px_rgba(38,67,104,.05)]"
                     >
                       <div className="text-2xl font-semibold text-foreground">{metric.value}</div>
                       <div className="mt-1 text-sm font-medium text-foreground">{metric.label}</div>
@@ -1297,7 +1346,7 @@ export default function OfficialSite({
                     width={922}
                     height={2048}
                     priority
-                    className="h-[620px] w-full rounded-[24px] object-cover object-top md:h-[700px]"
+                    className="h-[440px] w-full rounded-[24px] object-cover object-top md:h-[700px]"
                   />
                 </div>
                 <div className="absolute -bottom-5 left-1/2 hidden w-[88%] -translate-x-1/2 rounded-2xl border border-border bg-card/95 p-4 shadow-[0_12px_34px_rgba(24,36,61,.12)] backdrop-blur md:block">
@@ -1317,7 +1366,7 @@ export default function OfficialSite({
         </section>
 
         <section className="border-y border-border bg-card px-6 py-6">
-          <div className="mx-auto grid max-w-[1280px] gap-4 md:grid-cols-4">
+          <div className="mx-auto grid max-w-[1280px] grid-cols-2 gap-3 md:gap-4 md:grid-cols-4">
             {site.proofItems.map((item) => (
               <div key={item.label} className="flex items-start gap-3">
                 <CheckCircle2 className="mt-1 size-5 shrink-0 text-status-online" />
@@ -1342,15 +1391,28 @@ export default function OfficialSite({
                 <p className="text-sm font-semibold text-primary">{productSuite.primaryProduct.status}</p>
                 <h2 className="mt-3 text-3xl font-semibold">{productSuite.primaryProduct.name}</h2>
                 <p className="mt-4 text-sm leading-7 text-muted-foreground">{productSuite.primaryProduct.description}</p>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2">
                   {productSuite.primaryProduct.bullets.map((item) => (
-                    <div key={item} className="rounded-2xl border border-border bg-card p-4 text-sm font-medium">
+                    <div key={item} className="rounded-2xl border border-border bg-card p-3 text-sm font-medium">
                       {item}
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="mt-5 md:hidden">
+                <MobileDisclosure title={mobileContent.productMatrix} actionLabel={mobileContent.expand}>
+                  <div className="space-y-3">
+                    {productSuite.products.map(([fullName, shortName, desc]) => (
+                      <div key={shortName} className="rounded-xl bg-secondary p-3">
+                        <p className="text-xs font-semibold text-primary">{shortName}</p>
+                        <p className="mt-1 text-sm font-semibold">{fullName}</p>
+                        <p className="mt-2 text-xs leading-5 text-muted-foreground">{desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </MobileDisclosure>
+              </div>
+              <div className="hidden gap-4 md:grid md:grid-cols-2">
                 {productSuite.products.map(([fullName, shortName, desc]) => (
                   <div key={shortName} className="rounded-3xl border border-border bg-background p-5">
                     <p className="text-xs font-semibold text-primary">{shortName}</p>
@@ -1362,9 +1424,9 @@ export default function OfficialSite({
             </div>
             <div className="mt-12">
               <SectionHeading title={productSuite.solutionTitle} />
-              <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-8 grid grid-cols-2 gap-3 md:gap-5 md:grid-cols-2 lg:grid-cols-4">
                 {productSuite.solutionCards.map(([title, desc]) => (
-                  <div key={title} className="rounded-3xl border border-border bg-background p-6">
+                  <div key={title} className="mobile-compact-card rounded-3xl border border-border bg-background p-6">
                     <IconBox icon="layers" />
                     <h3 className="mt-5 text-lg font-semibold">{title}</h3>
                     <p className="mt-3 text-sm leading-6 text-muted-foreground">{desc}</p>
@@ -1381,10 +1443,10 @@ export default function OfficialSite({
               <FadeInSection>
                 <SectionHeading title={site.painTitle} subtitle={site.painSubtitle} />
               </FadeInSection>
-              <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-8 grid grid-cols-2 gap-3 md:mt-12 md:gap-5 md:grid-cols-2 xl:grid-cols-4">
                 {site.pains.map((pain, index) => (
                   <FadeInSection key={pain.title} delay={index * 60}>
-                    <div className="h-full rounded-3xl border border-border bg-card p-6 shadow-[0_4px_18px_rgba(38,67,104,.05)]">
+                    <div className="mobile-compact-card h-full rounded-3xl border border-border bg-card p-6 shadow-[0_4px_18px_rgba(38,67,104,.05)]">
                       <IconBox icon={pain.icon} />
                       <h3 className="mt-5 text-lg font-semibold">{pain.title}</h3>
                       <p className="mt-3 text-sm leading-6 text-muted-foreground">{pain.description}</p>
@@ -1405,7 +1467,7 @@ export default function OfficialSite({
                 subtitle="以下为典型使用场景测算，实际节省金额和效率提升会因企业规模、资料完整度和服务方式不同而变化。"
               />
             </FadeInSection>
-            <div className="mt-12 grid gap-5 lg:grid-cols-3">
+            <div className="mt-8 grid gap-3 md:mt-12 md:gap-5 lg:grid-cols-3">
               {[
                 {
                   title: '小规模商贸公司',
@@ -1427,7 +1489,7 @@ export default function OfficialSite({
                 },
               ].map((item, index) => (
                 <FadeInSection key={item.title} delay={index * 70}>
-                  <div className="h-full rounded-3xl border border-border bg-background p-6">
+                  <div className="h-full rounded-3xl border border-border bg-background p-5 md:p-6">
                     <p className="text-sm font-semibold text-primary">{item.title}</p>
                     <h3 className="mt-3 text-2xl font-semibold leading-tight">{item.result}</h3>
                     <p className="mt-4 text-sm leading-7 text-muted-foreground">{item.desc}</p>
@@ -1450,7 +1512,22 @@ export default function OfficialSite({
             <FadeInSection>
               <SectionHeading title={site.featuresTitle} subtitle={site.featuresSubtitle} />
             </FadeInSection>
-            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 md:hidden">
+              <MobileDisclosure title={mobileContent.features} actionLabel={mobileContent.expand}>
+                <div className="space-y-3">
+                  {site.features.map((feature) => (
+                    <div key={feature.title} className="rounded-xl bg-secondary p-3">
+                      <p className="text-sm font-semibold">{feature.title}</p>
+                      <p className="mt-2 text-xs leading-5 text-muted-foreground">{feature.description}</p>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {feature.details.map((detail) => <span key={detail} className="rounded-full bg-card px-2 py-1 text-[11px] text-muted-foreground">{detail}</span>)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </MobileDisclosure>
+            </div>
+            <div className="mt-12 hidden gap-5 md:grid md:grid-cols-2 lg:grid-cols-4">
               {site.features.map((feature, index) => (
                 <FadeInSection key={feature.title} delay={index * 50}>
                   <div className="h-full rounded-3xl border border-border bg-card p-6 shadow-[0_4px_18px_rgba(38,67,104,.05)]">
@@ -1479,7 +1556,22 @@ export default function OfficialSite({
             <FadeInSection>
               <SectionHeading title={site.rolesTitle} subtitle={site.rolesSubtitle} />
             </FadeInSection>
-            <div className="mt-12 grid gap-5 lg:grid-cols-5">
+            <div className="mt-8 lg:hidden">
+              <MobileDisclosure title={mobileContent.roles} actionLabel={mobileContent.expand}>
+                <div className="space-y-3">
+                  {site.roles.map((role) => (
+                    <details key={role.title} className="rounded-xl bg-secondary px-3 py-2.5">
+                      <summary className="cursor-pointer list-none text-sm font-semibold">{role.title}<span className="ml-2 text-xs font-normal text-primary">{role.user}</span></summary>
+                      <ol className="mt-3 space-y-2 border-t border-border pt-3">
+                        {role.journey.map((item, itemIndex) => <li key={item} className="text-xs leading-5 text-muted-foreground">{itemIndex + 1}. {item}</li>)}
+                      </ol>
+                      <p className="mt-3 text-xs leading-5 text-muted-foreground">{role.cta}</p>
+                    </details>
+                  ))}
+                </div>
+              </MobileDisclosure>
+            </div>
+            <div className="mt-12 hidden gap-5 lg:grid lg:grid-cols-5">
               {site.roles.map((role, index) => (
                 <FadeInSection key={role.title} delay={index * 60}>
                   <div className="h-full rounded-3xl border border-border bg-background p-5">
@@ -1509,7 +1601,20 @@ export default function OfficialSite({
             <FadeInSection>
               <SectionHeading title={site.workflowTitle} subtitle={site.workflowSubtitle} />
             </FadeInSection>
-            <div className="mt-12 grid gap-4 lg:grid-cols-5">
+            <div className="mt-8 lg:hidden">
+              <MobileDisclosure title={mobileContent.workflow} actionLabel={mobileContent.expand}>
+                <ol className="space-y-3">
+                  {site.workflow.map((step) => (
+                    <li key={step.step} className="rounded-xl bg-secondary p-3">
+                      <p className="text-sm font-semibold text-foreground">{step.step}. {step.title}</p>
+                      <p className="mt-2 text-xs leading-5 text-muted-foreground">{step.description}</p>
+                      <p className="mt-2 text-xs text-primary">{mobileContent.output}：{step.output}</p>
+                    </li>
+                  ))}
+                </ol>
+              </MobileDisclosure>
+            </div>
+            <div className="mt-12 hidden gap-4 lg:grid lg:grid-cols-5">
               {site.workflow.map((step, index) => (
                 <FadeInSection key={step.step} delay={index * 70}>
                   <div className="h-full rounded-3xl border border-border bg-card p-5 shadow-[0_4px_18px_rgba(38,67,104,.05)]">
@@ -1539,9 +1644,9 @@ export default function OfficialSite({
               />
             </FadeInSection>
             <FadeInSection delay={120}>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-2">
                 {site.proofItems.map((item) => (
-                  <div key={item.label} className="rounded-3xl border border-border bg-card p-6">
+                  <div key={item.label} className="mobile-compact-card rounded-3xl border border-border bg-card p-6">
                     <p className="text-sm text-muted-foreground">{item.label}</p>
                     <p className="mt-2 text-2xl font-semibold">{item.value}</p>
                     <p className="mt-3 text-sm leading-6 text-muted-foreground">{item.description}</p>
@@ -1636,11 +1741,20 @@ export default function OfficialSite({
             <FadeInSection>
               <SectionHeading title={site.faqTitle} />
             </FadeInSection>
-            <div className="mt-10 divide-y divide-border rounded-3xl border border-border bg-background">
+            <div className="mt-8 divide-y divide-border rounded-3xl border border-border bg-background md:mt-10">
               {site.faqs.map((faq) => (
-                <div key={faq.q} className="p-6">
-                  <h3 className="font-semibold">{faq.q}</h3>
-                  <p className="mt-3 text-sm leading-7 text-muted-foreground">{faq.a}</p>
+                <div key={faq.q}>
+                  <details className="p-4 md:hidden">
+                    <summary className="cursor-pointer list-none font-semibold">
+                      {faq.q}
+                      <span className="float-right text-xs font-normal text-primary">{mobileContent.faqExpand}</span>
+                    </summary>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{faq.a}</p>
+                  </details>
+                  <div className="hidden p-6 md:block">
+                    <h3 className="font-semibold">{faq.q}</h3>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{faq.a}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1684,9 +1798,9 @@ export default function OfficialSite({
                   </div>
                 </FadeInSection>
                 <FadeInSection delay={120}>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2">
                     {site.companyIntro.stats.map((item) => (
-                      <div key={item.label} className="rounded-3xl border border-border bg-card p-6 shadow-[0_10px_30px_rgba(24,36,61,.08)]">
+                      <div key={item.label} className="mobile-compact-card rounded-3xl border border-border bg-card p-6 shadow-[0_10px_30px_rgba(24,36,61,.08)]">
                         <p className="text-sm text-muted-foreground">{item.label}</p>
                         <p className="mt-2 text-3xl font-semibold">{item.value}</p>
                         <p className="mt-3 text-sm leading-6 text-muted-foreground">{item.note}</p>
@@ -1698,7 +1812,19 @@ export default function OfficialSite({
             </section>
 
             <section className="px-6 py-20">
-              <div className="mx-auto grid max-w-[1280px] gap-8 lg:grid-cols-3">
+              <div className="mx-auto md:hidden">
+                <MobileDisclosure title={mobileContent.company} actionLabel={mobileContent.expand}>
+                  <div className="space-y-3">
+                    {copy.cards.map(([title, desc], index) => (
+                      <div key={title} className="rounded-xl bg-secondary p-3">
+                        <p className="text-sm font-semibold">{index + 1}. {title}</p>
+                        <p className="mt-2 text-xs leading-5 text-muted-foreground">{desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </MobileDisclosure>
+              </div>
+              <div className="mx-auto hidden max-w-[1280px] gap-8 md:grid lg:grid-cols-3">
                 {[
                   ...copy.cards,
                 ].map(([title, desc], index) => (
@@ -1724,7 +1850,18 @@ export default function OfficialSite({
                   />
                 </FadeInSection>
                 <FadeInSection delay={120}>
-                  <div className="grid gap-4">
+                  <div className="md:hidden">
+                    <MobileDisclosure title={mobileContent.focus} actionLabel={mobileContent.expand}>
+                      <ol className="space-y-3">
+                        {site.companyIntro.focus.map((item, index) => (
+                          <li key={item} className="rounded-xl bg-secondary p-3 text-xs leading-5 text-muted-foreground">
+                            <span className="mr-2 font-semibold text-primary">{index + 1}.</span>{item}
+                          </li>
+                        ))}
+                      </ol>
+                    </MobileDisclosure>
+                  </div>
+                  <div className="hidden gap-4 md:grid">
                     {site.companyIntro.focus.map((item, index) => (
                       <div key={item} className="flex gap-4 rounded-3xl border border-border bg-background p-5">
                         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">

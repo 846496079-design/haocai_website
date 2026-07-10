@@ -160,3 +160,19 @@
 .animate-float-delay { animation: float 6s ease-in-out 2s infinite; }
 .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
 .company-marquee { animation: company-marquee 42s linear infinite; }
+
+@media (max-width: 767px) {
+  .official-main > section {
+    padding: 3.5rem 1.25rem;
+  }
+
+  .official-main .mobile-compact-card {
+    border-radius: 1.25rem;
+    padding: 1rem;
+  }
+
+  .official-main .mobile-compact-card .icon-box {
+    height: 2.25rem;
+    width: 2.25rem;
+  }
+}

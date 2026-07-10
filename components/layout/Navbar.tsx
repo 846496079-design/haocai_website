@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown, Globe, Menu, X } from 'lucide-react'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import type { SiteContent } from '@/lib/site-content'
 import { sites } from '@/lib/site-content'
 
@@ -12,21 +13,27 @@ interface NavbarProps {
 }
 
 const siteList = [sites.cn, sites.jp, sites.hk]
+const siteLabel = { cn: '站点', jp: 'サイト', hk: '站點' } as const
 
 export default function Navbar({ site, onTrialClick }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [globalOpen, setGlobalOpen] = useState(false)
+  const pathname = usePathname()
+
+  function isCurrentNavItem(href: string) {
+    return href === site.path ? pathname === href : pathname.startsWith(href)
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-6">
+      <div className="mx-auto flex h-14 max-w-[1280px] items-center justify-between px-4 md:h-16 md:px-6">
         <a href={site.path} className="flex items-center gap-2">
           <Image
             src="/images/brand/haocai-zds-logo-horizontal.png"
             alt="好财集团 账大师"
             width={220}
             height={52}
-            className="h-9 w-auto"
+            className="h-8 w-auto md:h-9"
             priority
           />
           <span className="hidden text-xs leading-tight text-muted-foreground lg:block">{site.localeName}</span>
@@ -84,31 +91,47 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
           </button>
         </div>
 
-        <button
-          type="button"
-          className="md:hidden"
-          onClick={() => setMobileOpen((open) => !open)}
-          aria-label="Toggle navigation"
-        >
-          {mobileOpen ? <X className="size-6" /> : <Menu className="size-6" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            onClick={onTrialClick}
+            className="inline-flex h-9 items-center justify-center rounded-lg bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-3 text-xs font-semibold text-white"
+          >
+            {site.actions.trial}
+          </button>
+          <button
+            type="button"
+            className="rounded-lg p-1.5"
+            onClick={() => setMobileOpen((open) => !open)}
+            aria-label="Toggle navigation"
+          >
+            {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </div>
 
+      <nav className="flex gap-1 overflow-x-auto border-t border-border px-3 py-2 scrollbar-none md:hidden" aria-label="移动端主导航">
+        {site.nav.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              isCurrentNavItem(item.href)
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+            onClick={() => setMobileOpen(false)}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+
       {mobileOpen && (
-        <div className="border-t border-border bg-card px-6 py-4 md:hidden">
+        <div className="border-t border-border bg-card px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-4">
-            {site.nav.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="text-sm font-medium text-muted-foreground"
-                onClick={() => setMobileOpen(false)}
-              >
-                {item.label}
-              </a>
-            ))}
             <div className="border-t border-border pt-4">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">站点</p>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">{siteLabel[site.code]}</p>
               <div className="grid gap-2">
                 {siteList.map((item) => (
                   <a
@@ -124,18 +147,6 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
                   </a>
                 ))}
               </div>
-            </div>
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileOpen(false)
-                  onTrialClick?.()
-                }}
-                className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] text-sm font-semibold text-white"
-              >
-                {site.actions.trial}
-              </button>
             </div>
           </nav>
         </div>

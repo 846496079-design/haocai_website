@@ -8,11 +8,110 @@ interface FooterProps {
 
 const siteList = [sites.cn, sites.jp, sites.hk]
 
+const mobileFooterCopy = {
+  cn: {
+    slogan: '让天下企业拥有一个 AI 财务专家',
+    phone: '电话咨询',
+    email: '邮件联系',
+    company: '企业信息',
+    sites: '站点与企业微信',
+    expand: '展开',
+    companyName: '企业主体',
+    creditCode: '统一社会信用代码',
+    registeredAddress: '注册地址',
+    headquarters: '企业总部',
+  },
+  jp: {
+    slogan: 'すべての企業に AI 財務の専門家を',
+    phone: '電話で相談',
+    email: 'メールで相談',
+    company: '会社情報',
+    sites: 'サイト・企業微信',
+    expand: '表示',
+    companyName: '法人名',
+    creditCode: '統一社会信用コード',
+    registeredAddress: '登録住所',
+    headquarters: '本社所在地',
+  },
+  hk: {
+    slogan: '讓天下企業擁有一個 AI 財務專家',
+    phone: '電話諮詢',
+    email: '電郵聯絡',
+    company: '企業資料',
+    sites: '站點與企業微信',
+    expand: '展開',
+    companyName: '企業主體',
+    creditCode: '統一社會信用代碼',
+    registeredAddress: '註冊地址',
+    headquarters: '企業總部',
+  },
+} as const
+
 export default function Footer({ site }: FooterProps) {
+  const mobileCopy = mobileFooterCopy[site.code]
+
   return (
     <footer className="border-t border-border bg-card">
-      <div className="mx-auto max-w-[1280px] px-6 py-14">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_0.8fr_0.8fr_1fr]">
+      <div className="mx-auto max-w-[1280px] px-5 py-8 lg:px-6 lg:py-14">
+        <div className="lg:hidden">
+          <Image
+            src="/images/brand/haocai-zds-logo-horizontal.png"
+            alt="好财集团 账大师"
+            width={240}
+            height={56}
+            className="h-8 w-auto"
+          />
+          <p className="mt-3 text-sm text-muted-foreground">{mobileCopy.slogan}</p>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <a href={`tel:${site.company.contact}`} className="rounded-2xl bg-background p-3">
+              <span className="block text-xs text-text-tertiary">{mobileCopy.phone}</span>
+              <span className="mt-1 block text-sm font-semibold text-foreground">{site.company.contact}</span>
+            </a>
+            <a href={`mailto:${site.company.email}`} className="rounded-2xl bg-background p-3">
+              <span className="block text-xs text-text-tertiary">{mobileCopy.email}</span>
+              <span className="mt-1 block break-all text-sm font-semibold text-foreground">{site.company.email}</span>
+            </a>
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {site.nav.map((item) => (
+              <a key={item.href} href={item.href} className="rounded-xl bg-background px-2 py-2 text-center text-xs text-muted-foreground">
+                {item.label}
+              </a>
+            ))}
+          </div>
+
+          <div className="mt-5 divide-y divide-border rounded-2xl border border-border bg-background px-4">
+            <details className="group py-3">
+              <summary className="cursor-pointer list-none text-sm font-semibold text-foreground">
+                {mobileCopy.company}
+                <span className="float-right text-xs font-normal text-muted-foreground">{mobileCopy.expand}</span>
+              </summary>
+              <div className="mt-3 space-y-2 text-xs leading-5 text-muted-foreground">
+                <p>{mobileCopy.companyName}：{site.company.name}</p>
+                <p>{mobileCopy.creditCode}：{site.company.creditCode}</p>
+                <p>{mobileCopy.registeredAddress}：{site.company.registeredAddress}</p>
+                <p>{mobileCopy.headquarters}：{site.company.headquarters}</p>
+              </div>
+            </details>
+            <details className="group py-3">
+              <summary className="cursor-pointer list-none text-sm font-semibold text-foreground">
+                {mobileCopy.sites}
+                <span className="float-right text-xs font-normal text-muted-foreground">{mobileCopy.expand}</span>
+              </summary>
+              <div className="mt-3 grid grid-cols-[1fr_auto] gap-4 text-sm text-muted-foreground">
+                <div className="space-y-2">
+                  {siteList.map((item) => <a key={item.code} href={item.path} className="block">{item.localeName}</a>)}
+                  <p className="pt-1 text-xs text-text-tertiary">{site.company.hours}</p>
+                </div>
+                <Image src="/images/wechat-qr.png" alt="企业微信二维码" width={72} height={72} className="rounded-lg border border-border" />
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div className="hidden gap-10 lg:grid lg:grid-cols-[1.4fr_0.8fr_0.8fr_1fr]">
           <div>
             <div className="flex items-center gap-2">
               <Image
@@ -94,7 +193,7 @@ export default function Footer({ site }: FooterProps) {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
+        <div className="mt-6 flex flex-col gap-3 border-t border-border pt-5 text-xs text-muted-foreground lg:mt-12 lg:pt-6 lg:flex-row lg:items-center lg:justify-between">
           <p>© 2026 {site.company.name}。页面信息仅用于产品介绍，具体服务以实际开通和双方确认为准。</p>
           <div className="flex gap-5">
             <span>用户协议</span>

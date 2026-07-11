@@ -80,11 +80,6 @@ const pageCopy = {
     professionalTitle: '以 AI 技术，连接财务流程与经营决策',
     professionalDesc:
       '从资料归集、智能处理、数据核对到经营分析，账大师帮助企业把高频财务工作沉淀为清晰流程，并为管理者提供更及时的经营信息参考。',
-    cards: [
-      ['AI 财务智能化', '围绕 AI 大模型、智能 Agent 与自动化工作流，探索企业财务服务的新一代产品形态。'],
-      ['产品、技术与服务协同', '以产品承接高频场景，以技术持续迭代，以服务支持企业与合作伙伴更好地落地使用。'],
-      ['开放合作生态', '与企业服务伙伴保持长期协同，共同探索 AI 在企业经营管理中的更多应用场景。'],
-    ],
     focusTitle: '专业但不复杂：让客户拿到可看、可查、可复核的财税结果',
     focusSubtitle:
       '账大师强调流程可落地、结果可复核、责任可确认，帮助企业把分散资料转化为清晰的月度财税视图。',
@@ -112,11 +107,6 @@ const pageCopy = {
     professionalTitle: 'AI で財務プロセスと経営判断をつなぐ',
     professionalDesc:
       '情報収集、照合、分析までの高頻度な業務を整理し、企業が経営情報をより早く把握できるよう支援します。',
-    cards: [
-      ['AI 財務の進化', 'AI 大模型、智能 Agent、自動化ワークフローを活用した新しい財務サービスを探求。'],
-      ['製品・技術・サービス', '製品、技術、サービスを連携させ、利用定着を支援。'],
-      ['協業エコシステム', '企業サービスのパートナーとともに、AI の活用場面を広げます。'],
-    ],
     focusTitle: '専門的でありながら、分かりやすい財税結果へ',
     focusSubtitle:
       '账大师は実行可能なフロー、確認可能な結果、明確な責任分担を重視します。',
@@ -144,11 +134,6 @@ const pageCopy = {
     professionalTitle: '以 AI 技術，連接財務流程與經營決策',
     professionalDesc:
       '從資料歸集、智能處理、數據核對到經營分析，賬大師協助企業把高頻財務工作沉澱為清晰流程，並提供更及時的經營信息參考。',
-    cards: [
-      ['AI 財務智能化', '圍繞 AI 大模型、智能 Agent 與自動化工作流，探索企業財務服務的新一代產品形態。'],
-      ['產品、技術與服務協同', '以產品承接高頻場景，以技術持續迭代，以服務支持企業與合作夥伴落地使用。'],
-      ['開放合作生態', '與企業服務夥伴保持長期協同，共同探索 AI 在企業經營管理中的更多應用場景。'],
-    ],
     focusTitle: '專業但不複雜：讓客戶拿到可看、可查、可復核的財稅結果',
     focusSubtitle:
       '賬大師重視流程可落地、結果可復核、責任可確認，協助企業把分散資料轉化為清晰的月度財稅視圖。',
@@ -192,7 +177,7 @@ const productSuiteCopy = {
       ['好财 AI 人才甄选与招聘管理系统', '好财智聘', '支持简历筛选、候选人跟进、面试排期和招聘协同。'],
       ['好财 Future-AI 企业级人工智能中台系统', '好财 AI 中台', '为企业内部系统提供模型能力、Agent 编排和自动化任务支撑。'],
     ],
-    solutionTitle: '解决方案不再单独拆页，统一放在产品中心',
+    solutionTitle: '覆盖企业财税与经营协同的关键场景',
     solutionCards: [
       ['财税管理', '账大师承接工资、发票、流水、报表和税额测算，先解决小微企业最频繁的财税协同。'],
       ['客户经营', 'AI 外呼、智能客服和新媒体工作台承接获客、跟进、咨询和内容转化。'],
@@ -221,7 +206,7 @@ const productSuiteCopy = {
       ['好财 AI 人才甄选与招聘管理系统', '好财智聘', '履歴書選別、候補者フォロー、面接調整を支援。'],
       ['好财 Future-AI 企业级人工智能中台系统', '好财 AI 中台', 'モデル能力、Agent 編排、自動化タスクの基盤。'],
     ],
-    solutionTitle: 'ソリューションは製品センターに統合',
+    solutionTitle: '企業の財税と経営協同を支える主要シーン',
     solutionCards: [
       ['財税管理', '账大师が給与、発票、銀行流水、帳票、税額試算を支援。'],
       ['顧客運営', 'AI 外呼、智能客服、新媒体工作台で獲客と問い合わせを支援。'],
@@ -250,7 +235,7 @@ const productSuiteCopy = {
       ['好財 AI 人才甄選與招聘管理系統', '好財智聘', '支持簡歷篩選、候選人跟進、面試排期和招聘協同。'],
       ['好財 Future-AI 企業級人工智能中台系統', '好財 AI 中台', '為企業內部系統提供模型能力、Agent 編排和自動化任務支撐。'],
     ],
-    solutionTitle: '解決方案不再單獨拆頁，統一放在產品中心',
+    solutionTitle: '覆蓋企業財稅與經營協同的關鍵場景',
     solutionCards: [
       ['財稅管理', '賬大師承接工資、發票、流水、報表和稅額測算，先解決高頻財稅協同。'],
       ['客戶經營', 'AI 外呼、智能客服和新媒體工作台承接獲客、跟進、諮詢和內容轉化。'],
@@ -783,7 +768,6 @@ const mobileContentCopy = {
     features: '查看全部核心功能',
     roles: '按角色查看使用方式',
     workflow: '查看完整工作流程',
-    company: '查看公司定位与服务方式',
     focus: '查看我们的专业服务重点',
     output: '产出',
   },
@@ -794,7 +778,6 @@ const mobileContentCopy = {
     features: '主な機能を表示',
     roles: '役割別の利用方法を表示',
     workflow: '全体の作業フローを表示',
-    company: '会社の位置づけとサービスを表示',
     focus: '専門サービスの重点を表示',
     output: 'アウトプット',
   },
@@ -805,7 +788,6 @@ const mobileContentCopy = {
     features: '查看全部核心功能',
     roles: '按角色查看使用方式',
     workflow: '查看完整工作流程',
-    company: '查看公司定位與服務方式',
     focus: '查看我們的專業服務重點',
     output: '產出',
   },
@@ -1339,14 +1321,14 @@ export default function OfficialSite({
 
             <FadeInSection delay={120}>
               <div className="relative">
-                <div className="-mx-2 max-w-none rounded-[28px] border border-border bg-card p-2 shadow-[0_24px_70px_rgba(24,36,61,.14)] md:mx-auto md:max-w-[430px] md:rounded-[32px] md:p-3">
+                <div className="md:mx-auto md:max-w-[430px] md:rounded-[32px] md:border md:border-border md:bg-card md:p-3 md:shadow-[0_24px_70px_rgba(24,36,61,.14)]">
                   <Image
                     src="/images/product-mobile-dashboard.png"
                     alt="好财账大师移动端 AI 三步智能记账界面"
                     width={922}
                     height={2048}
                     priority
-                    className="h-auto w-full rounded-[24px] md:h-[700px] md:object-cover md:object-top"
+                    className="-mx-5 h-auto w-[calc(100%+2.5rem)] max-w-none rounded-none md:mx-0 md:h-[700px] md:w-full md:max-w-full md:rounded-[24px] md:object-cover md:object-top"
                   />
                 </div>
                 <div className="absolute -bottom-5 left-1/2 hidden w-[88%] -translate-x-1/2 rounded-2xl border border-border bg-card/95 p-4 shadow-[0_12px_34px_rgba(24,36,61,.12)] backdrop-blur md:block">
@@ -1808,34 +1790,6 @@ export default function OfficialSite({
                     ))}
                   </div>
                 </FadeInSection>
-              </div>
-            </section>
-
-            <section className="company-positioning-section px-6 py-20">
-              <div className="mx-auto md:hidden">
-                <MobileDisclosure title={mobileContent.company} actionLabel={mobileContent.expand}>
-                  <div className="space-y-3">
-                    {copy.cards.map(([title, desc], index) => (
-                      <div key={title} className="rounded-xl bg-secondary p-3">
-                        <p className="text-sm font-semibold">{index + 1}. {title}</p>
-                        <p className="mt-2 text-xs leading-5 text-muted-foreground">{desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </MobileDisclosure>
-              </div>
-              <div className="mx-auto hidden max-w-[1280px] gap-8 md:grid lg:grid-cols-3">
-                {[
-                  ...copy.cards,
-                ].map(([title, desc], index) => (
-                  <FadeInSection key={title}>
-                    <div className="h-full rounded-3xl border border-border bg-card p-7">
-                      <IconBox icon={index === 1 ? 'spark' : index === 2 ? 'users' : 'calculator'} />
-                      <h2 className="mt-5 text-xl font-semibold">{title}</h2>
-                      <p className="mt-4 text-sm leading-7 text-muted-foreground">{desc}</p>
-                    </div>
-                  </FadeInSection>
-                ))}
               </div>
             </section>
 

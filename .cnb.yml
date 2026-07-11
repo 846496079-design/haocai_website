@@ -1,0 +1,21 @@
+main:
+  push:
+    - imports:
+        - https://cnb.cool/jason.cnb/hc/ai/github-sync-secrets/-/blob/main/github-sync.yml
+      stages:
+        - name: 同步主分支到 GitHub
+          script: |
+            set +x
+            cat > /tmp/github-askpass <<'EOF'
+            #!/bin/sh
+            case "$1" in
+              *Username*) echo "x-access-token" ;;
+              *) echo "$GITHUB_TOKEN" ;;
+            esac
+            EOF
+            chmod 700 /tmp/github-askpass
+            export GIT_ASKPASS=/tmp/github-askpass
+            export GIT_TERMINAL_PROMPT=0
+            git push https://github.com/846496079-design/haocai_website.git HEAD:refs/heads/main
+            git push https://github.com/846496079-design/haocai_website.git --tags
+            rm -f /tmp/github-askpass

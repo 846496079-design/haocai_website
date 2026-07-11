@@ -1201,7 +1201,7 @@ export default function OfficialSite({
                 <FadeInSection delay={120}>
                   <div className="rounded-[32px] border border-border bg-card p-5 shadow-[0_24px_70px_rgba(24,36,61,.12)]">
                     <Image
-                      src="/images/brand/haocai-zds-logo-horizontal.png"
+                      src="/images/brand/haocai-zds-logo-horizontal-web.png"
                       alt="好财集团 账大师"
                       width={520}
                       height={124}
@@ -1339,14 +1339,14 @@ export default function OfficialSite({
 
             <FadeInSection delay={120}>
               <div className="relative">
-                <div className="mx-auto max-w-[430px] rounded-[32px] border border-border bg-card p-3 shadow-[0_24px_70px_rgba(24,36,61,.14)]">
+                <div className="-mx-2 max-w-none rounded-[28px] border border-border bg-card p-2 shadow-[0_24px_70px_rgba(24,36,61,.14)] md:mx-auto md:max-w-[430px] md:rounded-[32px] md:p-3">
                   <Image
                     src="/images/product-mobile-dashboard.png"
                     alt="好财账大师移动端 AI 三步智能记账界面"
                     width={922}
                     height={2048}
                     priority
-                    className="h-[440px] w-full rounded-[24px] object-cover object-top md:h-[700px]"
+                    className="h-auto w-full rounded-[24px] md:h-[700px] md:object-cover md:object-top"
                   />
                 </div>
                 <div className="absolute -bottom-5 left-1/2 hidden w-[88%] -translate-x-1/2 rounded-2xl border border-border bg-card/95 p-4 shadow-[0_12px_34px_rgba(24,36,61,.12)] backdrop-blur md:block">
@@ -1811,7 +1811,7 @@ export default function OfficialSite({
               </div>
             </section>
 
-            <section className="px-6 py-20">
+            <section className="company-positioning-section px-6 py-20">
               <div className="mx-auto md:hidden">
                 <MobileDisclosure title={mobileContent.company} actionLabel={mobileContent.expand}>
                   <div className="space-y-3">
@@ -1836,6 +1836,36 @@ export default function OfficialSite({
                     </div>
                   </FadeInSection>
                 ))}
+              </div>
+            </section>
+
+            <section className="bg-card px-6 py-20">
+              <div className="mx-auto max-w-[1280px]">
+                <SectionHeading
+                  eyebrow={site.companyIntro.eyebrow}
+                  title={site.companyIntro.milestoneTitle}
+                  subtitle={site.companyIntro.milestoneSubtitle}
+                />
+                <div className="relative mt-10 md:mt-14">
+                  <div className="absolute left-5 top-4 h-[calc(100%-2rem)] w-px bg-border md:left-0 md:top-7 md:h-px md:w-full" />
+                  <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                    {site.companyIntro.milestones.map((milestone, index) => (
+                      <FadeInSection key={milestone.year} delay={index * 45}>
+                        <article className="relative rounded-3xl border border-border bg-background p-5 shadow-[0_4px_18px_rgba(38,67,104,.05)] md:pt-12">
+                          <span className="absolute -left-1 top-5 flex size-3 rounded-full border-2 border-primary bg-card md:left-5 md:top-5" />
+                          <p className="text-sm font-semibold text-primary">{milestone.year}</p>
+                          <h3 className="mt-2 text-lg font-semibold">{milestone.title}</h3>
+                          <p className="mt-3 text-sm leading-6 text-muted-foreground">{milestone.focus}</p>
+                          <div className="mt-4 rounded-2xl bg-card p-3">
+                            <p className="text-xs font-semibold text-foreground">{site.companyIntro.milestoneCapabilityLabel}</p>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">{milestone.capability}</p>
+                          </div>
+                          <p className="mt-3 text-xs leading-5 text-primary">{milestone.value}</p>
+                        </article>
+                      </FadeInSection>
+                    ))}
+                  </div>
+                </div>
               </div>
             </section>
 

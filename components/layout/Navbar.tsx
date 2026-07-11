@@ -14,11 +14,17 @@ interface NavbarProps {
 
 const siteList = [sites.cn, sites.jp, sites.hk]
 const siteLabel = { cn: '站点', jp: 'サイト', hk: '站點' } as const
+const localizedSiteNames = {
+  cn: { cn: '中国站', jp: '日本站', hk: '香港站' },
+  jp: { cn: '中国サイト', jp: '日本サイト', hk: '香港サイト' },
+  hk: { cn: '中國站', jp: '日本站', hk: '香港站' },
+} as const
 
 export default function Navbar({ site, onTrialClick }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [globalOpen, setGlobalOpen] = useState(false)
   const pathname = usePathname()
+  const currentSiteNames = localizedSiteNames[site.code]
 
   function isCurrentNavItem(href: string) {
     return href === site.path ? pathname === href : pathname.startsWith(href)
@@ -29,7 +35,7 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
       <div className="mx-auto flex h-14 max-w-[1280px] items-center justify-between px-4 md:h-16 md:px-6">
         <a href={site.path} className="flex items-center gap-2">
           <Image
-            src="/images/brand/haocai-zds-logo-horizontal.png"
+            src="/images/brand/haocai-zds-logo-horizontal-web.png"
             alt="好财集团 账大师"
             width={220}
             height={52}
@@ -57,7 +63,7 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
               className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               <Globe className="size-4" />
-              <span>站点</span>
+              <span>{siteLabel[site.code]}</span>
               <ChevronDown className={`size-4 transition-transform ${globalOpen ? 'rotate-180' : ''}`} />
             </button>
             {globalOpen && (
@@ -72,7 +78,7 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
                         : 'text-muted-foreground hover:bg-muted'
                     }`}
                   >
-                    <span>{item.localeName}</span>
+                    <span>{currentSiteNames[item.code]}</span>
                     <span className="text-xs uppercase">{item.code}</span>
                   </a>
                 ))}
@@ -142,7 +148,7 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
                     }`}
                     onClick={() => setMobileOpen(false)}
                   >
-                    <span>{item.localeName}</span>
+                    <span>{currentSiteNames[item.code]}</span>
                     <span className="text-xs uppercase">{item.code}</span>
                   </a>
                 ))}

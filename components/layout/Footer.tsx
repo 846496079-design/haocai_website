@@ -7,6 +7,7 @@ interface FooterProps {
 }
 
 const siteList = [sites.cn, sites.jp, sites.hk]
+const footerActionCopy = { cn: '关于我们', jp: '会社紹介', hk: '關於我們' } as const
 
 const mobileFooterCopy = {
   cn: {
@@ -55,7 +56,7 @@ export default function Footer({ site }: FooterProps) {
       <div className="mx-auto max-w-[1280px] px-5 py-8 lg:px-6 lg:py-14">
         <div className="lg:hidden">
           <Image
-            src="/images/brand/haocai-zds-logo-horizontal.png"
+            src="/images/brand/haocai-zds-logo-horizontal-web.png"
             alt="好财集团 账大师"
             width={240}
             height={56}
@@ -115,7 +116,7 @@ export default function Footer({ site }: FooterProps) {
           <div>
             <div className="flex items-center gap-2">
               <Image
-                src="/images/brand/haocai-zds-logo-horizontal.png"
+                src="/images/brand/haocai-zds-logo-horizontal-web.png"
                 alt="好财集团 账大师"
                 width={240}
                 height={56}
@@ -196,9 +197,7 @@ export default function Footer({ site }: FooterProps) {
         <div className="mt-6 flex flex-col gap-3 border-t border-border pt-5 text-xs text-muted-foreground lg:mt-12 lg:pt-6 lg:flex-row lg:items-center lg:justify-between">
           <p>© 2026 {site.company.name}。页面信息仅用于产品介绍，具体服务以实际开通和双方确认为准。</p>
           <div className="flex gap-5">
-            <span>用户协议</span>
-            <span>隐私政策</span>
-            <span>关于我们</span>
+            <a href={`${site.path}company/`} className="hover:text-foreground">{footerActionCopy[site.code]}</a>
           </div>
         </div>
       </div>

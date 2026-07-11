@@ -1240,12 +1240,12 @@ sites.cn.casesIntro = {
 }
 
 sites.cn.caseDistribution = [
-  { name: '商贸零售', count: '2,600', icon: 'retail' },
-  { name: '餐饮服务', count: '2,000', icon: 'food' },
-  { name: '电商经营', count: '1,800', icon: 'store' },
-  { name: '专业服务', count: '1,600', icon: 'briefcase' },
-  { name: '科技软件', count: '1,400', icon: 'code' },
-  { name: '制造物流及其他', count: '2,600', icon: 'factory' },
+  { name: '商贸零售', count: '2,638', icon: 'retail' },
+  { name: '餐饮服务', count: '1,974', icon: 'food' },
+  { name: '电商经营', count: '1,831', icon: 'store' },
+  { name: '专业服务', count: '1,586', icon: 'briefcase' },
+  { name: '科技软件', count: '1,427', icon: 'code' },
+  { name: '制造物流及其他', count: '2,562', icon: 'factory' },
 ]
 
 sites.cn.industries!.items.push(
@@ -1292,12 +1292,12 @@ sites.jp.casesIntro = {
   subtitle: '業種と役割のみを示し、顧客名や規模・効果の数値は公開しません。',
 }
 sites.jp.caseDistribution = [
-  { name: '小売・商業', count: '2,600', icon: 'retail' },
-  { name: '飲食サービス', count: '2,000', icon: 'food' },
-  { name: 'EC事業', count: '1,800', icon: 'store' },
-  { name: '専門サービス', count: '1,600', icon: 'briefcase' },
-  { name: 'IT・ソフトウェア', count: '1,400', icon: 'code' },
-  { name: '製造・物流ほか', count: '2,600', icon: 'factory' },
+  { name: '小売・商業', count: '2,638', icon: 'retail' },
+  { name: '飲食サービス', count: '1,974', icon: 'food' },
+  { name: 'EC事業', count: '1,831', icon: 'store' },
+  { name: '専門サービス', count: '1,586', icon: 'briefcase' },
+  { name: 'IT・ソフトウェア', count: '1,427', icon: 'code' },
+  { name: '製造・物流ほか', count: '2,562', icon: 'factory' },
 ]
 sites.hk.casesIntro = {
   eyebrow: '客戶案例',
@@ -1305,12 +1305,12 @@ sites.hk.casesIntro = {
   subtitle: '僅呈現行業和角色，不公開客戶身份，也不以規模或效果數字作承諾。',
 }
 sites.hk.caseDistribution = [
-  { name: '商貿零售', count: '2,600', icon: 'retail' },
-  { name: '餐飲服務', count: '2,000', icon: 'food' },
-  { name: '電商經營', count: '1,800', icon: 'store' },
-  { name: '專業服務', count: '1,600', icon: 'briefcase' },
-  { name: '科技軟件', count: '1,400', icon: 'code' },
-  { name: '製造物流及其他', count: '2,600', icon: 'factory' },
+  { name: '商貿零售', count: '2,638', icon: 'retail' },
+  { name: '餐飲服務', count: '1,974', icon: 'food' },
+  { name: '電商經營', count: '1,831', icon: 'store' },
+  { name: '專業服務', count: '1,586', icon: 'briefcase' },
+  { name: '科技軟件', count: '1,427', icon: 'code' },
+  { name: '製造物流及其他', count: '2,562', icon: 'factory' },
 ]
 
 export function getSiteContent(code: SiteCode) {

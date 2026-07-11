@@ -1432,6 +1432,12 @@ export default function OfficialSite({
   function renderCases({ dark = false }: { dark?: boolean } = {}) {
     const cases = site.cases
     if (!cases) return null
+    const distributionTotal = site.caseDistribution?.reduce((total, item) => total + Number(item.count.replace(/,/g, '')), 0) ?? 0
+    const distributionCopy = site.code === 'jp'
+      ? { eyebrow: '利用シーンの内訳', unit: '社', note: `業種別の合計は ${distributionTotal.toLocaleString('ja-JP')} 社です。現在の利用シーンをもとにした累計です。` }
+      : site.code === 'hk'
+        ? { eyebrow: '累計服務規模', unit: '企業', note: `行業分布合計 ${distributionTotal.toLocaleString('zh-HK')} 家，以目前服務場景的累計口徑呈現。` }
+        : { eyebrow: '累计服务规模', unit: '企业', note: `行业分布合计 ${distributionTotal.toLocaleString('zh-CN')} 家，以当前服务场景的累计口径呈现。` }
     return (
       <section className={`px-6 py-20 ${dark ? 'bg-card' : ''}`}>
         <div className="mx-auto max-w-[1280px]">
@@ -1439,10 +1445,10 @@ export default function OfficialSite({
             <div className="rounded-[28px] border border-primary/20 bg-[#eef2ff] p-5 shadow-[0_16px_40px_rgba(79,123,255,.10)] md:p-6">
               <div className="flex flex-wrap items-end justify-between gap-3 border-b border-primary/15 pb-5">
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.14em] text-primary">累计服务规模</p>
-                  <p className="mt-2 text-4xl font-black tracking-tight text-foreground">12,000+ <span className="text-base font-medium text-muted-foreground">企业</span></p>
+                  <p className="text-xs font-semibold tracking-[0.14em] text-primary">{distributionCopy.eyebrow}</p>
+                  <p className="mt-2 text-4xl font-black tracking-tight text-foreground">{distributionTotal.toLocaleString(site.code === 'jp' ? 'ja-JP' : site.code === 'hk' ? 'zh-HK' : 'zh-CN')} <span className="text-base font-medium text-muted-foreground">{distributionCopy.unit}</span></p>
                 </div>
-                <p className="max-w-md text-xs leading-5 text-muted-foreground">行业分布合计 12,000 家，以当前服务场景的累计口径呈现。</p>
+                <p className="max-w-md text-xs leading-5 text-muted-foreground">{distributionCopy.note}</p>
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
                 {site.caseDistribution.map((item) => (

@@ -9,8 +9,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: '好财账大师 · AI 财税工作台',
-  description: '好财账大师面向中小企业和代账场景，围绕工资、发票、银行流水、数据核对和申报资料生成，提供 360 元/年的 AI 财税流程化工作台。',
+  title: '账大师 · 360 元 AI 记账，一天一块钱',
+  description: '账大师面向中小企业和代账场景，用 AI 把工资、发票、银行流水自动整理成做账材料，生成税额测算、报表和待办提醒。360 元/年，一天一块钱，把公司账管明白。',
   icons: {
     icon: [
       { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },

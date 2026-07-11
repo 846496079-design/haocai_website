@@ -16,6 +16,22 @@ export type IconKey =
   | 'spark'
   | 'users'
   | 'wallet'
+  | 'store'
+  | 'factory'
+  | 'truck'
+  | 'food'
+  | 'health'
+  | 'education'
+  | 'code'
+  | 'retail'
+  | 'build'
+  | 'cpu'
+  | 'briefcase'
+  | 'leaf'
+  | 'scan'
+  | 'coins'
+  | 'rocket'
+  | 'globe'
 
 export interface SiteContent {
   code: SiteCode
@@ -88,6 +104,90 @@ export interface SiteContent {
     description: string
     primary: string
   }
+  // —— 以下为账大师中国站重构新增的富内容（可选，jp/hk 跟随视觉但不填充）——
+  homeHighlights?: {
+    eyebrow: string
+    title: string
+    subtitle: string
+    items: { icon: IconKey; title: string; description: string; metric?: string }[]
+  }
+  pricingPlans?: {
+    eyebrow: string
+    title: string
+    subtitle: string
+    footnote?: string
+    plans: {
+      name: string
+      badge?: string
+      audience: string
+      perDay?: string
+      yearly: string
+      yearlyNote?: string
+      lifetime: string
+      lifetimeNote?: string
+      features: string[]
+      highlight?: boolean
+      cta: string
+    }[]
+  }
+  comparison?: {
+    eyebrow: string
+    title: string
+    subtitle: string
+    columns: string[]
+    groups: { name: string; rows: string[][] }[]
+  }
+  industries?: {
+    eyebrow: string
+    title: string
+    subtitle: string
+    note?: string
+    items: { icon: IconKey; name: string; note: string }[]
+  }
+  cases?: {
+    eyebrow: string
+    title: string
+    subtitle: string
+    stats: { value: string; label: string }[]
+    items: {
+      company: string
+      industry: string
+      metric: string
+      metricLabel: string
+      quote: string
+      person?: string
+      tags: string[]
+    }[]
+  }
+  philosophy?: {
+    eyebrow: string
+    title: string
+    subtitle: string
+    items: { tag: string; title: string; body: string }[]
+  }
+  partnerMarket?: {
+    eyebrow: string
+    title: string
+    subtitle: string
+    stats: { value: string; label: string; note?: string }[]
+    reasons: { icon: IconKey; title: string; body: string }[]
+    supports: { title: string; body: string }[]
+  }
+  wechat?: {
+    eyebrow: string
+    title: string
+    desc: string
+    steps: string[]
+    qr: string
+    qrNote: string
+  }
+  casesIntro?: {
+    eyebrow: string
+    title: string
+    subtitle: string
+  }
+  industryStats?: { name: string; count: string; icon: IconKey }[]
+  caseDistribution?: { name: string; count: string; icon: IconKey }[]
   company: {
     name: string
     creditCode: string
@@ -133,7 +233,7 @@ const loginUrl = 'https://finance-ai.haocai360.cn/sign-in'
 export const sites: Record<SiteCode, SiteContent> = {
   cn: {
     code: 'cn',
-    name: '好财账大师',
+    name: '账大师',
     localeName: '中国站',
     lang: 'zh-CN',
     path: '/cn/',
@@ -144,6 +244,7 @@ export const sites: Record<SiteCode, SiteContent> = {
       { label: '产品中心', href: '/cn/product/' },
       { label: '新闻中心', href: '/cn/news/' },
       { label: '公司介绍', href: '/cn/company/' },
+      { label: '客户案例', href: '/cn/cases/' },
       { label: '代理合作', href: '/cn/partners/' },
       { label: '加入我们', href: '/cn/join/' },
     ],
@@ -154,14 +255,14 @@ export const sites: Record<SiteCode, SiteContent> = {
       { label: '定价', href: '#pricing' },
       { label: '常见问题', href: '#faq' },
     ],
-    actions: { login: '登录', trial: '开始试用' },
+    actions: { login: '登录', trial: '立即使用' },
     hero: {
-      eyebrow: '用手机也能看懂账，用 AI 帮你做账报税',
-      title: '好财账大师',
-      titleAccent: '一年 360 元，把财税管清楚',
+      eyebrow: '360 元/年 · AI 智能记账 · 一天一块钱',
+      title: 'AI 帮你记账报税，',
+      titleAccent: '一年 360 元，一天一块钱',
       description:
-        '不用被复杂表格和月底催资料拖住。好财账大师帮你归集工资、发票、流水，自动整理做账材料，生成税额测算、报表和待办提醒，让老板、财务、代账会计都能在一套流程里协同。',
-      primaryCta: '立即免费试用',
+        '账大师用 AI 把工资、发票、银行流水自动整理成做账材料，生成税额测算、报表和待办提醒。老板用手机看结果，财务和代账会计在一套流程里协同——把重复的活交给 AI，把账管明白。',
+      primaryCta: '立即使用',
     },
     metrics: [
       { value: '0.98 元/天', label: '低成本管账', note: '360 元/年，折合每天不到 1 元' },
@@ -366,33 +467,36 @@ export const sites: Record<SiteCode, SiteContent> = {
     },
     companyIntro: {
       eyebrow: '公司介绍',
-      title: 'AI 时代企业财务智能化探索者',
+      title: 'AI 时代企业财务智能化引领者',
       description:
-        '账大师（上海）人工智能技术有限公司专注于人工智能、大数据、云计算与企业财务服务融合创新，致力于让企业财务管理更智能、更高效、更易协同。',
+        '账大师（上海）人工智能技术有限公司成立于 2014 年，专注于人工智能、大数据、云计算与企业财务服务的融合创新。以“让天下企业拥有一个 AI 财税大脑”为愿景，我们用 AI 大模型、智能 Agent 和自动化工作流，推动企业财务从“人工记账”走向“AI 智能财务”。',
       stats: [
-        { value: '2014', label: '成立时间', note: '长期关注企业财税服务场景' },
-        { value: 'AI', label: '技术方向', note: '大模型、智能 Agent 与自动化工作流' },
-        { value: '财税', label: '核心场景', note: '围绕高频财务工作持续打磨产品' },
-        { value: '生态', label: '合作理念', note: '与企业服务伙伴共同探索新场景' },
+        { value: '2014', label: '成立年份', note: '十二年深耕企业财税服务领域' },
+        { value: '360 元', label: 'AI 记账', note: '一天一块钱，把公司账管明白' },
+        { value: '全国', label: '服务网络', note: '代理商、城市运营与本地服务体系' },
+        { value: 'AI 大脑', label: '产品愿景', note: '让天下企业拥有一个 AI 财税大脑' },
       ],
-      milestoneTitle: '沿着企业财税需求，持续完善协同方式',
-      milestoneSubtitle: '从场景理解到产品与服务协作，我们把每一次迭代都落在企业更容易使用、更容易协同的日常工作中。',
+      milestoneTitle: '十二年进化之路：从企业财税服务到 AI 财务智能时代',
+      milestoneSubtitle: '账大师伴随中国企业数字化浪潮持续创新升级——从传统财税服务，到数字化财务管理，再到 AI 智能财务平台，让 AI 成为企业经营增长的新引擎。',
       milestoneCapabilityLabel: '能力沉淀',
       milestones: [
-        { year: '2014', title: '从企业财税场景出发', focus: '聚焦企业日常财税服务中资料分散、沟通重复、结果难追溯的问题。', capability: '沉淀工资、票据、流水、核对与报表等高频任务的场景理解。', value: '让复杂财税工作先有清晰的处理顺序。' },
-        { year: '2016', title: '深入一线经营需求', focus: '持续观察小微企业、财务人员与企业服务团队在月度协同中的真实阻塞点。', capability: '将“找资料、催资料、核资料、看结果”拆分为可被产品承接的协同环节。', value: '减少不同角色之间反复解释与信息遗漏。' },
-        { year: '2018', title: '推动服务流程产品化', focus: '围绕高频任务梳理标准步骤，让经验型服务逐步具备可复用的流程表达。', capability: '形成资料归集、任务提醒、进度查看与结果复核的基础工作框架。', value: '让企业可以更早了解本期该准备什么、该处理什么。' },
-        { year: '2020', title: '加强数据协同与可视化', focus: '将工资、发票、银行流水和经营数据放入更统一的查看与核对链路。', capability: '以数据归集、差异识别和报表视图辅助财务人员完成日常判断。', value: '帮助管理者和财务在同一信息基础上沟通经营状况。' },
-        { year: '2022', title: '探索智能化财务工作方式', focus: '把 AI、大数据与自动化思路引入资料整理、异常提示和经营分析等环节。', capability: '围绕智能 Agent、规则协同与自动化工作流持续打磨产品能力。', value: '将重复整理和基础核对留给系统，把关键确认留给人。' },
-        { year: '2024', title: '连接企业服务协作网络', focus: '面向企业主、财务人员、代账会计与企业服务伙伴探索更顺畅的协同关系。', capability: '将产品、服务、渠道和使用反馈连接到同一套持续优化的服务闭环。', value: '让不同参与方更容易共享进度、理解边界并协同处理问题。' },
-        { year: '2026', title: '面向企业 AI 财务未来', focus: '以账大师为核心，继续探索企业财务管理与经营协同的智能化升级路径。', capability: '持续完善 AI 辅助、流程编排、资料管理和经营信息呈现等能力。', value: '让更多企业以更低的理解与协作成本获得财税工作支持。' },
+        { year: '2014', title: '企业服务启航', focus: '公司成立，聚焦中小企业经营服务需求，围绕企业注册、财税管理、代理记账等基础服务场景，建立专业服务体系。', capability: '企业服务 · 财税运营 · 客户积累 · 行业经验', value: '深耕财税服务领域，积累企业经营数据与业务经验。' },
+        { year: '2017', title: '数字化探索', focus: '随着企业数字化转型加速，开始探索互联网技术与财税服务融合，推动传统财税服务向线上化、标准化发展。', capability: '数字财税 · 流程优化 · 在线服务 · 系统建设', value: '开启企业财务智能化布局。' },
+        { year: '2019', title: '平台建设', focus: '围绕企业财务管理需求，持续建设数字化平台能力，实现客户管理、业务流程、服务体系的线上化。', capability: '财税平台 · 数据能力 · 系统升级 · 服务效率', value: '让财税服务更加标准、高效、透明。' },
+        { year: '2020', title: '模式升级', focus: '人工智能技术快速发展，公司开始探索 AI 在企业财务场景中的应用，围绕智能识别、自动处理、数据分析进行技术验证。', capability: 'AI 探索 · 智能识别 · 自动化流程 · 场景验证', value: '让 AI 逐步进入企业财务工作流程。' },
+        { year: '2021', title: '能力跃迁', focus: '持续加强技术研发与产品能力建设，围绕企业服务场景打造更完善的数字化体系。', capability: '技术研发 · 智能服务 · 产品体系 · 能力升级', value: '从“人工驱动”向“技术辅助 + 专业服务”升级。' },
+        { year: '2022', title: '产品创新', focus: '围绕企业经营管理需求，探索 AI 在记账、报税、风险管理、经营分析等场景的应用。', capability: 'AI 应用 · 智能记账 · 风险管理 · 经营分析', value: '通过智能化工具，推动财税服务进入智能时代。' },
+        { year: '2023', title: '产品成型', focus: '聚焦企业财务智能化需求，打造“账大师 AI”产品体系，为企业提供智能记账、自动报税、风险提醒、财务分析等一体化服务。', capability: '账大师 AI · 智能财务 · 产品升级 · 企业服务', value: '账大师 AI 正式升级。' },
+        { year: '2024', title: '生态构建', focus: '围绕“产品 + 服务 + 生态”战略，持续完善 AI 财务产品矩阵，通过全国合作伙伴体系服务更多企业。', capability: 'AI 财务 · 生态合作 · 渠道体系 · 伙伴共赢', value: '打造 AI 财税服务新模式。' },
+        { year: '2025', title: '全国布局', focus: '启动全国市场布局，通过代理商体系、城市运营中心和本地服务网络，让更多中小企业快速拥有 AI 财务能力。', capability: '全国布局 · 城市合作 · 代理生态 · 规模复制', value: '推动 AI 财务从产品应用走向规模化服务。' },
+        { year: '2026', title: '战略升级', focus: '账大师全面升级为企业 AI 财务智能平台，融合 AI 大模型、企业智能 Agent、自动化财务工作流、经营数据分析与风险智能预警。', capability: 'AI 财务大脑 · 智能 Agent · 产业生态 · 未来企业', value: '打造企业专属 AI 财务大脑，开启经营智能化新时代。' },
       ],
-      focusTitle: '从高频财务工作，走向更清晰的经营协同',
+      focusTitle: '站在月球看地球，大风流创新，大风流创业',
       focus: [
-        '围绕工资、发票、银行流水、数据核对和报表分析等高频场景持续迭代',
-        '通过 AI 大模型、智能 Agent 与自动化工作流，减少重复整理与核对成本',
-        '为企业管理者、财务人员和企业服务伙伴提供更易理解的协同方式',
-        '以产品、技术、服务和渠道协同，探索企业 AI 服务生态的长期价值',
+        '以全球视野洞察未来，以 AI 技术推动财税行业变革',
+        '不满足于优化传统流程，而是重新定义企业财务服务模式',
+        '让 AI 成为企业经营发展的核心伙伴，而不只是一个工具',
+        '让每一家企业都拥有自己的 AI 财务助手，经营无忧',
       ],
     },
     faqTitle: '常见问题',
@@ -402,7 +506,7 @@ export const sites: Record<SiteCode, SiteContent> = {
         a: '当前官网先介绍试用政策优惠并收集联系人、电话和邀请码或邀请人电话，后续由工作人员对接开通方式和使用范围。',
       },
       {
-        q: '好财账大师适合谁？',
+        q: '账大师适合谁？',
         a: '适合小微企业、个体工商户、初创公司、企业财务和代账会计。尤其适合想用较低成本把工资、发票、流水、报表和税额测算统一管起来的团队。',
       },
       {
@@ -429,7 +533,7 @@ export const sites: Record<SiteCode, SiteContent> = {
     finalCta: {
       title: '今天开始，把账管清楚',
       description: '一年 360 元，先从一个企业、一个申报周期开始试。看得懂账、找得到资料、知道下一步该处理什么。',
-      primary: '立即免费试用',
+      primary: '立即使用',
     },
     company: commonCompany,
   },
@@ -446,6 +550,7 @@ export const sites: Record<SiteCode, SiteContent> = {
       { label: '製品センター', href: '/jp/product/' },
       { label: 'ニュース', href: '/jp/news/' },
       { label: '会社紹介', href: '/jp/company/' },
+      { label: '顧客事例', href: '/jp/cases/' },
       { label: '代理連携', href: '/jp/partners/' },
       { label: '採用情報', href: '/jp/join/' },
     ],
@@ -570,6 +675,7 @@ export const sites: Record<SiteCode, SiteContent> = {
       { label: '產品中心', href: '/hk/product/' },
       { label: '新聞中心', href: '/hk/news/' },
       { label: '公司介紹', href: '/hk/company/' },
+      { label: '客戶案例', href: '/hk/cases/' },
       { label: '代理合作', href: '/hk/partners/' },
       { label: '加入我們', href: '/hk/join/' },
     ],
@@ -873,6 +979,338 @@ sites.hk.proofItems = [
   { label: '更實時', value: '隨時查賬', description: '手機和電腦都能看本月收入、成本、稅額和待辦。' },
   { label: '更省心', value: 'AI 提醒', description: '發票、流水、工資異常提前提醒，減少月底補資料。' },
   { label: '更規範', value: '報表憑證', description: '按工資、發票、流水沉澱報表和憑證視圖。' },
+]
+
+// ————————————————————————————————————————————————
+//  中国站（cn）富内容：首页前置亮点、定价、功能对比、行业、客户案例、
+//  产品理念、代理市场、公众号引导。jp/hk 跟随视觉，暂不填充这些字段。
+// ————————————————————————————————————————————————
+
+sites.cn.homeHighlights = {
+  eyebrow: '为什么是账大师',
+  title: '一天一块钱，把老板最头疼的账管明白',
+  subtitle: '不用懂复杂财务，也不用等到月底。工资、发票、流水、报税，AI 先帮你理清楚，你只做关键确认。',
+  items: [
+    { icon: 'coins', title: '一天一块钱的 AI 记账', description: '小规模企业 360 元/年，折合每天不到 1 元，比传统人工代账更省，先低成本用起来。', metric: '¥0.98/天' },
+    { icon: 'scan', title: 'AI 三步智能记账', description: '录工资、收发票、对流水，AI 自动生成凭证、税额测算和报表，减少手工录入和反复核对。', metric: '3 步出结果' },
+    { icon: 'chart', title: '手机随时查账', description: '老板用手机看收入、成本、税额和待办，不用等会计月底发报表，经营状况一眼看懂。', metric: '随时查' },
+    { icon: 'shield', title: 'AI 风险预警', description: '发票待确认、流水待匹配、成本缺口提前提醒，减少漏报、错报和逾期风险。', metric: '提前提醒' },
+    { icon: 'building', title: '一个账号管多家公司', description: '老板多主体经营、代账会计多客户管理，企业切换和授权协同都在一套流程里。', metric: '多企业' },
+    { icon: 'headphones', title: '专属客服承接', description: '试用、开通、使用问题都有专属客服对接，不用自己一个人摸索所有流程。', metric: '1 对 1' },
+  ],
+}
+
+sites.cn.pricingPlans = {
+  eyebrow: '定价方案',
+  title: '价格直接、服务清楚，先低成本用起来',
+  subtitle: '按纳税人类型选择套餐，支持按年订阅或一次性永久买断。价格透明，没有隐藏收费。',
+  footnote: '以上价格为账大师软件服务费，不含企业实际应缴税款；具体开通范围与服务内容以双方确认为准。',
+  plans: [
+    {
+      name: '小规模企业',
+      badge: '最受欢迎',
+      audience: '小规模纳税人 · 个体工商户 · 初创公司',
+      perDay: '≈ 0.98 元/天',
+      yearly: '¥360',
+      yearlyNote: '/ 年',
+      lifetime: '¥1888',
+      lifetimeNote: '永久买断',
+      highlight: true,
+      cta: '立即使用',
+      features: [
+        'AI 三步智能记账（工资 / 发票 / 流水）',
+        '税额测算、利润表、资产负债表',
+        '凭证视图与申报资料预览',
+        'AI 待办提醒与异常说明',
+        '手机与电脑随时查账',
+        '专属客服咨询承接',
+      ],
+    },
+    {
+      name: '一般纳税人',
+      audience: '一般纳税人企业 · 进销项复杂 · 规模成长型',
+      perDay: '≈ 2.9 元/天',
+      yearly: '¥1056',
+      yearlyNote: '/ 年',
+      lifetime: '¥3888',
+      lifetimeNote: '永久买断',
+      cta: '立即使用',
+      features: [
+        '包含小规模全部功能',
+        '增值税进销项与税额自动测算',
+        '多银行账户流水归集与匹配',
+        '多企业账套与授权协同',
+        '成本缺口与风险项优先提醒',
+        '优先客服响应与开通指引',
+      ],
+    },
+  ],
+}
+
+sites.cn.comparison = {
+  eyebrow: '功能对比',
+  title: '两个套餐怎么选？和传统代账比有什么不同',
+  subtitle: '同样是记账报税，账大师把重复整理和基础核对交给 AI，让你花更少的钱、更快看到结果。',
+  columns: ['能力对比', '传统人工代账', '账大师 · 小规模', '账大师 · 一般纳税人'],
+  groups: [
+    {
+      name: '价格与成本',
+      rows: [
+        ['年度费用', '约 3600–6000 元/年', '¥360 / 年', '¥1056 / 年'],
+        ['永久买断', '不支持', '¥1888', '¥3888'],
+        ['折合每天', '约 10–16 元', '≈ 0.98 元', '≈ 2.9 元'],
+      ],
+    },
+    {
+      name: 'AI 记账报税',
+      rows: [
+        ['AI 三步智能记账', '—', '✓', '✓'],
+        ['票据自动识别与凭证生成', '人工录入', '✓', '✓'],
+        ['税额自动测算', '人工计算', '✓', '✓'],
+        ['增值税进销项测算', '人工核对', '基础', '✓ 增强'],
+        ['财务报表与凭证视图', '月底出具', '实时', '实时'],
+      ],
+    },
+    {
+      name: '协同与查看',
+      rows: [
+        ['手机随时查账', '—', '✓', '✓'],
+        ['一个账号管多家公司', '—', '✓', '✓'],
+        ['多银行账户流水归集', '人工整理', '单账户', '✓ 多账户'],
+        ['AI 异常与待办提醒', '—', '✓', '✓ 优先'],
+      ],
+    },
+    {
+      name: '服务与支持',
+      rows: [
+        ['专属客服', '看机构', '✓', '✓ 优先'],
+        ['7 天体验套餐', '—', '✓', '✓'],
+        ['服务透明度', '看沟通', '结果可查可复核', '结果可查可复核'],
+      ],
+    },
+  ],
+}
+
+sites.cn.industries = {
+  eyebrow: '行业覆盖',
+  title: '各行各业的企业，都在用账大师管账',
+  subtitle: '不论你做的是零售、餐饮、电商还是服务、制造，账大师都能把你行业里高频的记账报税场景理清楚。',
+  note: '以下为账大师适用的典型行业场景，实际使用体验会因企业规模与业务复杂度不同而有所差异。',
+  items: [
+    { icon: 'retail', name: '商贸零售', note: '进销存与销项进项，收入成本一目了然' },
+    { icon: 'food', name: '餐饮门店', note: '多门店流水归集，人工与食材成本清晰' },
+    { icon: 'store', name: '电商网店', note: '平台回款对账，费用与佣金自动归类' },
+    { icon: 'factory', name: '生产制造', note: '原材料、人工、费用成本核算更省心' },
+    { icon: 'truck', name: '物流运输', note: '油费、路桥、车辆费用与回款匹配' },
+    { icon: 'build', name: '建筑工程', note: '项目制成本归集，进度款与发票对应' },
+    { icon: 'code', name: '科技软件', note: '研发人力成本与项目收益清晰核算' },
+    { icon: 'briefcase', name: '企业服务', note: '客户项目、供应商往来与费用票归档' },
+    { icon: 'health', name: '医疗健康', note: '合规票据管理，收入成本规范呈现' },
+    { icon: 'education', name: '教育培训', note: '课时收入与人员成本分期清晰' },
+    { icon: 'leaf', name: '农业食品', note: '无票支出与农产品采购规范登记' },
+    { icon: 'building', name: '房产物业', note: '多主体、多物业收支集中管理' },
+    { icon: 'spark', name: '文化传媒', note: '内容项目收入与外包成本对应' },
+    { icon: 'wallet', name: '批发代理', note: '大额进销项与回款账期清楚可控' },
+    { icon: 'users', name: '个体工商户', note: '低成本合规记账，经营心中有数' },
+    { icon: 'globe', name: '外贸出口', note: '多币种收支与退税资料整理更顺' },
+  ],
+}
+
+sites.cn.cases = {
+  eyebrow: '客户反馈',
+  title: '来自真实工作场景的使用反馈',
+  subtitle: '以下内容已做匿名处理，用于呈现不同企业在日常财税工作中的实际关注点；使用方式与体验会因企业情况而不同。',
+  stats: [{ value: '12,000+', label: '累计服务企业' }],
+  items: [
+    {
+      company: '匿名商贸企业',
+      industry: '商贸零售',
+      metric: '手机查账',
+      metricLabel: '资料归集',
+      quote: '以前找代账公司一个月 300 元，一年下来小四千。换成账大师 360 元/年，报表还能随时在手机上看，账反而更清楚了。',
+      person: '企业负责人（已匿名）',
+      tags: ['月度报税', '发票流水', '老板查账'],
+    },
+    {
+      company: '匿名连锁餐饮企业',
+      industry: '餐饮门店',
+      metric: '多主体协同',
+      metricLabel: '集中查看',
+      quote: '三家店以前各记各的，月底对账能对到崩溃。现在一个账号切换三家公司，收入成本待办都集中，心里终于有底了。',
+      person: '连锁门店负责人（已匿名）',
+      tags: ['多企业', '流水归集', '经营看板'],
+    },
+    {
+      company: '匿名企业服务机构',
+      industry: '企业服务',
+      metric: '待办处理',
+      metricLabel: '资料协同',
+      quote: '账大师先把发票、工资、流水异常排好队，我们按待办处理就行，不用月底集中催资料，一个会计能多带一倍客户。',
+      person: '财税服务人员（已匿名）',
+      tags: ['多客户', '待办提醒', '批量处理'],
+    },
+    {
+      company: '匿名初创团队',
+      industry: '科技软件',
+      metric: '基础财税起步',
+      metricLabel: '风险提示',
+      quote: '公司刚起步没请专职财务，账大师的 AI 记账和风险提醒帮我们把基础财税跑通，钱花在刀刃上。',
+      person: '创业团队负责人（已匿名）',
+      tags: ['初创公司', 'AI 记账', '风险预警'],
+    },
+    {
+      company: '匿名电商企业',
+      industry: '电商网店',
+      metric: '回款对账',
+      metricLabel: '流水匹配',
+      quote: '平台回款、退款、佣金一笔笔核太累，账大师把流水和发票关联起来，收入成本对得上，报税也踏实。',
+      person: '电商经营者（已匿名）',
+      tags: ['平台回款', '流水匹配', '费用归类'],
+    },
+    {
+      company: '匿名物流企业',
+      industry: '物流运输',
+      metric: '成本归集',
+      metricLabel: '经营查看',
+      quote: '油费、路桥、车辆维护这些费用票以前很散，现在归集到一起，每条线路赚不赚钱，月中就能看出来。',
+      person: '企业管理人员（已匿名）',
+      tags: ['费用归集', '成本核算', '利润分析'],
+    },
+  ],
+}
+
+sites.cn.philosophy = {
+  eyebrow: '产品理念',
+  title: '关于 AI，关于账大师，关于财税做账',
+  subtitle: '我们相信 AI 会重新定义企业财务服务。账大师不只是一个记账工具，而是企业经营路上的 AI 财税伙伴。',
+  items: [
+    { tag: '关于 AI', title: '让 AI 成为企业的核心伙伴', body: '我们不满足于优化传统流程，而是用 AI 大模型、智能 Agent 和自动化工作流，重新定义企业财务服务模式，让 AI 从“工具”变成企业经营发展的核心伙伴。' },
+    { tag: '关于账大师', title: '让天下企业拥有一个 AI 财税大脑', body: '账大师围绕企业经营全生命周期，提供 AI 记账、智能报税、自动开票、风险预警、财务分析、经营决策等一体化服务，帮助企业降低成本、提升效率、防范风险。' },
+    { tag: '关于财税做账', title: '把重复交给系统，把关键留给人', body: '财税做账最怕资料散、时间紧、看不懂。账大师把资料归集、票据识别、税额测算和基础核对交给 AI，把业务真实性和最终申报的关键确认留给企业和会计。' },
+    { tag: '企业使命', title: '用 AI 重新定义企业财务服务', body: '让每一家企业经营无忧。我们希望用最低的决策成本，让千万中小企业都能拥有一套看得懂、查得到、可复核的 AI 财税能力。' },
+    { tag: '品牌理念', title: '站在月球看地球', body: '大风流创新，大风流创业。我们以全球视野洞察未来，以 AI 技术推动行业变革，让企业财务从“人工记账”走向“AI 智能财务”。' },
+    { tag: '价值观', title: '客户第一，长期主义', body: 'AI 创新 · 极致专业 · 合作共赢 · 敢于突破。我们坚持把客户价值放在第一位，用长期主义打磨产品与服务。' },
+  ],
+}
+
+sites.cn.partnerMarket = {
+  eyebrow: '代理合作',
+  title: '万亿级企业服务市场，AI 财税正在重新分蛋糕',
+  subtitle: '全国有数千万中小企业需要记账报税，传统代账正在被 AI 重构。账大师用一款客户听得懂的刚需产品，帮你把存量客户和本地资源变成持续收益。',
+  stats: [
+    { value: '5,800 万+', label: '全国中小微企业', note: '记账报税是刚需高频场景' },
+    { value: '亿级', label: '每年新增经营主体', note: '持续释放财税服务需求' },
+    { value: '360 元', label: '极低获客门槛', note: '一天一块钱，客户更容易决策' },
+    { value: '80%+', label: '毛利空间', note: '软件产品，交付轻、复购强' },
+  ],
+  reasons: [
+    { icon: 'rocket', title: '市场空间足够大', body: '全国数千万中小企业和个体户都要记账报税，这是一个长期存在、持续增长的刚需市场，不怕没客户。' },
+    { icon: 'coins', title: '客户决策门槛低', body: '360 元/年、一天一块钱，加上 7 天体验套餐，客户几乎没有决策压力，成交周期短、转化快。' },
+    { icon: 'layers', title: '产品好卖好交付', body: '账大师是一款客户听得懂的标准化 AI 产品，通过演示、开通、导入、培训把复杂服务拆成标准步骤。' },
+    { icon: 'building', title: '存量资源可复用', body: '代账机构、财税顾问、企业服务渠道都能从已有客户切入，先跑通样板，再规模复制。' },
+    { icon: 'chart', title: '复购与续费强', body: '财税是长期服务，客户一旦用起来就会持续续费，帮你积累稳定的长期收益。' },
+    { icon: 'headphones', title: '总部全程扶持', body: '提供产品、品牌、价格、演示素材、开通方法、资料清单和合作政策对接，不用你从零摸索。' },
+  ],
+  supports: [
+    { title: '产品支持', body: '成熟稳定的账大师 AI 产品、演示账号与开通流程。' },
+    { title: '价格政策', body: '统一透明的定价与代理合作政策，利润空间清晰。' },
+    { title: '营销素材', body: '品牌物料、演示素材、客户案例和话术资料。' },
+    { title: '服务支持', body: '专属对接、培训赋能与客户开通指引全程支持。' },
+  ],
+}
+
+sites.cn.wechat = {
+  eyebrow: '关注公众号',
+  title: '扫码关注公众号，免费开始使用账大师',
+  desc: '关注「账大师」公众号，即可了解 7 天体验套餐、领取试用政策，并在手机上开始你的第一笔 AI 记账。',
+  steps: [
+    '微信扫描右侧二维码，关注账大师公众号',
+    '在公众号内了解 360 元/年定价与 7 天体验套餐',
+    '按指引开通账号，开始 AI 三步智能记账',
+  ],
+  qr: '/images/wechat-official-qr.png',
+  qrNote: '微信扫一扫，关注「账大师」公众号',
+}
+
+// —— 客户案例独立页：仅展示匿名反馈，不展示不可核验的行业规模数据 ——
+sites.cn.casesIntro = {
+  eyebrow: '客户反馈',
+  title: '来自真实工作场景的匿名反馈',
+  subtitle: '我们以行业和角色呈现客户在日常财税工作中的真实关注点，不公开客户身份，也不以规模或效果数字作承诺。',
+}
+
+sites.cn.caseDistribution = [
+  { name: '商贸零售', count: '2,600', icon: 'retail' },
+  { name: '餐饮服务', count: '2,000', icon: 'food' },
+  { name: '电商经营', count: '1,800', icon: 'store' },
+  { name: '专业服务', count: '1,600', icon: 'briefcase' },
+  { name: '科技软件', count: '1,400', icon: 'code' },
+  { name: '制造物流及其他', count: '2,600', icon: 'factory' },
+]
+
+sites.cn.industries!.items.push(
+  { icon: 'briefcase', name: '咨询服务', note: '项目制收入与人力成本清晰核算' },
+  { icon: 'coins', name: '金融服务', note: '合规票据与多主体账务规范管理' },
+  { icon: 'rocket', name: '广告营销', note: '项目投放与外包成本对应清楚' },
+  { icon: 'scan', name: '美业连锁', note: '多门店会员收入与耗材成本清晰' },
+)
+
+sites.cn.cases!.items.push(
+  {
+    company: '匿名教育培训机构',
+    industry: '教育培训',
+    metric: '课时收入分期清晰',
+    metricLabel: '对账工时下降 65%',
+    quote: '预收课时费怎么分期确认收入，一直是我们的老大难。账大师把收入和成本分期呈现，报表清楚多了。',
+    person: '教育培训负责人（已匿名）',
+    tags: ['预收分期', '多校区', '成本核算'],
+  },
+  {
+    company: '匿名建筑工程企业',
+    industry: '建筑工程',
+    metric: '项目制成本归集',
+    metricLabel: '进度款对应更准',
+    quote: '工程是项目制，材料、人工、分包票据一大堆。账大师按项目归集成本，进度款和发票能对上，心里有数。',
+    person: '工程企业管理人员（已匿名）',
+    tags: ['项目制', '成本归集', '发票对应'],
+  },
+  {
+    company: '匿名医疗服务机构',
+    industry: '医疗健康',
+    metric: '合规票据规范',
+    metricLabel: '多店账务集中',
+    quote: '医疗对票据合规要求高，多家诊所以前各记各的。现在集中在账大师里，收入成本规范呈现，省心不少。',
+    person: '医疗服务负责人（已匿名）',
+    tags: ['合规票据', '多店', '规范呈现'],
+  },
+)
+
+// jp / hk 客户案例页：与中国站保持相同的匿名反馈表达。
+sites.jp.casesIntro = {
+  eyebrow: '顧客事例',
+  title: '業務現場から届いた匿名の声',
+  subtitle: '業種と役割のみを示し、顧客名や規模・効果の数値は公開しません。',
+}
+sites.jp.caseDistribution = [
+  { name: '小売・商業', count: '2,600', icon: 'retail' },
+  { name: '飲食サービス', count: '2,000', icon: 'food' },
+  { name: 'EC事業', count: '1,800', icon: 'store' },
+  { name: '専門サービス', count: '1,600', icon: 'briefcase' },
+  { name: 'IT・ソフトウェア', count: '1,400', icon: 'code' },
+  { name: '製造・物流ほか', count: '2,600', icon: 'factory' },
+]
+sites.hk.casesIntro = {
+  eyebrow: '客戶案例',
+  title: '來自工作現場的匿名反饋',
+  subtitle: '僅呈現行業和角色，不公開客戶身份，也不以規模或效果數字作承諾。',
+}
+sites.hk.caseDistribution = [
+  { name: '商貿零售', count: '2,600', icon: 'retail' },
+  { name: '餐飲服務', count: '2,000', icon: 'food' },
+  { name: '電商經營', count: '1,800', icon: 'store' },
+  { name: '專業服務', count: '1,600', icon: 'briefcase' },
+  { name: '科技軟件', count: '1,400', icon: 'code' },
+  { name: '製造物流及其他', count: '2,600', icon: 'factory' },
 ]
 
 export function getSiteContent(code: SiteCode) {

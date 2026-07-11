@@ -79,8 +79,8 @@
   /* 品牌色 */
   --primary: #5b6cff;
   --primary-foreground: #ffffff;
-  --brand-from: #4f7bff; /* 渐变起始 */
-  --brand-to: #6c5cff; /* 渐变结束 */
+  --brand-from: #4f7bff;
+  --brand-to: #6c5cff;
 
   /* 浅品牌 / 悬停面 */
   --secondary: #f3f6ff; /* 悬停背景 */
@@ -106,9 +106,9 @@
 
   /* 图表 */
   --chart-1: #5b6cff;
-  --chart-2: #3b82f6;
-  --chart-3: #22c55e;
-  --chart-4: #f59e0b;
+  --chart-2: #5c98df;
+  --chart-3: #36aa78;
+  --chart-4: #f7c65b;
   --chart-5: #98a2b3;
 
   --radius: 0.625rem;
@@ -130,6 +130,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at 14% 12%, rgba(79, 123, 255, 0.12), transparent 24rem),
+      radial-gradient(circle at 86% 36%, rgba(108, 92, 255, 0.08), transparent 26rem);
+    background-attachment: fixed;
   }
   html {
     @apply font-sans scroll-smooth;
@@ -160,6 +164,243 @@
 .animate-float-delay { animation: float 6s ease-in-out 2s infinite; }
 .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
 .company-marquee { animation: company-marquee 42s linear infinite; }
+
+/* ————— 科技高光工具类（浅色底 + 渐变/网格/光晕/玻璃） ————— */
+
+/* 渐变网格背景，顶部淡出 */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(79, 123, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(79, 123, 255, 0.07) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 35%, transparent 78%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 35%, transparent 78%);
+}
+
+/* 极光光晕：模糊的品牌色渐变团 */
+.aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: -1;
+}
+.aurora-1 { background: radial-gradient(circle, rgba(79, 123, 255, 0.18), transparent 70%); }
+.aurora-2 { background: radial-gradient(circle, rgba(108, 92, 255, 0.12), transparent 70%); }
+.aurora-3 { background: radial-gradient(circle, rgba(79, 123, 255, 0.09), transparent 70%); }
+.animate-aurora { animation: aurora-drift 16s ease-in-out infinite; }
+.animate-aurora-slow { animation: aurora-drift 24s ease-in-out infinite reverse; }
+
+@keyframes aurora-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -24px) scale(1.12); }
+  66% { transform: translate(-24px, 20px) scale(0.94); }
+}
+
+/* 渐变文字 */
+.text-gradient {
+  background: linear-gradient(120deg, var(--brand-from), var(--brand-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-gradient-anim {
+  background: linear-gradient(120deg, #eef2ff, #4f7bff, #eef2ff);
+  background-size: 260% 260%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-pan 8s ease infinite;
+}
+
+@keyframes gradient-pan {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* 玻璃拟态面板 */
+.glass {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(79, 123, 255, 0.12);
+}
+
+/* 渐变描边卡片 */
+.gradient-border {
+  position: relative;
+  background: var(--card);
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(79, 123, 255, 0.52), rgba(108, 92, 255, 0.08) 45%, transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* 光泽扫过 */
+.animate-shimmer {
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.6) 50%, transparent 70%);
+  background-size: 220% 100%;
+  animation: shimmer 3.4s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -120% 0; }
+}
+
+/* 呼吸光环 */
+.glow-soft { box-shadow: 0 0 0 1px rgba(79, 123, 255, 0.18), 0 24px 70px rgba(79, 123, 255, 0.16); }
+
+/* 数字滚动入场 */
+.animate-count-up { animation: count-up 0.7s ease-out both; }
+
+/* 细滚动条隐藏 */
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* ————— 深色沉浸 / 霓虹科技（更大胆的视觉） ————— */
+
+.hero-dark {
+  background: linear-gradient(180deg, #fbfcff 0%, #f0f4ff 100%);
+}
+
+/* 首页与客户反馈页：单色深石墨科技感，避免蓝紫渐变混搭。 */
+.home-hero {
+  background: linear-gradient(180deg, #fbfcff 0%, #f0f4ff 100%);
+  box-shadow: inset 0 -1px 0 rgba(79, 123, 255, 0.1);
+}
+
+.home-hero,
+.hero-dark {
+  color: var(--foreground) !important;
+}
+
+/* 全站统一的雾白科技页面基调。 */
+.official-main > section {
+  border-color: rgba(79, 123, 255, 0.1);
+}
+
+.official-main .shadow-\[0_24px_60px_rgba\(79\,123\,255\,\.14\)\],
+.official-main .shadow-\[0_18px_54px_rgba\(24\,36\,61\,\.08\)\] {
+  box-shadow: 0 18px 56px rgba(79, 123, 255, 0.1);
+}
+
+.home-hero .grid-dark {
+  background-image:
+    linear-gradient(rgba(79, 123, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 123, 255, 0.07) 1px, transparent 1px);
+}
+
+.official-main {
+  background-image:
+    linear-gradient(rgba(79, 123, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 123, 255, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  animation: tech-grid-drift 30s linear infinite;
+}
+
+@keyframes tech-grid-drift {
+  from { background-position: 0 0; }
+  to { background-position: 56px 56px; }
+}
+
+.grid-dark {
+  background-image:
+    linear-gradient(rgba(79, 123, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 123, 255, 0.08) 1px, transparent 1px);
+  background-size: 50px 50px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 8%, #000 38%, transparent 82%);
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 8%, #000 38%, transparent 82%);
+}
+
+.text-glow { text-shadow: 0 0 24px rgba(79, 123, 255, 0.18); }
+
+.text-gradient-neon {
+  background: linear-gradient(100deg, #4f7bff, #6c5cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 深色区玻璃卡 */
+.glass-dark {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(79, 123, 255, 0.14);
+}
+
+.home-hero [class*="bg-white"],
+.hero-dark [class*="bg-white"] {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+}
+
+.tech-light-orb {
+  position: absolute;
+  width: 18rem;
+  height: 18rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(79, 123, 255, 0.16), transparent 68%);
+  filter: blur(14px);
+  pointer-events: none;
+  animation: tech-light-drift 20s ease-in-out infinite;
+}
+
+@keyframes tech-light-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(28px, -18px, 0) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tech-light-orb,
+  .official-main { animation: none; }
+}
+
+/* 旋转的锥形渐变光环（主 CTA / 二维码） */
+.conic-ring { position: relative; }
+.conic-ring::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from 0deg, #4f7bff, #6c5cff, #4f7bff);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: spin-slow 6s linear infinite;
+}
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+
+/* 扫描线（hero 手机截图上的科技感） */
+.scan-beam { position: relative; overflow: hidden; }
+.scan-beam::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: -40%;
+  height: 40%;
+  background: linear-gradient(180deg, transparent, rgba(79, 123, 255, 0.24), transparent);
+  animation: scan-move 3.6s ease-in-out infinite;
+}
+@keyframes scan-move { 0% { top: -45%; } 100% { top: 105%; } }
+
+/* 霓虹描边药丸 */
+.pill-neon {
+  border: 1px solid rgba(79, 123, 255, 0.36);
+  background: rgba(79, 123, 255, 0.1);
+  box-shadow: inset 0 0 18px rgba(79, 123, 255, 0.08);
+}
+
+/* 数字流光计数 */
+.stat-neon { text-shadow: 0 0 22px rgba(79, 123, 255, 0.2); }
 
 @media (max-width: 767px) {
   .official-main > section {

@@ -8,6 +8,11 @@ interface FooterProps {
 
 const siteList = [sites.cn, sites.jp, sites.hk]
 const footerActionCopy = { cn: '关于我们', jp: '会社紹介', hk: '關於我們' } as const
+const logoSrc = {
+  cn: '/images/brand/official-logo-cn.png',
+  jp: '/images/brand/official-logo-jp.png',
+  hk: '/images/brand/official-logo-hk.png',
+} as const
 
 const mobileFooterCopy = {
   cn: {
@@ -56,11 +61,11 @@ export default function Footer({ site }: FooterProps) {
       <div className="mx-auto max-w-[1280px] px-5 py-8 lg:px-6 lg:py-14">
         <div className="lg:hidden">
           <Image
-            src="/images/brand/haocai-zds-logo-horizontal-web.png"
-            alt="好财集团 账大师"
-            width={240}
-            height={56}
-            className="h-8 w-auto"
+            src={logoSrc[site.code]}
+            alt="账大师"
+            width={720}
+            height={238}
+            className="h-9 w-auto"
           />
           <p className="mt-3 text-sm text-muted-foreground">{mobileCopy.slogan}</p>
 
@@ -116,14 +121,14 @@ export default function Footer({ site }: FooterProps) {
           <div>
             <div className="flex items-center gap-2">
               <Image
-                src="/images/brand/haocai-zds-logo-horizontal-web.png"
-                alt="好财集团 账大师"
-                width={240}
-                height={56}
-                className="h-10 w-auto"
+                src={logoSrc[site.code]}
+                alt="账大师"
+                width={720}
+                height={238}
+                className="h-11 w-auto"
               />
             </div>
-            <p className="mt-3 text-sm text-muted-foreground">让天下企业拥有一个 AI 财务专家</p>
+            <p className="mt-3 text-sm text-muted-foreground">让天下企业拥有一个 AI 财税大脑 · 360 元 AI 记账</p>
             <div className="mt-5 space-y-2 text-sm leading-6 text-muted-foreground">
               <p>企业主体：{site.company.name}</p>
               <p>统一社会信用代码：{site.company.creditCode}</p>

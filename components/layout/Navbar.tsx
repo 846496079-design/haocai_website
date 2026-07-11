@@ -14,6 +14,11 @@ interface NavbarProps {
 
 const siteList = [sites.cn, sites.jp, sites.hk]
 const siteLabel = { cn: '站点', jp: 'サイト', hk: '站點' } as const
+const logoSrc = {
+  cn: '/images/brand/official-logo-cn.png',
+  jp: '/images/brand/official-logo-jp.png',
+  hk: '/images/brand/official-logo-hk.png',
+} as const
 const localizedSiteNames = {
   cn: { cn: '中国站', jp: '日本站', hk: '香港站' },
   jp: { cn: '中国サイト', jp: '日本サイト', hk: '香港サイト' },
@@ -31,14 +36,14 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-border/70 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-[1280px] items-center justify-between px-4 md:h-16 md:px-6">
         <a href={site.path} className="flex items-center gap-2">
           <Image
-            src="/images/brand/haocai-zds-logo-horizontal-web.png"
-            alt="好财集团 账大师"
-            width={220}
-            height={52}
+            src={logoSrc[site.code]}
+            alt="账大师"
+            width={720}
+            height={238}
             className="h-8 w-auto md:h-9"
             priority
           />
@@ -91,7 +96,7 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
           <button
             type="button"
             onClick={onTrialClick}
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-4 text-sm font-semibold text-white"
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_rgba(87,215,223,.22)]"
           >
             {site.actions.trial}
           </button>
@@ -101,7 +106,7 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
           <button
             type="button"
             onClick={onTrialClick}
-            className="inline-flex h-9 items-center justify-center rounded-lg bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-3 text-xs font-semibold text-white"
+            className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground"
           >
             {site.actions.trial}
           </button>

@@ -44,6 +44,7 @@
 - 首屏和各区块不能依赖 JavaScript 动画才显示内容。
 - 所有首页动画仅使用 `opacity` 与 `transform`，并提供 `prefers-reduced-motion` 兜底。
 - 保留 Next Image 优化与现有真实产品图片，不增加网络图片或依赖。
+- 首页永久买断套餐沿用产品中心的金色强调；“查看完整功能对比表”固定跳转到产品中心 `#comparison` 锚点。
 
 ## 验收
 

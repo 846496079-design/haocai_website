@@ -1337,21 +1337,15 @@ export default function OfficialSite({
           <div className="mt-12 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {purchasePlans.map((plan, index) => {
               const lifetime = plan.purchase === 'lifetime'
-              const lifetimeCardTone = visibleOnLoad
-                ? 'border-primary/35 ring-1 ring-primary/10'
-                : 'border-[#e2b64f] ring-1 ring-[#f7c65b]/25'
-              const lifetimeSurfaceTone = visibleOnLoad
-                ? 'border-primary/25 bg-primary/5'
-                : 'border-[#f7c65b]/55 bg-[#fff8e6]'
-              const lifetimeTextTone = visibleOnLoad ? 'text-primary' : 'text-[#9b6b06]'
-              const lifetimeButtonTone = visibleOnLoad
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'bg-[#f7c65b] text-[#251d08] shadow-lg shadow-[#f7c65b]/20 hover:-translate-y-0.5'
+              const lifetimeCardTone = 'border-[#e2b64f] ring-1 ring-[#f7c65b]/25'
+              const lifetimeSurfaceTone = 'border-[#f7c65b]/55 bg-[#fff8e6]'
+              const lifetimeTextTone = 'text-[#9b6b06]'
+              const lifetimeButtonTone = 'bg-[#f7c65b] text-[#251d08] shadow-lg shadow-[#f7c65b]/20 hover:-translate-y-0.5'
               return (
               <FadeInSection key={plan.key} delay={index * 70} visibleOnLoad={visibleOnLoad}>
                 <div className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border bg-card p-6 ${visibleOnLoad ? '' : 'shadow-[0_16px_42px_rgba(20,64,78,.08)]'} ${lifetime ? lifetimeCardTone : 'border-border'}`}>
                   {lifetime && (
-                    <span className={`absolute right-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-semibold ${visibleOnLoad ? 'bg-primary text-primary-foreground' : 'bg-[#f7c65b] text-[#251d08]'}`}>永久买断</span>
+                    <span className="absolute right-4 top-4 rounded-full bg-[#f7c65b] px-2.5 py-1 text-[11px] font-semibold text-[#251d08]">永久买断</span>
                   )}
                   <p className="text-lg font-semibold">{plan.name}</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.audience}</p>
@@ -1363,7 +1357,7 @@ export default function OfficialSite({
                     </div>
                   </div>
                   <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span>{lifetime ? <>年付也可选：<span className="font-semibold text-foreground">{plan.yearly}</span> {plan.yearlyNote}</> : <>长期方案：<span className={`font-semibold ${visibleOnLoad ? 'text-primary' : 'text-[#9b6b06]'}`}>{plan.lifetime}</span> {plan.lifetimeNote}</>}</span>
+                    <span>{lifetime ? <>年付也可选：<span className="font-semibold text-foreground">{plan.yearly}</span> {plan.yearlyNote}</> : <>长期方案：<span className="font-semibold text-[#9b6b06]">{plan.lifetime}</span> {plan.lifetimeNote}</>}</span>
                     {plan.perDay && <span className="rounded-full bg-secondary px-3 py-1 font-medium text-primary">{plan.perDay}</span>}
                   </div>
                   <button
@@ -1394,7 +1388,7 @@ export default function OfficialSite({
     const comparison = site.comparison
     if (!comparison) return null
     return (
-      <section className={`px-6 py-20 ${dark ? 'bg-card' : ''}`}>
+      <section id="comparison" className={`px-6 py-20 ${dark ? 'bg-card' : ''}`}>
         <div className="mx-auto max-w-[1120px]">
           <FadeInSection>
             <SectionHeading eyebrow={comparison.eyebrow} title={comparison.title} subtitle={comparison.subtitle} />
@@ -1634,7 +1628,7 @@ export default function OfficialSite({
             {renderPricing()}
             {site.comparison && (
               <div className="-mt-8 px-6 pb-12 text-center">
-                <a href={`${site.path}product/#pricing`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{home.fullComparison}<ArrowRight className="ml-1 size-4" /></a>
+                <a href={`${site.path}product/#comparison`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{home.fullComparison}<ArrowRight className="ml-1 size-4" /></a>
               </div>
             )}
 

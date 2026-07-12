@@ -539,7 +539,7 @@ export const sites: Record<SiteCode, SiteContent> = {
   },
   jp: {
     code: 'jp',
-    name: '账大师 Japan',
+    name: '帳マスター',
     localeName: '日本站',
     lang: 'ja-JP',
     path: '/jp/',
@@ -563,18 +563,18 @@ export const sites: Record<SiteCode, SiteContent> = {
     ],
     actions: { login: 'ログイン', trial: '試用開始' },
     hero: {
-      eyebrow: '中国企業向け AI 財税ワークスペース',
-      title: '財税業務を',
-      titleAccent: '標準フローで管理',
+      eyebrow: '中小企業向け AI 財務ワークスペース',
+      title: '日々の財務業務を',
+      titleAccent: '一つの流れで管理',
       description:
         '給与、請求書、銀行明細、照合、申告資料作成を一つの流れで管理し、経営者と財務担当者が同じ画面で状況を確認できます。',
       primaryCta: '試用開始',
     },
     metrics: [
-      { value: '360 元', label: '年間料金', note: '低コストで標準フローを体験' },
-      { value: '5 Step', label: '標準フロー', note: '給与、請求書、銀行、照合、申告資料' },
-      { value: 'Web + Mobile', label: '両端対応', note: '担当者と経営者の協同' },
-      { value: 'AI Assist', label: '補助説明', note: '照合、要約、次の対応' },
+      { value: '360 元', label: '年額料金', note: '低コストで標準フローを体験' },
+      { value: '5 ステップ', label: '標準フロー', note: '給与、請求書、明細、照合、資料確認' },
+      { value: 'Web・モバイル', label: '両方で利用', note: '担当者と経営者が連携' },
+      { value: 'AI アシスト', label: '確認を補助', note: '照合、要約、次の対応を整理' },
     ],
     painTitle: '海外展開企業にも、分かりやすい財税フローが必要です',
     painSubtitle: '資料整理、税額確認、担当者間の連携を一つの流れにまとめます。',
@@ -664,7 +664,7 @@ export const sites: Record<SiteCode, SiteContent> = {
   },
   hk: {
     code: 'hk',
-    name: '账大师香港',
+    name: '賬大師香港',
     localeName: '香港站',
     lang: 'zh-HK',
     path: '/hk/',
@@ -981,10 +981,26 @@ sites.hk.proofItems = [
   { label: '更規範', value: '報表憑證', description: '按工資、發票、流水沉澱報表和憑證視圖。' },
 ]
 
-// ————————————————————————————————————————————————
-//  中国站（cn）富内容：首页前置亮点、定价、功能对比、行业、客户案例、
-//  产品理念、代理市场、公众号引导。jp/hk 跟随视觉，暂不填充这些字段。
-// ————————————————————————————————————————————————
+// 日本站与香港站同步提供本地化的富内容，保持与中国站一致的信息层级。
+sites.jp.homeHighlights = { eyebrow: '利用シーン', title: '日々の財務作業を、確認しやすい流れに', subtitle: '資料の収集から確認、次の対応までを一つの画面で追えるようにします。', items: [{ icon: 'wallet', title: '日々の資料を集約', description: '給与、請求書、銀行明細を日常的に整理します。' }, { icon: 'check', title: '確認事項を可視化', description: '照合待ちや不足資料を優先して確認できます。' }, { icon: 'chart', title: '経営状況を把握', description: '収入、コスト、対応事項を同じ情報で確認します。' }, { icon: 'users', title: '役割ごとに連携', description: '経営者、財務担当、支援担当者の協業を支えます。' }] }
+sites.jp.pricingPlans = { eyebrow: '料金プラン', title: '事業の状況に合わせて選べる、明確な料金', subtitle: '小規模事業者向けと一般納税人向けの二つの基本プランを用意しています。', footnote: '利用範囲や最終的な申告判断は、実際の事業状況と担当者の確認に基づきます。', plans: [{ name: '小規模事業者向け', audience: '日々の記帳と資料整理を始めたい事業者', perDay: '1日約1元', yearly: '360 元', yearlyNote: '/ 年', lifetime: 'お問い合わせください', lifetimeNote: '', features: ['企業管理', '給与・請求書・銀行明細', '照合と確認事項の整理', 'AIによる補助説明'], cta: '試用開始' }, { name: '一般納税人向け', badge: '進階', audience: '仕入・売上・税額の確認がより複雑な事業者', yearly: '1,056 元', yearlyNote: '/ 年', lifetime: 'お問い合わせください', lifetimeNote: '', features: ['小規模事業者向けの全機能', '仕入・売上の確認支援', '複数口座の明細整理', '税額試算の補助'], highlight: true, cta: '試用開始' }] }
+sites.jp.comparison = { eyebrow: '機能比較', title: '利用シーンに合わせた機能の見え方', subtitle: '必要な確認項目を、企業規模や業務の複雑さに応じて選べます。', columns: ['主な機能', '小規模事業者向け', '一般納税人向け', '確認ポイント'], groups: [{ name: '資料整理', rows: [['給与・請求書・銀行明細', '対応', '対応', '日々の資料を一つに集約'], ['照合待ちの確認', '対応', '対応', '不足・不一致を確認']] }, { name: '確認と連携', rows: [['税額試算の補助', '基本', '進階', '最終判断は担当者が確認'], ['複数企業・権限管理', '対応', '対応', '役割に応じた情報共有']] }] }
+sites.jp.industries = { eyebrow: '業種別活用', title: 'さまざまな事業の日常的な財務確認に', subtitle: '業種ごとに異なる収入・コスト・明細管理の確認を支援します。', note: '実際の利用方法は、事業規模や取引内容によって異なります。', items: [{ icon: 'retail', name: '小売・商業', note: '仕入・売上・回収の確認' }, { icon: 'food', name: '飲食サービス', note: '店舗別の明細とコスト整理' }, { icon: 'store', name: 'EC事業', note: '入金・返金・手数料の照合' }, { icon: 'briefcase', name: '専門サービス', note: '案件収入と経費の確認' }, { icon: 'code', name: 'IT・ソフトウェア', note: '人件費とプロジェクト収支の整理' }, { icon: 'factory', name: '製造・物流', note: '仕入・原価・回収の確認' }] }
+sites.jp.cases = { eyebrow: '顧客の声', title: '日々の財務業務で寄せられる課題', subtitle: '企業名を公開せず、利用場面で重視される確認ポイントを紹介します。', stats: [{ value: '12,018', label: '利用シーンの累計' }], items: [{ company: '匿名の小売事業者', industry: '小売・商業', metric: 'モバイルで状況確認', metricLabel: '資料を日々に整理', quote: '月末だけに資料を集めるのではなく、日々の確認事項として整理できるようになりました。', person: '経営者（匿名）', tags: ['日常管理', '明細確認'] }, { company: '匿名の会計サービスチーム', industry: '会計サービス', metric: '対応事項を共有', metricLabel: '確認漏れを減らす', quote: '担当者ごとの確認事項が見えやすくなり、資料の依頼と照合を同じ流れで進められます。', person: '担当者（匿名）', tags: ['共同作業', '照合'] }, { company: '匿名の複数企業経営者', industry: '複数企業', metric: '企業ごとに確認', metricLabel: '役割と権限を整理', quote: '会社ごとの収入、コスト、対応事項を切り替えて確認でき、状況を把握しやすくなりました。', person: '経営者（匿名）', tags: ['複数企業', '権限管理'] }] }
+sites.jp.philosophy = { eyebrow: '私たちの考え方', title: '反復作業は仕組みへ、重要な判断は人へ', subtitle: 'AIと業務フローを組み合わせ、企業の財務確認をわかりやすくします。', items: [{ tag: 'AI', title: '日常の確認を支える', body: '資料整理、例外の提示、確認事項の要約を通じて、日々の業務を支援します。' }, { tag: '製品', title: '分かりやすい流れをつくる', body: '複雑な財務作業を、役割ごとに理解しやすい手順へ整理します。' }, { tag: '協業', title: '同じ情報で話せる状態へ', body: '経営者、財務担当、支援担当者が進捗と確認事項を共有できるようにします。' }] }
+sites.jp.partnerMarket = { eyebrow: 'パートナー連携', title: '企業サービスの現場に、わかりやすいAI財務を', subtitle: '会計事務所、財務アドバイザー、企業サービスのパートナーと連携します。', stats: [{ value: 'AI', label: '日常の資料整理' }, { value: '標準', label: '導入フロー' }, { value: '協業', label: 'パートナー支援' }], reasons: [{ icon: 'rocket', title: '説明しやすい製品体験', body: '日常の資料整理と確認事項を、利用者が理解しやすい流れにまとめます。' }, { icon: 'layers', title: '既存顧客への提案', body: '会計・財務サービスの現場で、日々の確認作業を支える選択肢になります。' }, { icon: 'headphones', title: '導入を支援', body: '製品説明、利用開始、資料整理の流れをパートナーと共有します。' }], supports: [{ title: '製品支援', body: '利用シーンに応じた製品説明と導入案内。' }, { title: '運用支援', body: '資料整理と確認の進め方を共有。' }, { title: '連携支援', body: 'パートナーとの継続的な情報連携。' }] }
+sites.jp.wechat = { eyebrow: '利用開始', title: 'まずはAI記帳の流れを確認', desc: '試用開始後、企業情報と日常の資料をもとに利用フローをご案内します。', steps: ['試用開始を選択', '連絡先と利用状況を送信', '案内に沿って利用を開始'], qr: '/images/wechat-official-qr.png', qrNote: '利用開始のご案内' }
+
+sites.hk.homeHighlights = { eyebrow: '使用場景', title: '把日常財務工作整理成容易查看的流程', subtitle: '由資料歸集、核對到下一步處理，都可在同一個工作流程中掌握。', items: [{ icon: 'wallet', title: '集中日常資料', description: '把工資、發票及銀行流水持續整理。' }, { icon: 'check', title: '看清待確認事項', description: '按優先次序查看待核對及缺漏資料。' }, { icon: 'chart', title: '掌握經營狀況', description: '以同一套資料查看收入、成本及待辦。' }, { icon: 'users', title: '按角色協同', description: '支援企業主、財務與服務團隊協作。' }] }
+sites.hk.pricingPlans = { eyebrow: '定價方案', title: '按企業情況選擇清晰的服務方案', subtitle: '提供小微企業及一般納稅人兩類基本方案。', footnote: '實際使用範圍及最終申報判斷，應按企業情況及專業人員確認。', plans: [{ name: '小微企業方案', audience: '希望開始整理日常記賬與資料的企業', perDay: '每日約 1 元', yearly: '360 元', yearlyNote: '/ 年', lifetime: '請聯絡我們', lifetimeNote: '', features: ['企業管理', '工資、發票及銀行流水', '核對與待辦整理', 'AI 輔助說明'], cta: '開始試用' }, { name: '一般納稅人方案', badge: '進階', audience: '進銷項與稅額核對較複雜的企業', yearly: '1,056 元', yearlyNote: '/ 年', lifetime: '請聯絡我們', lifetimeNote: '', features: ['包含小微企業方案功能', '進銷項核對支援', '多賬戶流水整理', '稅額測算輔助'], highlight: true, cta: '開始試用' }] }
+sites.hk.comparison = { eyebrow: '功能比較', title: '按使用場景查看功能配置', subtitle: '可按企業規模及工作複雜度選擇需要的核對方式。', columns: ['主要功能', '小微企業方案', '一般納稅人方案', '核對重點'], groups: [{ name: '資料整理', rows: [['工資、發票及銀行流水', '支援', '支援', '日常資料集中整理'], ['待核對事項', '支援', '支援', '查看缺漏與差異']] }, { name: '核對與協同', rows: [['稅額測算輔助', '基本', '進階', '最終判斷由人員確認'], ['多企業與權限管理', '支援', '支援', '按角色共享進度']] }] }
+sites.hk.industries = { eyebrow: '行業場景', title: '支援不同企業的日常財務查看', subtitle: '按行業的收入、成本與流水特點整理常見核對場景。', note: '實際使用方式會因企業規模及交易內容而異。', items: [{ icon: 'retail', name: '商貿零售', note: '進銷與回款查看' }, { icon: 'food', name: '餐飲服務', note: '門店流水與成本整理' }, { icon: 'store', name: '電商經營', note: '回款、退款與佣金核對' }, { icon: 'briefcase', name: '專業服務', note: '項目收入與費用查看' }, { icon: 'code', name: '科技軟件', note: '人力與項目收支整理' }, { icon: 'factory', name: '製造物流', note: '採購、成本與回款核對' }] }
+sites.hk.cases = { eyebrow: '客戶回饋', title: '來自日常財務工作的關注點', subtitle: '不公開企業名稱，僅呈現不同角色關心的使用場景。', stats: [{ value: '12,018', label: '累計服務場景' }], items: [{ company: '匿名商貿企業', industry: '商貿零售', metric: '隨時查看狀況', metricLabel: '日常資料歸集', quote: '不再等到月底才集中找資料，日常就可以看到需要處理的事項。', person: '企業負責人（已匿名）', tags: ['日常管理', '流水查看'] }, { company: '匿名企業服務團隊', industry: '企業服務', metric: '共享待辦事項', metricLabel: '減少核對遺漏', quote: '不同同事都能看到待處理事項，收集資料與核對工作更有次序。', person: '服務人員（已匿名）', tags: ['協同', '核對'] }, { company: '匿名多主體企業', industry: '多企業管理', metric: '分開查看各企業', metricLabel: '整理角色權限', quote: '收入、成本與待辦可按公司切換查看，管理狀況更容易掌握。', person: '企業負責人（已匿名）', tags: ['多企業', '權限管理'] }] }
+sites.hk.philosophy = { eyebrow: '我們的理念', title: '把重複整理交給系統，把關鍵確認留給人', subtitle: '以 AI 與工作流程，協助企業更清楚地處理日常財務。', items: [{ tag: 'AI', title: '支援日常核對', body: '透過資料整理、例外提示與待辦摘要，支援日常工作。' }, { tag: '產品', title: '建立容易理解的流程', body: '把複雜財務工作整理成不同角色都容易使用的步驟。' }, { tag: '協同', title: '以同一套資料溝通', body: '讓企業主、財務與服務團隊更容易共享進度與事項。' }] }
+sites.hk.partnerMarket = { eyebrow: '合作夥伴', title: '把清晰易用的 AI 財務帶進企業服務現場', subtitle: '與會計、財稅顧問及企業服務夥伴共同服務企業。', stats: [{ value: 'AI', label: '日常資料整理' }, { value: '標準', label: '導入流程' }, { value: '協同', label: '夥伴支援' }], reasons: [{ icon: 'rocket', title: '容易說明的產品體驗', body: '把日常資料整理與核對事項放在使用者容易理解的流程。' }, { icon: 'layers', title: '服務既有客戶', body: '為會計及企業服務場景提供日常核對工作的支援。' }, { icon: 'headphones', title: '支援使用開始', body: '與合作夥伴共享產品說明、使用開始及資料整理方法。' }], supports: [{ title: '產品支援', body: '提供按使用場景整理的產品說明。' }, { title: '使用支援', body: '共享資料整理與核對流程。' }, { title: '協同支援', body: '持續與合作夥伴交換使用回饋。' }] }
+sites.hk.wechat = { eyebrow: '開始使用', title: '先了解 AI 記賬的使用流程', desc: '開始試用後，我們會按企業情況提供使用流程說明。', steps: ['選擇開始試用', '提交聯絡資料與使用情況', '按指引開始使用'], qr: '/images/wechat-official-qr.png', qrNote: '開始使用說明' }
+
+// 中国站（cn）富内容：首页前置亮点、定价、功能对比、行业、客户案例、产品理念、代理市场、公众号引导。
 
 sites.cn.homeHighlights = {
   eyebrow: '为什么是账大师',

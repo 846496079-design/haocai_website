@@ -341,6 +341,73 @@ export const newsArticles: Record<SiteCode, NewsArticle[]> = {
   ],
 }
 
+type LocalizedNewsMeta = Pick<NewsArticle, 'category' | 'tags' | 'title' | 'summary' | 'lead'>
+
+const localizedNewsMeta: Record<'jp' | 'hk', Record<string, LocalizedNewsMeta>> = {
+  jp: {
+    '2026-07-09': { category: '会社ニュース', tags: ['AI財務', '企業連携'], title: '真筷楽科技の鄭漢勇氏が帳マスターを訪問、AI財務について意見交換', summary: 'AI財務の活用、経営効率、企業サービスの協業について交流しました。', lead: '真筷楽科技の鄭漢勇氏が帳マスターを訪問し、企業財務におけるAI活用と企業サービスの発展について意見を交わしました。' },
+    'ai-three-step-bookkeeping': { category: '製品ニュース', tags: ['AI記帳', '製品アップデート'], title: '帳マスター「AI 3ステップ記帳」を刷新：給与・請求書・銀行明細を一つの流れで管理', summary: '給与、請求書、銀行明細の整理と照合を、AIが日々の業務フローにまとめます。', lead: '帳マスターは、給与入力・請求書の収集・銀行明細の照合という三つの高頻度業務を、わかりやすいAI記帳フローに整理しました。' },
+    'why-360-a-year': { category: 'AI財務', tags: ['年額料金', 'コスト管理'], title: '年額360元、1日約1元：AI記帳を身近にするための価格設計', summary: '標準化と自動化を通じ、小規模事業者にも導入しやすいAI記帳を目指します。', lead: '帳マスターは、複雑な記帳業務を標準化し、日々の財務管理を無理なく始められる価格帯で提供します。' },
+    'ai-tax-brain-vision': { category: 'AI財務', tags: ['AI財務', 'ビジョン'], title: 'すべての企業にAI財務ブレーンを：帳マスターの製品ビジョン', summary: '記帳から経営確認まで、企業に寄り添うAI財務パートナーを目指します。', lead: '帳マスターは、分散しがちな財務情報を見やすい業務フローにまとめ、経営者と担当者の判断を支えます。' },
+    'small-business-tax-tips': { category: '実務ガイド', tags: ['小規模事業者', '申告準備'], title: '小規模事業者の申告準備：事前に整えるべきポイント', summary: '給与、請求書、銀行明細を早めにそろえ、申告前の確認負担を減らします。', lead: '申告期に慌てないためには、日々の資料整理と例外事項の確認を前倒しで行うことが重要です。' },
+    'agent-partner-program': { category: '会社ニュース', tags: ['パートナー', '協業'], title: '帳マスター、AI財務サービスのパートナー連携を開始', summary: '会計事務所や企業支援パートナーとともに、AI記帳の活用を広げます。', lead: '帳マスターは、地域の会計・企業サービスパートナーと協力し、わかりやすいAI財務の導入を支援します。' },
+    'multi-company-management': { category: '製品ニュース', tags: ['複数企業', '共同作業'], title: '一つのアカウントで複数社を管理：経営者と会計担当者のための連携機能', summary: '企業ごとの収支・税額・対応事項を分けて確認し、権限管理もわかりやすくします。', lead: '複数の会社を運営する経営者や多くの顧客を担当する会計者に向け、帳マスターは企業切り替えと権限連携を一つの流れにまとめます。' },
+    'ai-risk-alert': { category: 'AI財務', tags: ['リスク通知', 'AI'], title: 'AIリスク通知：申告に影響する項目を早めに整理', summary: '請求書や銀行明細の確認漏れなどを、優先度に応じて見つけやすくします。', lead: '申告直前の慌ただしさを減らすため、帳マスターは確認が必要な項目を日常業務の中で整理します。' },
+    'restaurant-industry-solution': { category: '業種別活用', tags: ['飲食店', '店舗管理'], title: '飲食店の記帳を見える化：複数店舗の明細とコストを一画面で確認', summary: '日々の売上・仕入・人件費を整理し、店舗ごとの状況を確認しやすくします。', lead: '店舗数が増えるほど複雑になる飲食業の明細とコスト管理を、日々の確認しやすい形に整えます。' },
+    'ecommerce-reconciliation': { category: '業種別活用', tags: ['EC', '入金照合'], title: 'ECの入金照合を効率化：AIで銀行明細と請求書を関連付ける', summary: '売上入金、返金、手数料を整理し、収入とコストの確認を支援します。', lead: 'EC事業で発生する入金・返金・手数料の照合を、日々の財務フローにまとめます。' },
+    'startup-finance-guide': { category: '導入事例', tags: ['スタートアップ', 'AI記帳'], title: '専任の財務担当がいないスタートアップのためのAI財務の始め方', summary: '少人数のチームでも、基本的な財務資料を継続して整理できます。', lead: '創業初期の限られた時間と予算の中で、給与・請求書・明細を無理なく管理するための考え方を紹介します。' },
+    'general-taxpayer-plan': { category: '製品ニュース', tags: ['一般納税人', '料金プラン'], title: '一般納税人向け：帳マスターの進階プランを提供開始', summary: '仕入・売上・税額の確認がより複雑な事業者に向けた記帳支援です。', lead: '事業の成長に伴い複雑になる仕入・売上・税額の確認を、日々の業務フローで見やすく整理します。' },
+    'from-manual-to-ai': { category: 'AI財務', tags: ['業界動向', 'AI'], title: '「手作業の財務」から「AI財務」へ：企業財務サービスの変化', summary: '標準化、オンライン化、AI活用が企業財務の進め方を変えています。', lead: '企業財務サービスは、手作業中心の運用から、データとAIを活用する継続的な業務フローへ進化しています。' },
+    'invoice-management': { category: '製品ニュース', tags: ['請求書', '経費管理'], title: '売上・仕入・経費の請求書を一元管理：帳マスターの書類整理', summary: '請求書と支出情報をまとめ、収入・コスト・確認事項を見やすくします。', lead: '複数の担当者やチャネルに分かれた請求書を一つに集め、日常的に確認できる状態を作ります。' },
+    'accounting-firm-efficiency': { category: '導入事例', tags: ['会計事務所', '業務効率'], title: '会計担当者の業務を平準化：帳マスターで月末業務を見直す', summary: '対応事項を日々に分散し、月末だけに負担が集中しない運用を支援します。', lead: '会計事務所では、資料回収や照合を日常の対応事項として管理することで、月末の集中作業を減らせます。' },
+    'mobile-check-anytime': { category: '製品ニュース', tags: ['モバイル', '経営確認'], title: '月末を待たずに確認：スマートフォンで売上・コスト・対応事項を把握', summary: '経営者が外出先でも日々の財務状況を確認できるモバイル体験を提供します。', lead: '帳マスターのモバイル画面では、売上・コスト・税額の見込み・対応事項を一つにまとめて確認できます。' },
+    'year-end-review-2025': { category: '会社ニュース', tags: ['年間レビュー', '製品更新'], title: '2025年レビュー：AI財務の導入体験を継続的に改善', summary: '製品、パートナー連携、日々の財務フローを通じて、AI財務の利用場面を広げました。', lead: '2025年、帳マスターはAI記帳、リスク通知、複数企業の連携など、日々の財務業務を支える体験を改善しました。' },
+  },
+  hk: {
+    '2026-07-09': { category: '公司動態', tags: ['AI 財務', '企業合作'], title: '真筷樂科技鄭漢勇到訪賬大師，交流 AI 財務應用', summary: '雙方就 AI 財務、經營效率及企業服務合作進行交流。', lead: '真筷樂科技鄭漢勇到訪賬大師，圍繞企業財務的 AI 應用及企業服務發展交換意見。' },
+    'ai-three-step-bookkeeping': { category: '產品動態', tags: ['AI 記賬', '產品升級'], title: '賬大師「AI 三步智能記賬」升級：工資、發票、銀行流水一站管理', summary: '把工資、發票及銀行流水的整理與核對納入同一個日常流程。', lead: '賬大師把錄入工資、收集發票及核對銀行流水三個高頻環節，整理成清晰易用的 AI 記賬流程。' },
+    'why-360-a-year': { category: 'AI 財務', tags: ['年度方案', '成本管理'], title: '年費 360 元、每日約 1 元：讓 AI 記賬更易開始', summary: '透過標準化與自動化，讓小微企業也可按日常節奏使用 AI 財務。', lead: '賬大師以更易理解的方式整理重複記賬工作，讓企業可用合理成本開始日常財務管理。' },
+    'ai-tax-brain-vision': { category: 'AI 財務', tags: ['AI 財務', '產品願景'], title: '讓企業擁有 AI 財稅大腦：賬大師的產品願景', summary: '由記賬至經營查閱，成為企業身邊的 AI 財務夥伴。', lead: '賬大師希望把分散的財務資料整理為可查看、可核對的工作流程，協助管理者及財務人員作出判斷。' },
+    'small-business-tax-tips': { category: '實務指南', tags: ['小微企業', '申報準備'], title: '小微企業報稅前：幾項應及早完成的準備', summary: '及早整理工資、發票及銀行流水，減少申報前的補漏與返工。', lead: '要讓申報期更從容，關鍵在於把資料整理與例外事項的確認放在日常完成。' },
+    'agent-partner-program': { category: '公司動態', tags: ['合作夥伴', '企業服務'], title: '賬大師啟動 AI 財務合作夥伴計劃', summary: '與會計、財稅顧問及企業服務渠道共同推進 AI 記賬的應用。', lead: '賬大師期望與各地企業服務夥伴合作，為更多中小企業提供清晰易用的 AI 財務體驗。' },
+    'multi-company-management': { category: '產品動態', tags: ['多企業', '協同'], title: '一個帳戶管理多家公司：為老闆與會計而設的協同方式', summary: '分開查看各企業的收入、成本、稅額及待辦，並清晰管理授權。', lead: '面對多主體經營及多客戶服務場景，賬大師把企業切換與授權協同整理到同一個流程。' },
+    'ai-risk-alert': { category: 'AI 財務', tags: ['風險提示', 'AI'], title: 'AI 風險提示：及早整理可能影響申報的事項', summary: '讓待確認發票、待匹配流水等事項按優先次序呈現。', lead: '為減少申報前的集中處理壓力，賬大師會在日常整理資料時提示需要留意的事項。' },
+    'restaurant-industry-solution': { category: '行業觀察', tags: ['餐飲', '門店管理'], title: '餐飲門店記賬如何看清：多店流水與成本一屏掌握', summary: '整理日常收入、採購與人工成本，讓各門店狀況更易查看。', lead: '門店愈多，流水與成本管理愈複雜；賬大師協助把資料整理為便於日常查看的方式。' },
+    'ecommerce-reconciliation': { category: '行業觀察', tags: ['電商', '回款核對'], title: '電商回款核對太繁複？用 AI 關聯流水與發票', summary: '整理平台回款、退款與佣金，協助企業核對收入及成本。', lead: '面對電商場景中的回款、退款及佣金，賬大師把核對工作整理為清晰的日常流程。' },
+    'startup-finance-guide': { category: '客戶故事', tags: ['初創企業', 'AI 記賬'], title: '初創企業未設專職財務，如何開始整理基礎財稅', summary: '小型團隊也可持續整理工資、發票及銀行流水等基本資料。', lead: '在時間與預算有限的創業初期，先把基本財務資料按日常流程整理好，能讓經營者更專注於業務。' },
+    'general-taxpayer-plan': { category: '產品動態', tags: ['一般納稅人', '方案'], title: '面向一般納稅人：賬大師進階記賬方案', summary: '支援較複雜的進銷項、稅額及銀行流水整理。', lead: '隨著企業業務成長，進銷項及稅額核對更為複雜；賬大師提供更清晰的日常整理方式。' },
+    'from-manual-to-ai': { category: 'AI 財務', tags: ['行業趨勢', 'AI'], title: '由「人工財務」走向「AI 財務」：企業財稅服務正在改變', summary: '標準化、線上化與 AI 正在改變企業處理財務工作的方式。', lead: '企業財務服務正由分散的人手處理，走向以資料、流程及 AI 支援的持續協同。' },
+    'invoice-management': { category: '產品動態', tags: ['發票', '費用管理'], title: '銷項、進項及費用發票：賬大師一處整理', summary: '把發票與支出資料集中，協助企業看清收入、成本及待確認事項。', lead: '當發票分散在不同人員及渠道，日常核對容易變得混亂；集中整理能讓資料更易查看。' },
+    'accounting-firm-efficiency': { category: '客戶故事', tags: ['會計服務', '效率'], title: '會計團隊如何平衡月末工作：以待辦方式整理日常事項', summary: '把資料回收及核對分散到日常處理，減少月末集中壓力。', lead: '會計服務團隊可把發票、工資及流水的例外事項轉為日常待辦，讓工作節奏更有條理。' },
+    'mobile-check-anytime': { category: '產品動態', tags: ['流動端', '經營查看'], title: '不用等到月末：用手機查看收入、成本及待辦', summary: '管理者可隨時掌握日常財務狀況，並與財務人員協同跟進。', lead: '賬大師流動端把收入、成本、預計稅額及待辦集中呈現，讓管理者在外出時也可查看。' },
+    'year-end-review-2025': { category: '公司動態', tags: ['年度回顧', '產品更新'], title: '2025 年回顧：持續改善 AI 財務的日常體驗', summary: '透過產品、合作夥伴與本地服務場景，推進 AI 財務的實際應用。', lead: '2025 年，賬大師圍繞 AI 記賬、風險提示及多企業協同等能力，持續改善企業日常財務體驗。' },
+  },
+}
+
+function createLocalizedArticle(siteCode: 'jp' | 'hk', article: NewsArticle): NewsArticle {
+  const meta = localizedNewsMeta[siteCode][article.slug]
+  const jp = siteCode === 'jp'
+  return {
+    ...article,
+    ...meta,
+    sections: jp
+      ? [
+          { title: '概要', paragraphs: [meta.lead, '帳マスターは、日々の給与・請求書・銀行明細を整理し、確認が必要な事項を見やすくすることで、経営者と担当者の業務連携を支援します。'] },
+          { title: '業務での活かし方', paragraphs: ['実際の利用方法や確認の範囲は、企業規模、業種、取引内容によって異なります。重要な事実確認と最終的な申告判断は、企業または専門担当者が行ってください。'] },
+        ]
+      : [
+          { title: '內容概要', paragraphs: [meta.lead, '賬大師協助企業整理日常的工資、發票及銀行流水，讓需要確認的事項更易查看，並支援管理者與財務人員協同處理。'] },
+          { title: '實務應用', paragraphs: ['實際使用方式及核對範圍會因企業規模、行業及交易內容而有所不同；重要事實確認及最終申報判斷，仍應由企業或專業人員完成。'] },
+        ],
+    closing: jp
+      ? ['帳マスターは、企業の日常業務に寄り添うAI財務体験をこれからも改善していきます。']
+      : ['賬大師會持續改善貼合企業日常工作的 AI 財務體驗。'],
+  }
+}
+
+newsArticles.jp = newsArticles.cn.map((article) => createLocalizedArticle('jp', article))
+newsArticles.hk = newsArticles.cn.map((article) => createLocalizedArticle('hk', article))
+
 export function getNewsArticle(siteCode: SiteCode, slug: string) {
   return newsArticles[siteCode].find((article) => article.slug === slug)
 }

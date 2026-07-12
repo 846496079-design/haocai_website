@@ -177,6 +177,11 @@ const productIntroCopy = {
     eyebrow: '产品中心',
     status: '主推产品',
     name: '账大师 · AI 财务',
+    title: '以账大师为核心，把财税工作装进一套 AI 流程',
+    subtitle: '账大师是我们唯一主推的产品——把工资、发票、流水、报税和经营查看做深、做透。',
+    imageAlt: '账大师移动端 AI 三步智能记账界面',
+    imageLabel: '真实产品截图',
+    imageDesc: '展示移动端 AI 三步智能记账、银行流水同步和下一步建议。',
     description:
       '面向小微企业、财务人员和代账机构，把工资、发票、银行流水、核对、报表和待办提醒统一到一套流程里，用 AI 把重复整理和基础核对做掉。',
     bullets: ['360 元/年 · 一天一块钱', 'AI 三步智能记账', '移动端与电脑端协同', '适合财税和代账场景'],
@@ -184,14 +189,24 @@ const productIntroCopy = {
   jp: {
     eyebrow: '製品センター',
     status: '主力製品',
-    name: '账大师 · AI 財務',
-    description: '給与、発票、銀行流水、照合、帳票、タスク確認を一つのフローにまとめます。',
-    bullets: ['360 元/年', 'AI 三步智能記帳', 'Web と Mobile', '財税と代行記帳向け'],
+    name: '帳マスター · AI 財務',
+    title: '帳マスターを中心に、日々の財務確認を一つの流れへ',
+    subtitle: '給与、請求書、銀行明細、照合、申告資料の確認を、役割ごとに連携しやすい業務フローにまとめます。',
+    imageAlt: '帳マスターのモバイル AI 記帳画面',
+    imageLabel: 'モバイル画面の例',
+    imageDesc: 'AI記帳、銀行明細の同期、次の対応事項をモバイルで確認できます。',
+    description: '給与、請求書、銀行明細、照合、帳票、タスク確認を一つのフローにまとめます。',
+    bullets: ['年額 360 元', 'AI 3ステップ記帳', 'Web・モバイル対応', '財務・会計サービス向け'],
   },
   hk: {
     eyebrow: '產品中心',
     status: '主推產品',
     name: '賬大師 · AI 財務',
+    title: '以賬大師為核心，把日常財務工作整合到同一流程',
+    subtitle: '把工資、發票、銀行流水、核對及申報資料查看，整理為不同角色都容易協同的工作方式。',
+    imageAlt: '賬大師流動端 AI 智能記賬畫面',
+    imageLabel: '流動端產品畫面',
+    imageDesc: '可在流動端查看 AI 記賬、銀行流水同步及下一步處理建議。',
     description: '面向小微企業、財務人員和代賬機構，把工資、發票、銀行流水、核對、報表和待辦提醒統一到一套流程裡。',
     bullets: ['360 元/年 · 一天一塊錢', 'AI 三步智能記賬', '移動端與電腦端協同', '適合財稅和代賬場景'],
   },
@@ -1586,7 +1601,7 @@ export default function OfficialSite({
                     <div className="overflow-hidden rounded-[40px] border border-white/15 bg-[#101b25] p-3 shadow-[0_44px_110px_rgba(0,0,0,.48)]">
                       <Image
                         src={screenshotSrc[site.code]}
-                        alt="账大师移动端 AI 三步智能记账界面"
+                        alt={productIntro.imageAlt}
                         width={922}
                         height={2048}
                         priority
@@ -1752,7 +1767,7 @@ export default function OfficialSite({
                     <div className="md:mx-auto md:max-w-[430px] glass-dark scan-beam md:rounded-[34px] md:p-3 md:shadow-[0_40px_100px_rgba(0,0,0,.5)]">
                       <Image
                         src={screenshotSrc[site.code]}
-                        alt="账大师移动端 AI 三步智能记账界面"
+                        alt={productIntro.imageAlt}
                         width={922}
                         height={2048}
                         priority
@@ -1763,8 +1778,8 @@ export default function OfficialSite({
                       <div className="flex items-start gap-3">
                         <Bot className="mt-0.5 size-5 text-primary" />
                         <div>
-                          <p className="text-sm font-semibold text-white">真实产品截图</p>
-                          <p className="mt-1 text-xs leading-5 text-white/60">展示移动端 AI 三步智能记账、银行流水同步和下一步建议。</p>
+                          <p className="text-sm font-semibold text-white">{productIntro.imageLabel}</p>
+                          <p className="mt-1 text-xs leading-5 text-white/60">{productIntro.imageDesc}</p>
                         </div>
                       </div>
                     </div>
@@ -1792,7 +1807,7 @@ export default function OfficialSite({
             <section className="bg-card px-6 pb-6 pt-16">
               <div className="mx-auto max-w-[1280px]">
                 <FadeInSection>
-                  <SectionHeading eyebrow={productIntro.eyebrow} title="以账大师为核心，把财税工作装进一套 AI 流程" subtitle="账大师是我们唯一主推的产品——把工资、发票、流水、报税和经营查看做深、做透。" />
+                  <SectionHeading eyebrow={productIntro.eyebrow} title={productIntro.title} subtitle={productIntro.subtitle} />
                 </FadeInSection>
                 <FadeInSection delay={100}>
                   <div className="mt-10 grid gap-6 lg:grid-cols-[1.05fr_1fr]">

@@ -53,8 +53,15 @@ const mobileFooterCopy = {
   },
 } as const
 
+const desktopFooterCopy = {
+  cn: { slogan: '让天下企业拥有一个 AI 财税大脑 · 360 元 AI 记账', product: '产品服务', sites: '站点', contact: '联系我们', manager: '联系人', phone: '电话', email: '邮箱', wechat: '企业微信', qrAlt: '企业微信二维码', disclaimer: '页面信息仅用于产品介绍，具体服务以实际开通和双方确认为准。' },
+  jp: { slogan: 'すべての企業に AI 財務の専門家を · 年額 360 元 AI 記帳', product: '製品・サービス', sites: 'サイト', contact: 'お問い合わせ', manager: '担当者', phone: '電話', email: 'メール', wechat: '企業微信', qrAlt: '企業微信のQRコード', disclaimer: '本ページは製品紹介を目的としています。具体的なサービス内容は、利用開始時の案内と双方の確認を優先します。' },
+  hk: { slogan: '讓天下企業擁有一個 AI 財務專家 · 年費 360 元 AI 記賬', product: '產品服務', sites: '站點', contact: '聯絡我們', manager: '聯絡人', phone: '電話', email: '電郵', wechat: '企業微信', qrAlt: '企業微信二維碼', disclaimer: '本頁資料僅作產品介紹，實際服務以開通說明及雙方確認為準。' },
+} as const
+
 export default function Footer({ site }: FooterProps) {
   const mobileCopy = mobileFooterCopy[site.code]
+  const desktopCopy = desktopFooterCopy[site.code]
 
   return (
     <footer className="border-t border-border bg-card">
@@ -111,7 +118,7 @@ export default function Footer({ site }: FooterProps) {
                   {siteList.map((item) => <a key={item.code} href={item.path} className="block">{item.localeName}</a>)}
                   <p className="pt-1 text-xs text-text-tertiary">{site.company.hours}</p>
                 </div>
-                <Image src="/images/wechat-qr.png" alt="企业微信二维码" width={72} height={72} className="rounded-lg border border-border" />
+                <Image src="/images/wechat-qr.png" alt={desktopCopy.qrAlt} width={72} height={72} className="rounded-lg border border-border" />
               </div>
             </details>
           </div>
@@ -128,17 +135,17 @@ export default function Footer({ site }: FooterProps) {
                 className="h-11 w-auto"
               />
             </div>
-            <p className="mt-3 text-sm text-muted-foreground">让天下企业拥有一个 AI 财税大脑 · 360 元 AI 记账</p>
+            <p className="mt-3 text-sm text-muted-foreground">{desktopCopy.slogan}</p>
             <div className="mt-5 space-y-2 text-sm leading-6 text-muted-foreground">
-              <p>企业主体：{site.company.name}</p>
-              <p>统一社会信用代码：{site.company.creditCode}</p>
-              <p>注册地址：{site.company.registeredAddress}</p>
-              <p>企业总部：{site.company.headquarters}</p>
+              <p>{mobileCopy.companyName}：{site.company.name}</p>
+              <p>{mobileCopy.creditCode}：{site.company.creditCode}</p>
+              <p>{mobileCopy.registeredAddress}：{site.company.registeredAddress}</p>
+              <p>{mobileCopy.headquarters}：{site.company.headquarters}</p>
             </div>
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold">产品服务</h4>
+            <h4 className="text-sm font-semibold">{desktopCopy.product}</h4>
             <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
               {site.nav.map((item) => (
                 <li key={item.href}>
@@ -151,7 +158,7 @@ export default function Footer({ site }: FooterProps) {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold">站点</h4>
+            <h4 className="text-sm font-semibold">{desktopCopy.sites}</h4>
             <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
               {siteList.map((item) => (
                 <li key={item.code}>
@@ -164,30 +171,30 @@ export default function Footer({ site }: FooterProps) {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold">联系我们</h4>
+            <h4 className="text-sm font-semibold">{desktopCopy.contact}</h4>
             <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
               <li>
-                <span className="block text-xs text-text-tertiary">联系人</span>
+                <span className="block text-xs text-text-tertiary">{desktopCopy.manager}</span>
                 {site.company.manager}
               </li>
               <li>
-                <span className="block text-xs text-text-tertiary">电话</span>
+                <span className="block text-xs text-text-tertiary">{desktopCopy.phone}</span>
                 <a href={`tel:${site.company.contact}`} className="hover:text-foreground">
                   {site.company.contact}
                 </a>
               </li>
               <li>
-                <span className="block text-xs text-text-tertiary">邮箱</span>
+                <span className="block text-xs text-text-tertiary">{desktopCopy.email}</span>
                 <a href={`mailto:${site.company.email}`} className="hover:text-foreground">
                   {site.company.email}
                 </a>
               </li>
               <li>
-                <span className="block text-xs text-text-tertiary">企业微信</span>
+                <span className="block text-xs text-text-tertiary">{desktopCopy.wechat}</span>
                 <div className="mt-2">
                   <Image
                     src="/images/wechat-qr.png"
-                    alt="企业微信二维码"
+                    alt={desktopCopy.qrAlt}
                     width={88}
                     height={88}
                     className="rounded-xl border border-border"
@@ -200,7 +207,7 @@ export default function Footer({ site }: FooterProps) {
         </div>
 
         <div className="mt-6 flex flex-col gap-3 border-t border-border pt-5 text-xs text-muted-foreground lg:mt-12 lg:pt-6 lg:flex-row lg:items-center lg:justify-between">
-          <p>© 2026 {site.company.name}。页面信息仅用于产品介绍，具体服务以实际开通和双方确认为准。</p>
+          <p>© 2026 {site.company.name}。{desktopCopy.disclaimer}</p>
           <div className="flex gap-5">
             <a href={`${site.path}company/`} className="hover:text-foreground">{footerActionCopy[site.code]}</a>
           </div>

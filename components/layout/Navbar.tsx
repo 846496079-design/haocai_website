@@ -38,7 +38,7 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-border/70 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-[1280px] items-center justify-between px-4 md:h-16 md:px-6">
-        <a href={site.path} className="flex items-center gap-2">
+        <a href={site.path} className="flex min-h-11 items-center gap-2 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
           <Image
             src={logoSrc[site.code]}
             alt="账大师"
@@ -65,14 +65,16 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
             <button
               type="button"
               onClick={() => setGlobalOpen((open) => !open)}
-              className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="flex h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              aria-expanded={globalOpen}
+              aria-controls="global-site-menu"
             >
               <Globe className="size-4" />
               <span>{siteLabel[site.code]}</span>
               <ChevronDown className={`size-4 transition-transform ${globalOpen ? 'rotate-180' : ''}`} />
             </button>
             {globalOpen && (
-              <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-border bg-card p-1.5 shadow-lg">
+              <div id="global-site-menu" className="absolute right-0 mt-2 w-44 rounded-2xl border border-border bg-card p-1.5 shadow-lg">
                 {siteList.map((item) => (
                   <a
                     key={item.code}
@@ -96,7 +98,7 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
           <button
             type="button"
             onClick={onTrialClick}
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_rgba(87,215,223,.22)]"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_rgba(87,215,223,.22)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {site.actions.trial}
           </button>
@@ -106,15 +108,17 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
           <button
             type="button"
             onClick={onTrialClick}
-            className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground"
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {site.actions.trial}
           </button>
           <button
             type="button"
-            className="rounded-lg p-1.5"
+            className="inline-flex size-11 items-center justify-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             onClick={() => setMobileOpen((open) => !open)}
-            aria-label="Toggle navigation"
+            aria-label={mobileOpen ? '关闭站点选择' : '打开站点选择'}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-site-menu"
           >
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
@@ -126,7 +130,7 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
           <a
             key={item.href}
             href={item.href}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`inline-flex h-11 shrink-0 items-center rounded-lg px-3 text-xs font-medium transition-colors ${
               isCurrentNavItem(item.href)
                 ? 'bg-primary/10 text-primary'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -139,7 +143,7 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
       </nav>
 
       {mobileOpen && (
-        <div className="border-t border-border bg-card px-4 py-4 md:hidden">
+        <div id="mobile-site-menu" className="border-t border-border bg-card px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-4">
             <div className="border-t border-border pt-4">
               <p className="mb-2 text-xs font-medium text-muted-foreground">{siteLabel[site.code]}</p>

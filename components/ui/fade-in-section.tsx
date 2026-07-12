@@ -7,6 +7,7 @@ interface FadeInSectionProps {
   className?: string
   delay?: number
   direction?: 'up' | 'down' | 'left' | 'right' | 'none'
+  visibleOnLoad?: boolean
 }
 
 export default function FadeInSection({
@@ -14,11 +15,14 @@ export default function FadeInSection({
   className = '',
   delay = 0,
   direction = 'up',
+  visibleOnLoad = false,
 }: FadeInSectionProps) {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(visibleOnLoad)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (visibleOnLoad) return
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -31,7 +35,7 @@ export default function FadeInSection({
 
     if (ref.current) observer.observe(ref.current)
     return () => observer.disconnect()
-  }, [])
+  }, [visibleOnLoad])
 
   const directionStyles = {
     up: 'translate-y-8',
@@ -44,10 +48,10 @@ export default function FadeInSection({
   return (
     <div
       ref={ref}
-      className={`transition-all duration-700 ease-out ${
+      className={`${visibleOnLoad ? '' : 'transition-all duration-700 ease-out'} ${
         isVisible ? 'opacity-100 translate-x-0 translate-y-0' : `opacity-0 ${directionStyles[direction]}`
       } ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
+      style={visibleOnLoad ? undefined : { transitionDelay: `${delay}ms` }}
     >
       {children}
     </div>

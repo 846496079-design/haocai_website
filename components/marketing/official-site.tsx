@@ -772,24 +772,34 @@ const touchpointCopy = {
   },
 } as const
 
-function TouchpointsSection({ site, onTrial, dark = false }: { site: SiteContent; onTrial: () => void; dark?: boolean }) {
+function TouchpointsSection({
+  site,
+  onTrial,
+  dark = false,
+  compact = false,
+}: {
+  site: SiteContent
+  onTrial: () => void
+  dark?: boolean
+  compact?: boolean
+}) {
   const t = touchpointCopy[site.code]
   const qr = site.wechat?.qr ?? '/images/wechat-official-qr.png'
   return (
-    <section id="start" className={`px-6 py-20 ${dark ? '' : ''}`}>
+    <section id="start" className={`px-6 ${compact ? 'border-y border-border bg-card py-14 md:py-16' : 'py-20'} ${dark ? '' : ''}`}>
       <div className="mx-auto max-w-[1280px]">
-        <FadeInSection>
-          <SectionHeading eyebrow={t.eyebrow} title={t.title} subtitle={t.subtitle} />
+        <FadeInSection visibleOnLoad={compact}>
+          <SectionHeading align={compact ? 'left' : 'center'} eyebrow={t.eyebrow} title={t.title} subtitle={t.subtitle} />
         </FadeInSection>
-        <div className="mt-8 grid overflow-hidden rounded-[28px] border border-border bg-card shadow-[0_16px_42px_rgba(0,0,0,.24)] md:grid-cols-[auto_1fr_auto_auto] md:items-center">
-          <FadeInSection>
+        <div className={`mt-8 grid overflow-hidden rounded-[28px] border border-border ${compact ? 'bg-background' : 'bg-card shadow-[0_16px_42px_rgba(0,0,0,.24)]'} md:grid-cols-[auto_1fr_auto_auto] md:items-center`}>
+          <FadeInSection visibleOnLoad={compact}>
             <div className="border-b border-border p-5 md:border-b-0 md:border-r md:p-6">
               <div className="relative mx-auto size-28 overflow-hidden rounded-2xl bg-white p-1.5">
                 <Image src={qr} alt={t.wechatNote} fill sizes="112px" className="object-contain p-1.5" />
               </div>
             </div>
           </FadeInSection>
-          <FadeInSection delay={80}>
+          <FadeInSection delay={80} visibleOnLoad={compact}>
             <div className="p-6 md:p-7">
               <div className="inline-flex items-center gap-2 text-sm font-semibold text-primary"><MessageSquareText className="size-4" />{t.wechatTitle}</div>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.wechatDesc}</p>
@@ -797,18 +807,18 @@ function TouchpointsSection({ site, onTrial, dark = false }: { site: SiteContent
               <p className="mt-1 text-sm leading-6 text-muted-foreground">{t.webDesc}</p>
             </div>
           </FadeInSection>
-          <FadeInSection delay={120}>
+          <FadeInSection delay={120} visibleOnLoad={compact}>
             <div className="px-6 pb-6 md:px-7 md:pb-0">
-              <button type="button" onClick={onTrial} className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary/90 md:w-auto">
+              <button type="button" onClick={onTrial} className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:w-auto">
                 {t.webCta}<ArrowRight className="ml-2 size-4" />
               </button>
             </div>
           </FadeInSection>
-          <FadeInSection delay={160}>
+          <FadeInSection delay={160} visibleOnLoad={compact}>
             <div className="border-t border-border px-6 py-5 md:border-l md:border-t-0 md:px-7">
               <p className="text-sm font-semibold text-foreground">{t.macTitle}</p>
               <p className="mt-1 max-w-44 text-xs leading-5 text-muted-foreground">{t.macDesc}</p>
-              <a href={macDownloadUrl} className="mt-3 inline-flex items-center text-sm font-semibold text-primary transition-colors hover:text-primary/80">
+              <a href={macDownloadUrl} className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary transition-colors hover:text-primary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                 {t.macCta}<ArrowRight className="ml-1.5 size-4" />
               </a>
             </div>
@@ -1268,15 +1278,16 @@ export default function OfficialSite({
 
   function renderPricing({ dark = false }: { dark?: boolean } = {}) {
     const pricing = site.pricingPlans
+    const visibleOnLoad = page === 'home'
     if (!pricing) {
       // jp/hk 回退：沿用单一定价
       return (
         <section id="pricing" className={`${dark ? 'bg-card' : ''} px-6 py-20`}>
           <div className="mx-auto grid max-w-[1120px] items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <FadeInSection>
+            <FadeInSection visibleOnLoad={visibleOnLoad}>
               <SectionHeading align="left" title={site.pricing.title} subtitle={site.pricing.subtitle} />
             </FadeInSection>
-            <FadeInSection delay={120}>
+            <FadeInSection delay={120} visibleOnLoad={visibleOnLoad}>
               <div className="rounded-[28px] border border-primary/20 bg-background p-6 shadow-[0_20px_60px_rgba(24,36,61,.12)]">
                 <div className="flex flex-col gap-4 border-b border-border pb-6 md:flex-row md:items-end md:justify-between">
                   <div>
@@ -1318,37 +1329,47 @@ export default function OfficialSite({
     ])
     return (
       <section id="pricing" className={`relative overflow-hidden px-6 py-20 ${dark ? 'bg-card' : ''}`}>
-        <div className="bg-grid absolute inset-0 -z-10" />
+        {!visibleOnLoad && <div className="bg-grid absolute inset-0 -z-10" />}
         <div className="mx-auto max-w-[1120px]">
-          <FadeInSection>
+          <FadeInSection visibleOnLoad={visibleOnLoad}>
             <SectionHeading eyebrow={pricing.eyebrow} title={pricing.title} subtitle={pricing.subtitle} />
           </FadeInSection>
           <div className="mt-12 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {purchasePlans.map((plan, index) => {
               const lifetime = plan.purchase === 'lifetime'
+              const lifetimeCardTone = visibleOnLoad
+                ? 'border-primary/35 ring-1 ring-primary/10'
+                : 'border-[#e2b64f] ring-1 ring-[#f7c65b]/25'
+              const lifetimeSurfaceTone = visibleOnLoad
+                ? 'border-primary/25 bg-primary/5'
+                : 'border-[#f7c65b]/55 bg-[#fff8e6]'
+              const lifetimeTextTone = visibleOnLoad ? 'text-primary' : 'text-[#9b6b06]'
+              const lifetimeButtonTone = visibleOnLoad
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'bg-[#f7c65b] text-[#251d08] shadow-lg shadow-[#f7c65b]/20 hover:-translate-y-0.5'
               return (
-              <FadeInSection key={plan.key} delay={index * 70}>
-                <div className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border bg-card p-6 shadow-[0_16px_42px_rgba(20,64,78,.08)] ${lifetime ? 'border-[#e2b64f] ring-1 ring-[#f7c65b]/25' : 'border-border'}`}>
+              <FadeInSection key={plan.key} delay={index * 70} visibleOnLoad={visibleOnLoad}>
+                <div className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border bg-card p-6 ${visibleOnLoad ? '' : 'shadow-[0_16px_42px_rgba(20,64,78,.08)]'} ${lifetime ? lifetimeCardTone : 'border-border'}`}>
                   {lifetime && (
-                    <span className="absolute right-4 top-4 rounded-full bg-[#f7c65b] px-2.5 py-1 text-[11px] font-semibold text-[#251d08]">永久买断</span>
+                    <span className={`absolute right-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-semibold ${visibleOnLoad ? 'bg-primary text-primary-foreground' : 'bg-[#f7c65b] text-[#251d08]'}`}>永久买断</span>
                   )}
                   <p className="text-lg font-semibold">{plan.name}</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.audience}</p>
-                  <div className={`mt-6 rounded-2xl border p-4 ${lifetime ? 'border-[#f7c65b]/55 bg-[#fff8e6]' : 'border-border bg-secondary/50'}`}>
-                    <span className={`text-xs font-semibold tracking-[0.14em] ${lifetime ? 'text-[#9b6b06]' : 'text-primary'}`}>{lifetime ? '一次购买 · 长期使用' : '按年订阅 · 灵活开通'}</span>
+                  <div className={`mt-6 rounded-2xl border p-4 ${lifetime ? lifetimeSurfaceTone : 'border-border bg-secondary/50'}`}>
+                    <span className={`text-xs font-semibold tracking-[0.14em] ${lifetime ? lifetimeTextTone : 'text-primary'}`}>{lifetime ? '一次购买 · 长期使用' : '按年订阅 · 灵活开通'}</span>
                     <div className="mt-2 flex items-end gap-2">
-                      <span className={`text-4xl font-bold tracking-tight ${lifetime ? 'text-[#9b6b06]' : 'text-foreground'}`}>{lifetime ? plan.lifetime : plan.yearly}</span>
-                      <span className={`pb-1.5 text-sm font-semibold ${lifetime ? 'text-[#9b6b06]' : 'text-muted-foreground'}`}>{lifetime ? plan.lifetimeNote : plan.yearlyNote}</span>
+                      <span className={`text-4xl font-bold tracking-tight ${lifetime ? lifetimeTextTone : 'text-foreground'}`}>{lifetime ? plan.lifetime : plan.yearly}</span>
+                      <span className={`pb-1.5 text-sm font-semibold ${lifetime ? lifetimeTextTone : 'text-muted-foreground'}`}>{lifetime ? plan.lifetimeNote : plan.yearlyNote}</span>
                     </div>
                   </div>
                   <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span>{lifetime ? <>年付也可选：<span className="font-semibold text-foreground">{plan.yearly}</span> {plan.yearlyNote}</> : <>长期方案：<span className="font-semibold text-[#9b6b06]">{plan.lifetime}</span> {plan.lifetimeNote}</>}</span>
+                    <span>{lifetime ? <>年付也可选：<span className="font-semibold text-foreground">{plan.yearly}</span> {plan.yearlyNote}</> : <>长期方案：<span className={`font-semibold ${visibleOnLoad ? 'text-primary' : 'text-[#9b6b06]'}`}>{plan.lifetime}</span> {plan.lifetimeNote}</>}</span>
                     {plan.perDay && <span className="rounded-full bg-secondary px-3 py-1 font-medium text-primary">{plan.perDay}</span>}
                   </div>
                   <button
                     type="button"
                     onClick={() => setTrialOpen(true)}
-                    className={`mt-6 inline-flex h-11 w-full items-center justify-center rounded-xl px-5 text-sm font-semibold transition-all ${lifetime ? 'bg-[#f7c65b] text-[#251d08] shadow-lg shadow-[#f7c65b]/20 hover:-translate-y-0.5' : 'bg-primary text-primary-foreground shadow-lg shadow-primary/15 hover:-translate-y-0.5'}`}
+                    className={`mt-6 inline-flex h-12 w-full items-center justify-center rounded-xl px-5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${lifetime ? lifetimeButtonTone : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
                   >
                     {plan.cta}
                     <ArrowRight className="ml-2 size-4" />
@@ -1553,41 +1574,36 @@ export default function OfficialSite({
     <div className="min-h-screen bg-background text-foreground">
       <Navbar site={site} onTrialClick={() => setTrialOpen(true)} />
 
-      <main className="official-main">
+      <main className={page === 'home' ? 'official-main home-trust' : 'official-main'}>
         {page === 'home' && (
           <>
-            {/* HERO · 深色沉浸 */}
-            <section className="home-hero relative overflow-hidden px-6 pt-20 pb-24 text-white md:pt-28 md:pb-32">
-              <div className="grid-dark pointer-events-none absolute inset-0" />
-              <div className="tech-light-orb -left-24 -top-24" />
-              <div className="tech-light-orb -bottom-32 right-8 [animation-delay:-8s]" />
-              <div className="relative mx-auto grid max-w-[1280px] items-center gap-12 lg:grid-cols-[1.05fr_430px]">
-                <FadeInSection>
+            <section className="home-trust-hero relative overflow-hidden px-6 py-14 md:py-20">
+              <div className="mx-auto grid max-w-[1280px] items-center gap-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-12">
+                <FadeInSection visibleOnLoad>
                   <div>
-                    <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-                      <Sparkles className="size-4" />
+                    <div className="mb-6 inline-flex items-center gap-2 border-l-2 border-primary pl-3 text-sm font-semibold text-primary">
                       {site.hero.eyebrow}
                     </div>
-                    <h1 className="text-5xl font-black leading-[1.08] tracking-tight md:text-7xl">
+                    <h1 className="max-w-3xl text-5xl font-black leading-[1.1] tracking-[-0.035em] text-foreground md:text-6xl">
                       <span className="block">{site.hero.title}</span>
-                      <span className="mt-2 block text-gradient-neon">{site.hero.titleAccent}</span>
+                      <span className="mt-2 block text-primary">{site.hero.titleAccent}</span>
                     </h1>
-                    <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">{site.hero.description}</p>
+                    <p className="mt-6 max-w-xl text-base leading-8 text-muted-foreground md:text-lg">{site.hero.description}</p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                      <button type="button" onClick={() => setTrialOpen(true)} className="inline-flex h-12 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-6 text-sm font-semibold text-white shadow-[0_10px_32px_rgba(79,123,255,.25)] transition-transform hover:-translate-y-0.5 hover:brightness-105">
+                      <button type="button" onClick={() => setTrialOpen(true)} className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                         {site.hero.primaryCta}
                         <ArrowRight className="ml-2 size-4" />
                       </button>
-                      <a href="#start" className="glass-dark inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold text-foreground transition-colors hover:bg-primary/10">
+                      <a href="#start" className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card px-6 text-sm font-semibold text-foreground transition-colors hover:border-primary/35 hover:bg-primary/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                         <MessageSquareText className="mr-2 size-4" />
                         {home.followWechat}
                       </a>
                     </div>
-                    <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="mt-10 grid grid-cols-2 border-y border-border sm:grid-cols-4">
                       {site.metrics.map((metric) => (
-                        <div key={metric.label} className="rounded-2xl border border-primary/10 bg-white/80 p-4 shadow-[0_8px_24px_rgba(79,123,255,.06)]">
-                          <div className="text-2xl font-bold text-foreground">{metric.value}</div>
-                          <div className="mt-1 text-sm font-medium text-foreground">{metric.label}</div>
+                        <div key={metric.label} className="border-r border-border py-4 pr-3 last:border-r-0 sm:px-4 sm:first:pl-0">
+                          <div className="text-xl font-bold text-foreground">{metric.value}</div>
+                          <div className="mt-1 text-sm font-semibold text-foreground">{metric.label}</div>
                           <p className="mt-1 text-xs leading-5 text-muted-foreground">{metric.note}</p>
                         </div>
                       ))}
@@ -1595,45 +1611,30 @@ export default function OfficialSite({
                   </div>
                 </FadeInSection>
 
-                <FadeInSection delay={120}>
-                  <div className="relative mx-auto max-w-[360px]">
-                    <div className="absolute -inset-6 -z-10 rounded-[46px] bg-cyan-300/10 blur-2xl" />
-                    <div className="overflow-hidden rounded-[40px] border border-white/15 bg-[#101b25] p-3 shadow-[0_44px_110px_rgba(0,0,0,.48)]">
+                <FadeInSection visibleOnLoad>
+                  <div className="relative mx-auto max-w-[340px] lg:mr-0">
+                    <div className="overflow-hidden rounded-[32px] border border-border bg-card p-2 shadow-[0_20px_56px_rgba(24,36,61,.16)]">
                       <Image
                         src={screenshotSrc[site.code]}
                         alt={productIntro.imageAlt}
                         width={922}
                         height={2048}
                         priority
-                        className="h-[560px] w-full rounded-[30px] object-cover object-top"
+                        className="h-[540px] w-full rounded-[24px] object-cover object-top"
                       />
-                    </div>
-                    <div className="absolute -left-5 top-16 hidden rounded-2xl border border-white/15 bg-[#101b25]/90 px-4 py-3 shadow-xl backdrop-blur md:block animate-float">
-                      <p className="text-xs text-white/60">AI 记账</p>
-                      <p className="text-lg font-bold text-primary">¥0.98/天</p>
-                    </div>
-                    <div className="absolute -right-5 bottom-24 hidden rounded-2xl border border-white/15 bg-[#101b25]/90 px-4 py-3 shadow-xl backdrop-blur md:block animate-float-delay">
-                      <div className="flex items-center gap-2">
-                        <span className="flex size-8 items-center justify-center rounded-full bg-status-online/20 text-status-online"><CheckCircle2 className="size-4" /></span>
-                        <div>
-                          <p className="text-xs text-white/60">本月报税</p>
-                          <p className="text-sm font-semibold">3 步已完成</p>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </FadeInSection>
               </div>
             </section>
 
-            {/* 三种触达方式（公众号主推） */}
-            <TouchpointsSection site={site} onTrial={() => setTrialOpen(true)} />
+            <TouchpointsSection site={site} onTrial={() => setTrialOpen(true)} compact />
 
             {/* 定价（卡片；完整对比表在产品页） */}
             {renderPricing()}
             {site.comparison && (
               <div className="-mt-8 px-6 pb-12 text-center">
-                <a href={`${site.path}product/#pricing`} className="inline-flex items-center text-sm font-semibold text-primary">{home.fullComparison}<ArrowRight className="ml-1 size-4" /></a>
+                <a href={`${site.path}product/#pricing`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{home.fullComparison}<ArrowRight className="ml-1 size-4" /></a>
               </div>
             )}
 
@@ -1641,7 +1642,7 @@ export default function OfficialSite({
             {site.cases && (
               <section className="bg-card px-6 py-20">
                 <div className="mx-auto max-w-[1120px]">
-                  <FadeInSection>
+                  <FadeInSection visibleOnLoad>
                     <SectionHeading eyebrow="客户案例" title="12,000+ 企业的服务规模，与真实工作场景反馈" subtitle="行业分布合计 12,000 家；反馈均已做匿名处理，不以单个客户的节省金额或效率比例作承诺。" />
                   </FadeInSection>
                   {site.caseDistribution && (
@@ -1656,7 +1657,7 @@ export default function OfficialSite({
                   )}
                   <div className="mt-8 grid gap-4 md:grid-cols-3">
                     {site.cases.items.slice(0, 3).map((item, index) => (
-                      <FadeInSection key={item.company} delay={index * 60}>
+                      <FadeInSection key={item.company} delay={index * 60} visibleOnLoad>
                         <div className="flex h-full flex-col rounded-2xl border border-border bg-background p-5">
                           <span className="text-xs font-semibold text-primary">{item.industry}</span>
                           <p className="mt-4 flex-1 text-sm leading-7 text-muted-foreground">“{item.quote}”</p>
@@ -1666,7 +1667,7 @@ export default function OfficialSite({
                     ))}
                   </div>
                   <div className="mt-8 text-center">
-                    <a href={`${site.path}cases/`} className="inline-flex h-11 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-6 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-transform hover:-translate-y-0.5">{home.viewCases}<ArrowRight className="ml-2 size-4" /></a>
+                    <a href={`${site.path}cases/`} className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{home.viewCases}<ArrowRight className="ml-2 size-4" /></a>
                   </div>
                 </div>
               </section>
@@ -1675,12 +1676,12 @@ export default function OfficialSite({
             {/* 新闻 teaser */}
             <section className="bg-card px-6 py-20">
               <div className="mx-auto max-w-[1280px]">
-                <FadeInSection>
+                <FadeInSection visibleOnLoad>
                   <SectionHeading eyebrow={news.eyebrow} title={news.title} subtitle={home.newsTeaserSub} />
                 </FadeInSection>
                 <div className="mt-10 grid gap-5 md:grid-cols-3">
                   {articles.slice(0, 3).map((item, index) => (
-                    <FadeInSection key={item.slug} delay={index * 70}>
+                    <FadeInSection key={item.slug} delay={index * 70} visibleOnLoad>
                       <a href={`${site.path}news/${item.slug}/`} className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-border bg-background transition-all hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(79,123,255,.14)]">
                         <div className="relative aspect-[16/9] bg-secondary">
                           <Image src={item.cover} alt={item.title} fill className="object-cover" sizes="(min-width: 768px) 33vw, 100vw" />
@@ -1696,7 +1697,7 @@ export default function OfficialSite({
                   ))}
                 </div>
                 <div className="mt-8 text-center">
-                  <a href={`${site.path}news/`} className="inline-flex items-center text-sm font-semibold text-primary">{home.moreNews}<ArrowRight className="ml-1 size-4" /></a>
+                  <a href={`${site.path}news/`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{home.moreNews}<ArrowRight className="ml-1 size-4" /></a>
                 </div>
               </div>
             </section>
@@ -1705,7 +1706,7 @@ export default function OfficialSite({
             <section className="px-6 pb-20 pt-4">
               <div className="mx-auto grid max-w-[1280px] gap-3 lg:gap-6 lg:grid-cols-3">
                 {home.navCards.map(([title, desc, href]) => (
-                  <a key={title} href={`${site.path.replace(/\/$/, '')}${href}`} className="group flex min-h-[160px] flex-col rounded-[28px] border border-border bg-card p-5 transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_24px_60px_rgba(79,123,255,.14)] lg:min-h-[200px] lg:p-7">
+                  <a key={title} href={`${site.path.replace(/\/$/, '')}${href}`} className="group flex min-h-[160px] flex-col rounded-[28px] border border-border bg-card p-5 transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_24px_60px_rgba(79,123,255,.14)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:min-h-[200px] lg:p-7">
                     <h2 className="text-2xl font-semibold">{title}</h2>
                     <p className="mt-4 text-sm leading-7 text-muted-foreground">{desc}</p>
                     <span className="mt-auto inline-flex items-center pt-6 text-sm font-semibold text-primary">

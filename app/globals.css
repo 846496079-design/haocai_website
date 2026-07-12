@@ -307,6 +307,30 @@
   animation: tech-grid-drift 30s linear infinite;
 }
 
+/* 首页采用可信、清晰的财务产品表达，不叠加装饰性科技效果。 */
+.home-trust {
+  background: #ffffff;
+  background-image: none;
+  animation: none;
+}
+
+.home-trust-hero {
+  border-bottom: 1px solid var(--border);
+  background: #f9fbff;
+}
+
+.home-trust .text-gradient-neon {
+  background: none;
+  color: var(--primary);
+}
+
+.home-trust .glass-dark {
+  background: var(--card);
+  border-color: var(--border);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 @keyframes tech-grid-drift {
   from { background-position: 0 0; }
   to { background-position: 56px 56px; }
@@ -361,7 +385,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tech-light-orb,
-  .official-main { animation: none; }
+  .official-main,
+  .animate-float,
+  .animate-float-delay,
+  .animate-pulse-glow,
+  .animate-aurora,
+  .animate-aurora-slow,
+  .animate-shimmer,
+  .company-marquee { animation: none; }
 }
 
 /* 旋转的锥形渐变光环（主 CTA / 二维码） */

@@ -7,6 +7,7 @@ export type CmsCategory = {
   id: number
   name: string
   slug: string
+  title: string
   status: 'ACTIVE' | 'DISABLED'
   source: 'MANUAL' | 'IMPORT'
 }
@@ -24,6 +25,7 @@ export type CmsArticleSummary = {
   updatedAt: string
   publishedAt: string | null
   localesComplete: boolean
+  translationStatus: 'CURRENT' | 'STALE' | 'NOT_TRANSLATED'
   isPinned: boolean
   deletedAt: string | null
 }

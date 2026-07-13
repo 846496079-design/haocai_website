@@ -23,6 +23,7 @@ type ArticleRow = {
   is_pinned: number
   pinned_position: number | null
   manual_position: number | null
+  translation_status: 'CURRENT' | 'STALE' | 'NOT_TRANSLATED'
 }
 
 type VersionRow = {
@@ -113,7 +114,7 @@ function initialize() {
   const columns = new Set((database.prepare('PRAGMA table_info(news_article)').all() as { name: string }[]).map((column) => column.name))
   const additions = [
     ['category_id', 'INTEGER'], ['deleted_at', 'TEXT'], ['deleted_from_status', 'TEXT'],
-    ['is_pinned', 'INTEGER NOT NULL DEFAULT 0'], ['pinned_position', 'REAL'], ['manual_position', 'REAL'],
+    ['is_pinned', 'INTEGER NOT NULL DEFAULT 0'], ['pinned_position', 'REAL'], ['manual_position', 'REAL'], ['translation_status', "TEXT NOT NULL DEFAULT 'NOT_TRANSLATED'"],
   ] as const
   additions.forEach(([name, definition]) => { if (!columns.has(name)) database.exec(`ALTER TABLE news_article ADD COLUMN ${name} ${definition}`) })
 }
@@ -203,6 +204,7 @@ function toRecord(row: ArticleRow, version: VersionRow): CmsArticleRecord {
   return {
     id: row.id,
     slug: row.slug,
+    title: first.title,
     status: row.status,
     date: first.date,
     category: first.category,
@@ -211,6 +213,7 @@ function toRecord(row: ArticleRow, version: VersionRow): CmsArticleRecord {
     updatedAt: row.updated_at,
     publishedAt: row.published_at,
     localesComplete: isContentComplete(content),
+    translationStatus: row.translation_status ?? 'NOT_TRANSLATED',
     isPinned: Boolean(row.is_pinned),
     deletedAt: row.deleted_at,
     content,
@@ -315,9 +318,11 @@ export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: 
       version = database.prepare('SELECT * FROM news_version WHERE id = ?').get(result.lastInsertRowid) as VersionRow
     }
     const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, normalizeArticle(content[locale], row.slug)])) as CmsArticleContent
+    const previous = version ? parseContent(version.content_json) : createEmptyContent(row.slug)
+    const chineseChanged = JSON.stringify(previous.cn) !== JSON.stringify(normalized.cn)
     const categoryId = ensureCategory(normalized.cn.category)
     database.prepare('UPDATE news_version SET content_json = ?, previewed_at = NULL, updated_at = ? WHERE id = ?').run(JSON.stringify(normalized), timestamp, version.id)
-    database.prepare("UPDATE news_article SET category_id = ?, status = CASE WHEN published_version_id IS NULL THEN 'DRAFT' ELSE status END, updated_at = ? WHERE id = ?").run(categoryId, timestamp, row.id)
+    database.prepare("UPDATE news_article SET category_id = ?, translation_status = CASE WHEN ? THEN 'STALE' ELSE translation_status END, status = CASE WHEN published_version_id IS NULL THEN 'DRAFT' ELSE status END, updated_at = ? WHERE id = ?").run(categoryId, chineseChanged ? 1 : 0, timestamp, row.id)
     writeAudit(adminId, 'SAVE_DRAFT', 'news_article', String(row.id), { versionId: version.id })
   })
   operation()
@@ -332,6 +337,13 @@ export function markCmsPreviewed(id: number, adminId: number) {
   const timestamp = now()
   database.prepare('UPDATE news_version SET previewed_at = ?, updated_at = ? WHERE id = ?').run(timestamp, timestamp, version.id)
   writeAudit(adminId, 'PREVIEW_DRAFT', 'news_article', String(id), { versionId: version.id })
+}
+
+export function markCmsTranslated(id: number, adminId: number) {
+  if (usesPostgres()) return postgresStore.markCmsTranslated(id, adminId)
+  const result = database.prepare("UPDATE news_article SET translation_status = 'CURRENT', updated_at = ? WHERE id = ?").run(now(), id)
+  if (!result.changes) throw new Error('新闻不存在。')
+  writeAudit(adminId, 'TRANSLATE_DRAFT', 'news_article', String(id), {})
 }
 
 export function publishCmsArticle(id: number, adminId: number, reviewed: boolean) {

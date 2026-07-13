@@ -48,7 +48,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import FadeInSection from '@/components/ui/fade-in-section'
 import type { IconKey, SiteContent } from '@/lib/site-content'
-import { getNewsArticle, newsArticles } from '@/lib/news-content'
+import { getNewsArticle, newsArticles, type NewsArticle } from '@/lib/news-content'
 
 const icons: Record<IconKey, typeof Building2> = {
   building: Building2,
@@ -878,18 +878,22 @@ export default function OfficialSite({
   site,
   page = 'home',
   articleSlug,
+  initialArticles,
+  initialArticle,
 }: {
   site: SiteContent
   page?: OfficialPage
   articleSlug?: string
+  initialArticles?: NewsArticle[]
+  initialArticle?: NewsArticle
 }) {
   const contactHref = `tel:${site.company.contact}`
   const copy = pageCopy[site.code]
   const productIntro = productIntroCopy[site.code]
   const news = newsCopy[site.code]
   const home = homeCopy[site.code]
-  const articles = newsArticles[site.code]
-  const article = articleSlug ? getNewsArticle(site.code, articleSlug) : undefined
+  const articles = initialArticles ?? newsArticles[site.code]
+  const article = initialArticle ?? (articleSlug ? getNewsArticle(site.code, articleSlug) : undefined)
   const trial = trialCopy[site.code]
   const jobs = jobCopy[site.code]
   const ui = uiCopy[site.code]

@@ -1,6 +1,7 @@
 import OfficialSite from '@/components/marketing/official-site'
+import { getPublishedArticles } from '@/lib/cms/store'
 import { getSiteContent } from '@/lib/site-content'
 
-export default function CNNewsPage() {
-  return <OfficialSite site={getSiteContent('cn')} page="news" />
+export default async function CNNewsPage() {
+  return <OfficialSite site={getSiteContent('cn')} page="news" initialArticles={getPublishedArticles('cn')} />
 }

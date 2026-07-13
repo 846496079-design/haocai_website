@@ -1,12 +1,11 @@
 import OfficialSite from '@/components/marketing/official-site'
+import { getPublishedArticle, getPublishedArticles } from '@/lib/cms/store'
 import { getSiteContent } from '@/lib/site-content'
-import { newsArticles } from '@/lib/news-content'
-
-export function generateStaticParams() {
-  return newsArticles.jp.map((article) => ({ slug: article.slug }))
-}
+import { notFound } from 'next/navigation'
 
 export default async function JPNewsArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  return <OfficialSite site={getSiteContent('jp')} page="newsDetail" articleSlug={slug} />
+  const article = getPublishedArticle('jp', slug)
+  if (!article) notFound()
+  return <OfficialSite site={getSiteContent('jp')} page="newsDetail" articleSlug={slug} initialArticles={getPublishedArticles('jp')} initialArticle={article} />
 }

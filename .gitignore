@@ -1,5 +1,7 @@
 # 依赖与包管理缓存
 node_modules/
+.data/
+public/uploads/cms/
 .pnp
 .pnp.js
 

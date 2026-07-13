@@ -5,7 +5,7 @@ import { mkdirSync } from 'node:fs'
 import { basename, dirname, extname, join } from 'node:path'
 import { newsArticles, type NewsArticle } from '@/lib/news-content'
 import type { SiteCode } from '@/lib/site-content'
-import { CMS_LOCALES, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary } from './types'
+import { CMS_LOCALES, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsCategory } from './types'
 
 type ArticleRow = {
   id: number
@@ -149,6 +149,36 @@ function seedLegacyArticles() {
 
 seedLegacyArticles()
 
+function categorySlug(value: string) {
+  const normalized = value.trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').replace(/^-+|-+$/g, '')
+  return normalized || `category-${Date.now()}`
+}
+
+function ensureCategory(name: string, source: CmsCategory['source'] = 'MANUAL') {
+  const normalized = name.trim()
+  if (!normalized) return null
+  const existing = database.prepare('SELECT * FROM news_category WHERE name = ?').get(normalized) as { id: number } | undefined
+  if (existing) return existing.id
+  const timestamp = now()
+  const suffix = Math.random().toString(36).slice(2, 7)
+  const result = database.prepare("INSERT INTO news_category (name, slug, status, source, created_at, updated_at) VALUES (?, ?, 'ACTIVE', ?, ?, ?)").run(normalized, `${categorySlug(normalized)}-${suffix}`, source, timestamp, timestamp)
+  return Number(result.lastInsertRowid)
+}
+
+function seedCategories() {
+  const rows = database.prepare('SELECT * FROM news_article').all() as ArticleRow[]
+  const update = database.prepare('UPDATE news_article SET category_id = ? WHERE id = ?')
+  rows.forEach((row) => {
+    if (row.category_id) return
+    const version = versionFor(row)
+    if (!version) return
+    const categoryId = ensureCategory(parseContent(version.content_json).cn.category)
+    if (categoryId) update.run(categoryId, row.id)
+  })
+}
+
+seedCategories()
+
 function parseContent(value: string): CmsArticleContent {
   const parsed = JSON.parse(value) as Partial<CmsArticleContent>
   const fallback = createEmptyContent()
@@ -246,8 +276,9 @@ export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: 
       version = database.prepare('SELECT * FROM news_version WHERE id = ?').get(result.lastInsertRowid) as VersionRow
     }
     const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, normalizeArticle(content[locale], row.slug)])) as CmsArticleContent
+    const categoryId = ensureCategory(normalized.cn.category)
     database.prepare('UPDATE news_version SET content_json = ?, previewed_at = NULL, updated_at = ? WHERE id = ?').run(JSON.stringify(normalized), timestamp, version.id)
-    database.prepare("UPDATE news_article SET status = CASE WHEN published_version_id IS NULL THEN 'DRAFT' ELSE status END, updated_at = ? WHERE id = ?").run(timestamp, row.id)
+    database.prepare("UPDATE news_article SET category_id = ?, status = CASE WHEN published_version_id IS NULL THEN 'DRAFT' ELSE status END, updated_at = ? WHERE id = ?").run(categoryId, timestamp, row.id)
     writeAudit(adminId, 'SAVE_DRAFT', 'news_article', String(row.id), { versionId: version.id })
   })
   operation()
@@ -287,6 +318,70 @@ export function offlineCmsArticle(id: number, adminId: number) {
   const timestamp = now()
   database.prepare("UPDATE news_article SET status = 'OFFLINE', offline_at = ?, updated_at = ? WHERE id = ?").run(timestamp, timestamp, id)
   writeAudit(adminId, 'OFFLINE', 'news_article', String(id), {})
+}
+
+export function listCmsCategories(): CmsCategory[] {
+  return database.prepare("SELECT id, name, slug, status, source FROM news_category ORDER BY status = 'ACTIVE' DESC, sort_order ASC, name ASC").all() as CmsCategory[]
+}
+
+export function createCmsCategory(name: string, adminId: number) {
+  if (!name.trim()) throw new Error('分类名称不能为空。')
+  const id = ensureCategory(name, 'MANUAL')
+  if (!id) throw new Error('分类创建失败。')
+  writeAudit(adminId, 'CREATE_CATEGORY', 'news_category', String(id), { name: name.trim() })
+  return listCmsCategories().find((item) => item.id === id)
+}
+
+export function setCmsCategoryStatus(id: number, status: CmsCategory['status'], adminId: number) {
+  const result = database.prepare('UPDATE news_category SET status = ?, updated_at = ? WHERE id = ?').run(status, now(), id)
+  if (!result.changes) throw new Error('分类不存在。')
+  writeAudit(adminId, status === 'ACTIVE' ? 'RESTORE_CATEGORY' : 'DISABLE_CATEGORY', 'news_category', String(id), {})
+}
+
+export function moveCmsArticleToTrash(id: number, adminId: number) {
+  const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
+  if (!row || row.status === 'TRASH') throw new Error('新闻不存在或已在回收站。')
+  const timestamp = now()
+  database.transaction(() => {
+    database.prepare("UPDATE news_article SET status = 'TRASH', deleted_at = ?, deleted_from_status = ?, is_pinned = 0, pinned_position = NULL, manual_position = NULL, updated_at = ? WHERE id = ?").run(timestamp, row.status, timestamp, id)
+    writeAudit(adminId, 'MOVE_TO_TRASH', 'news_article', String(id), { from: row.status })
+  })()
+}
+
+export function restoreCmsArticle(id: number, adminId: number) {
+  const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
+  if (!row || row.status !== 'TRASH') throw new Error('只有回收站稿件可以恢复。')
+  database.prepare("UPDATE news_article SET status = 'DRAFT', deleted_at = NULL, deleted_from_status = NULL, updated_at = ? WHERE id = ?").run(now(), id)
+  writeAudit(adminId, 'RESTORE_FROM_TRASH', 'news_article', String(id), {})
+}
+
+export function deleteCmsArticlePermanently(id: number, adminId: number) {
+  const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
+  if (!row || row.status !== 'TRASH') throw new Error('只有回收站稿件可以永久删除。')
+  database.transaction(() => { database.prepare('DELETE FROM news_version WHERE article_id = ?').run(id); database.prepare('DELETE FROM news_article WHERE id = ?').run(id); writeAudit(adminId, 'DELETE_PERMANENTLY', 'news_article', String(id), {}) })()
+}
+
+export function setCmsArticlePinned(id: number, pinned: boolean, adminId: number) {
+  const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
+  if (!row || row.status !== 'PUBLISHED') throw new Error('只有已发布稿件可以置顶。')
+  const position = pinned ? Number((database.prepare('SELECT COALESCE(MIN(pinned_position), 0) - 1 AS value FROM news_article WHERE status = ? AND is_pinned = 1').get('PUBLISHED') as { value: number }).value) : null
+  database.prepare('UPDATE news_article SET is_pinned = ?, pinned_position = ?, updated_at = ? WHERE id = ?').run(pinned ? 1 : 0, position, now(), id)
+  writeAudit(adminId, pinned ? 'PIN_ARTICLE' : 'UNPIN_ARTICLE', 'news_article', String(id), {})
+}
+
+export function reorderCmsPublishedArticles(ids: number[], adminId: number) {
+  if (!ids.length || new Set(ids).size !== ids.length) throw new Error('排序参数不正确。')
+  const rows = database.prepare("SELECT id, is_pinned FROM news_article WHERE status = 'PUBLISHED'").all() as { id: number; is_pinned: number }[]
+  if (rows.length !== ids.length || rows.some((row) => !ids.includes(row.id))) throw new Error('排序必须包含全部已发布稿件。')
+  const update = database.prepare('UPDATE news_article SET pinned_position = ?, manual_position = ?, updated_at = ? WHERE id = ?')
+  const timestamp = now()
+  database.transaction(() => {
+    ids.forEach((id, index) => {
+      const row = rows.find((item) => item.id === id)!
+      update.run(row.is_pinned ? index : null, row.is_pinned ? null : index, timestamp, id)
+    })
+    writeAudit(adminId, 'REORDER_PUBLISHED', 'news_article', 'published', { ids })
+  })()
 }
 
 export function writeAudit(adminId: number | null, action: string, targetType: string, targetId: string, detail: unknown) {

@@ -6,13 +6,13 @@
 
 ## 首次创建
 
-1. 确认 Vercel 环境已连接正确的 Neon 数据库并完成 schema 迁移。
-2. 在对应 Vercel Environment 设置 `CMS_ADMIN_USERNAME` 和随机 `CMS_ADMIN_PASSWORD`。密码少于 12 位会被拒绝。
+1. 确认目标运行环境已连接正确的 Neon 数据库并完成 schema 迁移。
+2. 在对应 Vercel Environment 或自有服务器的 Secret Manager 设置 `CMS_ADMIN_USERNAME` 和随机 `CMS_ADMIN_PASSWORD`。密码少于 12 位会被拒绝。
 3. 重新部署该环境。
 4. 访问该环境的 `/cms/login/`，使用初始凭据登录。首次登录请求会在空表中创建管理员。
 5. 登录后访问 `/api/cms/health/`，确认数据库与 Blob 状态。
 6. 查询 Neon 确认只有一条启用管理员记录，并确认 `password_hash` 以 bcrypt 格式存储；不要复制或展示哈希。
-7. 将凭据保存到团队批准的密码管理器。确认登录正常后，从 Vercel 删除 `CMS_ADMIN_PASSWORD` 并重新部署，减少明文初始密码驻留时间。
+7. 将凭据保存到团队批准的密码管理器。确认登录正常后，从运行环境删除 `CMS_ADMIN_PASSWORD` 并重新部署或重启服务，减少明文初始密码驻留时间。
 
 移除初始密码不会影响已有管理员，因为后续认证读取数据库哈希。
 

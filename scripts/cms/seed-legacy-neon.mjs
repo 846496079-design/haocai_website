@@ -6,7 +6,8 @@ import { databaseUrl, fail, hasFlag, option, requireFile, resolveFromRoot, sha25
 const help = `用法：npm run cms:seed-legacy -- [选项]
 
 把本地 SQLite 中当前已发布的新闻版本导入 Neon。脚本按 slug 幂等：
-目标库已有同 slug 时跳过，不覆盖线上内容，也不迁移管理员或会话。
+目标库已有且版本指针有效时跳过；指针缺失或无效时只修复版本关系，
+不覆盖线上内容，也不迁移管理员或会话。
 
 选项：
   --source <路径>  SQLite 文件，默认 .data/news-cms.sqlite
@@ -54,33 +55,59 @@ async function main() {
   const sql = neon(databaseUrl())
   let inserted = 0
   let skipped = 0
+  let repaired = 0
   for (const article of articles) {
-    const rows = await sql.query(`
-      WITH category_upsert AS (
-        INSERT INTO news_category (name, slug, status, source)
-        SELECT $2, $3, 'ACTIVE', 'MANUAL' WHERE $2 <> ''
-        ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-        RETURNING id
-      ), article_insert AS (
-        INSERT INTO news_article (slug, status, category_id, published_at, created_at, updated_at)
-        VALUES ($1, 'PUBLISHED', (SELECT id FROM category_upsert), $4, $5, $6)
-        ON CONFLICT (slug) DO NOTHING
-        RETURNING id
-      ), version_insert AS (
+    const categoryRows = await sql.query(`
+      INSERT INTO news_category (name, slug, status, source)
+      SELECT $1, $2, 'ACTIVE', 'MANUAL' WHERE $1 <> ''
+      ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+      RETURNING id
+    `, [article.category, categorySlug(article.category || article.slug)])
+    const categoryId = categoryRows[0]?.id || null
+
+    const articleRows = await sql.query(`
+      INSERT INTO news_article (slug, status, category_id, published_at, created_at, updated_at)
+      VALUES ($1, 'PUBLISHED', $2, $3, $4, $5)
+      ON CONFLICT (slug) DO UPDATE SET slug = EXCLUDED.slug
+      RETURNING id, published_version_id, (xmax = 0) AS created
+    `, [article.slug, categoryId, article.published_at, article.created_at, article.updated_at])
+    const target = articleRows[0]
+    const validPointer = await sql.query(`
+      SELECT v.id
+      FROM news_version v
+      WHERE v.id = $1 AND v.article_id = $2
+    `, [target.published_version_id, target.id])
+    if (validPointer.length) {
+      skipped += 1
+      continue
+    }
+
+    const existingVersion = await sql.query(`
+      SELECT id
+      FROM news_version
+      WHERE article_id = $1 AND state = 'PUBLISHED'
+      ORDER BY version_no DESC, id DESC
+      LIMIT 1
+    `, [target.id])
+    let versionId = existingVersion[0]?.id
+    if (!versionId) {
+      const versionRows = await sql.query(`
         INSERT INTO news_version (article_id, version_no, state, content_json, created_at, updated_at)
-        SELECT id, 1, 'PUBLISHED', $7::jsonb, $5, $6 FROM article_insert
-        RETURNING id, article_id
-      )
-      UPDATE news_article a
-      SET published_version_id = v.id
-      FROM version_insert v
-      WHERE a.id = v.article_id
-      RETURNING a.id
-    `, [article.slug, article.category, categorySlug(article.category || article.slug), article.published_at, article.created_at, article.updated_at, JSON.stringify(article.content)])
-    if (rows.length) inserted += 1
-    else skipped += 1
+        VALUES ($1, 1, 'PUBLISHED', $2::jsonb, $3, $4)
+        RETURNING id
+      `, [target.id, JSON.stringify(article.content), article.created_at, article.updated_at])
+      versionId = versionRows[0].id
+    }
+    await sql.query(`
+      UPDATE news_article
+      SET status = 'PUBLISHED', published_version_id = $2, draft_version_id = NULL,
+        published_at = COALESCE(published_at, $3), updated_at = NOW()
+      WHERE id = $1
+    `, [target.id, versionId, article.published_at])
+    if (target.created) inserted += 1
+    else repaired += 1
   }
-  console.log(`历史新闻导入完成：新增 ${inserted} 篇，跳过已有 slug ${skipped} 篇。`)
+  console.log(`历史新闻导入完成：新增 ${inserted} 篇，修复不完整记录 ${repaired} 篇，跳过有效记录 ${skipped} 篇。`)
 }
 
 main().catch(fail)

@@ -1,5 +1,7 @@
 # Vercel + Neon + Blob 部署 Runbook
 
+本文只覆盖 Vercel 计算平台。使用公司服务器时执行 [self-hosting-runbook.md](./self-hosting-runbook.md)，两种部署方式共用同一套 Neon 数据迁移和验收标准。
+
 ## 1. 前置条件
 
 - GitHub 上待部署分支包含 CMS 代码、`db/migrations/`、`scripts/cms/` 和本目录文档。
@@ -49,7 +51,7 @@ npm run cms:verify
 2. 按 [数据操作](./data-operations.md) 创建 Neon 恢复点或逻辑备份。
 3. 在 Vercel Production 连接生产 Neon branch/database 与 Blob Store。
 4. 配置 Production 环境变量；不得复制 Preview 密钥。
-5. 在本机先运行迁移和 seed 的 `--dry-run`，再单人执行正式命令。历史 seed 只会新增缺失 slug，不覆盖已有生产稿件。
+5. 在本机先运行迁移和 seed 的 `--dry-run`，再单人执行正式命令。历史 seed 不覆盖有效的同 slug 稿件，只修复缺失或无效的版本指针。
 6. 执行 `npm run cms:verify`，结果必须为零错误。
 7. 将已经验收的 commit 部署为 Production。不要在 Production 临时改分支后跳过 Preview 验收。
 8. 首次打开 CMS 完成管理员初始化；确认登录后移除 Vercel 中的初始明文密码并重新部署。

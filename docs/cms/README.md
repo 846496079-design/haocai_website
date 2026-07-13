@@ -1,10 +1,12 @@
 # 新闻 CMS 生产交付文档
 
-本目录是新闻 CMS 在 Vercel、Neon Postgres 和 Vercel Blob 上线与运维的唯一操作入口。
+本目录是新闻 CMS 在 Vercel 或自有服务器、Neon Postgres 和 Vercel Blob 上线与运维的唯一操作入口。
 
 | 文档 | 用途 |
 | --- | --- |
+| [cto-handoff.md](./cto-handoff.md) | 技术总决策项、交接会议议程与签收清单 |
 | [deployment-runbook.md](./deployment-runbook.md) | 从空环境到 Preview、Production 的完整上线顺序与验收 |
+| [self-hosting-runbook.md](./self-hosting-runbook.md) | 公司 Linux 服务器构建、运行、反向代理、回滚和监控 |
 | [environment-variables.md](./environment-variables.md) | 环境变量、作用域、生成与轮换要求 |
 | [data-operations.md](./data-operations.md) | schema 迁移、历史新闻导入、校验、备份、恢复和回滚 |
 | [admin-bootstrap.md](./admin-bootstrap.md) | 唯一管理员首次初始化、凭据保管和应急重置 |
@@ -25,7 +27,7 @@ npm run cms:verify -- --help
 
 以下条件缺一不可：
 
-1. 生产环境已连接 Neon 和 Blob，且环境变量作用域正确。
+1. 生产计算服务已连接 Neon 和 Blob，且环境变量作用域正确。
 2. schema 迁移、历史新闻导入和 `cms:verify` 全部通过。
 3. 已完成数据库恢复点或逻辑备份。
 4. Preview 中完成管理员登录、上传、草稿、翻译、预览、发布、下架和恢复测试。

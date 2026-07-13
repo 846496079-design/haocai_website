@@ -11,7 +11,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const body = await request.json() as { status?: CmsCategory['status'] }
   if (!Number.isInteger(id) || (body.status !== 'ACTIVE' && body.status !== 'DISABLED')) return NextResponse.json({ message: '分类参数不正确。' }, { status: 400 })
   try {
-    setCmsCategoryStatus(id, body.status, admin.id)
+    await setCmsCategoryStatus(id, body.status, admin.id)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : '分类更新失败。' }, { status: 422 })

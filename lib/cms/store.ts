@@ -6,6 +6,9 @@ import { basename, dirname, extname, join } from 'node:path'
 import { newsArticles, type NewsArticle } from '@/lib/news-content'
 import type { SiteCode } from '@/lib/site-content'
 import { CMS_LOCALES, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsCategory } from './types'
+import * as postgresStore from './store-postgres'
+
+function usesPostgres() { return Boolean(process.env.CMS_DATABASE_URL) }
 
 type ArticleRow = {
   id: number
@@ -217,6 +220,7 @@ function toRecord(row: ArticleRow, version: VersionRow): CmsArticleRecord {
 }
 
 export function listCmsArticles(status?: CmsArticleStatus): CmsArticleSummary[] {
+  if (usesPostgres()) return postgresStore.listCmsArticles(status) as unknown as CmsArticleSummary[]
   const query = status ? 'SELECT * FROM news_article WHERE status = ? ORDER BY is_pinned DESC, pinned_position, manual_position, published_at DESC, updated_at DESC' : 'SELECT * FROM news_article ORDER BY is_pinned DESC, pinned_position, manual_position, published_at DESC, updated_at DESC'
   return (database.prepare(query).all(...(status ? [status] : [])) as ArticleRow[]).flatMap((row) => {
     const version = versionFor(row)
@@ -228,17 +232,20 @@ export function listCmsArticles(status?: CmsArticleStatus): CmsArticleSummary[] 
 }
 
 export function getCmsArticle(id: number): CmsArticleRecord | undefined {
+  if (usesPostgres()) return postgresStore.getCmsArticle(id) as unknown as CmsArticleRecord | undefined
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   const version = row && versionFor(row)
   return row && version ? toRecord(row, version) : undefined
 }
 
 export function getCmsPreviewArticle(id: number, locale: SiteCode) {
+  if (usesPostgres()) return postgresStore.getCmsPreviewArticle(id, locale)
   const record = getCmsArticle(id)
   return record ? record.content[locale] : undefined
 }
 
 export function getPublishedArticles(locale: SiteCode): NewsArticle[] {
+  if (usesPostgres()) return postgresStore.getPublishedArticles(locale) as unknown as NewsArticle[]
   const rows = database.prepare("SELECT * FROM news_article WHERE status = 'PUBLISHED' AND published_version_id IS NOT NULL ORDER BY is_pinned DESC, pinned_position, manual_position, published_at DESC, id DESC").all() as ArticleRow[]
   return rows.flatMap((row) => {
     const version = versionFor(row, false)
@@ -247,10 +254,12 @@ export function getPublishedArticles(locale: SiteCode): NewsArticle[] {
 }
 
 export function getPublishedArticle(locale: SiteCode, slug: string) {
+  if (usesPostgres()) return postgresStore.getPublishedArticle(locale, slug)
   return getPublishedArticles(locale).find((article) => article.slug === slug)
 }
 
 export function createCmsArticle(slug: string, adminId: number) {
+  if (usesPostgres()) return postgresStore.createCmsArticle(slug, adminId)
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('文章路径仅支持小写字母、数字和连字符。')
   const timestamp = now()
   const operation = database.transaction(() => {
@@ -264,6 +273,7 @@ export function createCmsArticle(slug: string, adminId: number) {
 }
 
 export function importCmsArticle(content: CmsArticleContent, sourceId: string) {
+  if (usesPostgres()) return postgresStore.importCmsArticle(content, sourceId)
   const slug = content.cn.slug.trim()
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('导入稿件的 slug 仅支持小写字母、数字和连字符。')
   const existing = database.prepare('SELECT * FROM news_article WHERE slug = ?').get(slug) as ArticleRow | undefined
@@ -292,6 +302,7 @@ export function importCmsArticle(content: CmsArticleContent, sourceId: string) {
 }
 
 export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: number) {
+  if (usesPostgres()) return postgresStore.updateCmsDraft(id, content, adminId) as unknown as CmsArticleRecord | undefined
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   if (!row) throw new Error('新闻不存在。')
   const timestamp = now()
@@ -314,6 +325,7 @@ export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: 
 }
 
 export function markCmsPreviewed(id: number, adminId: number) {
+  if (usesPostgres()) return postgresStore.markCmsPreviewed(id, adminId)
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   const version = row && versionFor(row)
   if (!row || !version) throw new Error('新闻草稿不存在。')
@@ -323,6 +335,7 @@ export function markCmsPreviewed(id: number, adminId: number) {
 }
 
 export function publishCmsArticle(id: number, adminId: number, reviewed: boolean) {
+  if (usesPostgres()) return postgresStore.publishCmsArticle(id, adminId, reviewed)
   if (!reviewed) throw new Error('请先完成人工审核确认。')
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   const version = row && versionFor(row)
@@ -341,6 +354,7 @@ export function publishCmsArticle(id: number, adminId: number, reviewed: boolean
 }
 
 export function offlineCmsArticle(id: number, adminId: number) {
+  if (usesPostgres()) return postgresStore.offlineCmsArticle(id, adminId)
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   if (!row || row.status !== 'PUBLISHED') throw new Error('只有已发布新闻可以下线。')
   const timestamp = now()
@@ -349,10 +363,12 @@ export function offlineCmsArticle(id: number, adminId: number) {
 }
 
 export function listCmsCategories(): CmsCategory[] {
+  if (usesPostgres()) return postgresStore.listCmsCategories() as unknown as CmsCategory[]
   return database.prepare("SELECT id, name, slug, status, source FROM news_category ORDER BY status = 'ACTIVE' DESC, sort_order ASC, name ASC").all() as CmsCategory[]
 }
 
 export function createCmsCategory(name: string, adminId: number) {
+  if (usesPostgres()) return postgresStore.createCmsCategory(name, adminId) as unknown as CmsCategory | undefined
   if (!name.trim()) throw new Error('分类名称不能为空。')
   const id = ensureCategory(name, 'MANUAL')
   if (!id) throw new Error('分类创建失败。')
@@ -361,12 +377,14 @@ export function createCmsCategory(name: string, adminId: number) {
 }
 
 export function setCmsCategoryStatus(id: number, status: CmsCategory['status'], adminId: number) {
+  if (usesPostgres()) return postgresStore.setCmsCategoryStatus(id, status, adminId)
   const result = database.prepare('UPDATE news_category SET status = ?, updated_at = ? WHERE id = ?').run(status, now(), id)
   if (!result.changes) throw new Error('分类不存在。')
   writeAudit(adminId, status === 'ACTIVE' ? 'RESTORE_CATEGORY' : 'DISABLE_CATEGORY', 'news_category', String(id), {})
 }
 
 export function moveCmsArticleToTrash(id: number, adminId: number) {
+  if (usesPostgres()) return postgresStore.moveCmsArticleToTrash(id, adminId)
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   if (!row || row.status === 'TRASH') throw new Error('新闻不存在或已在回收站。')
   const timestamp = now()
@@ -377,6 +395,7 @@ export function moveCmsArticleToTrash(id: number, adminId: number) {
 }
 
 export function restoreCmsArticle(id: number, adminId: number) {
+  if (usesPostgres()) return postgresStore.restoreCmsArticle(id, adminId)
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   if (!row || row.status !== 'TRASH') throw new Error('只有回收站稿件可以恢复。')
   database.prepare("UPDATE news_article SET status = 'DRAFT', deleted_at = NULL, deleted_from_status = NULL, updated_at = ? WHERE id = ?").run(now(), id)
@@ -384,12 +403,14 @@ export function restoreCmsArticle(id: number, adminId: number) {
 }
 
 export function deleteCmsArticlePermanently(id: number, adminId: number) {
+  if (usesPostgres()) return postgresStore.deleteCmsArticlePermanently(id, adminId)
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   if (!row || row.status !== 'TRASH') throw new Error('只有回收站稿件可以永久删除。')
   database.transaction(() => { database.prepare('DELETE FROM news_version WHERE article_id = ?').run(id); database.prepare('DELETE FROM news_article WHERE id = ?').run(id); writeAudit(adminId, 'DELETE_PERMANENTLY', 'news_article', String(id), {}) })()
 }
 
 export function setCmsArticlePinned(id: number, pinned: boolean, adminId: number) {
+  if (usesPostgres()) return postgresStore.setCmsArticlePinned(id, pinned, adminId)
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   if (!row || row.status !== 'PUBLISHED') throw new Error('只有已发布稿件可以置顶。')
   const position = pinned ? Number((database.prepare('SELECT COALESCE(MIN(pinned_position), 0) - 1 AS value FROM news_article WHERE status = ? AND is_pinned = 1').get('PUBLISHED') as { value: number }).value) : null
@@ -398,6 +419,7 @@ export function setCmsArticlePinned(id: number, pinned: boolean, adminId: number
 }
 
 export function reorderCmsPublishedArticles(ids: number[], adminId: number) {
+  if (usesPostgres()) return postgresStore.reorderCmsPublishedArticles(ids, adminId)
   if (!ids.length || new Set(ids).size !== ids.length) throw new Error('排序参数不正确。')
   const rows = database.prepare("SELECT id, is_pinned FROM news_article WHERE status = 'PUBLISHED'").all() as { id: number; is_pinned: number }[]
   if (rows.length !== ids.length || rows.some((row) => !ids.includes(row.id))) throw new Error('排序必须包含全部已发布稿件。')
@@ -413,6 +435,7 @@ export function reorderCmsPublishedArticles(ids: number[], adminId: number) {
 }
 
 export function writeAudit(adminId: number | null, action: string, targetType: string, targetId: string, detail: unknown) {
+  if (usesPostgres()) return postgresStore.writeAudit(adminId, action, targetType, targetId, detail)
   database.prepare('INSERT INTO cms_audit_log (admin_id, action, target_type, target_id, detail_json, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(adminId, action, targetType, targetId, JSON.stringify(detail), now())
 }
 

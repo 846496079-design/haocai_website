@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       sharp(source).rotate().resize({ width: 960, height: 540, fit: 'cover', position: 'attention' }).webp({ quality: 78 }).toBuffer(),
     ])
     const [url, thumbnailUrl] = await Promise.all([saveAsset(key, mainName, main), saveAsset(key, thumbnailName, thumbnail)])
-    writeAudit(admin.id, 'UPLOAD_ASSET', 'cms_asset', key, { sourceType: file.type, width: metadata.width, height: metadata.height, url })
+    await writeAudit(admin.id, 'UPLOAD_ASSET', 'cms_asset', key, { sourceType: file.type, width: metadata.width, height: metadata.height, url })
     return NextResponse.json({ url, thumbnailUrl, width: metadata.width, height: metadata.height })
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : '上传失败。' }, { status: 400 })

@@ -8,7 +8,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!admin) return NextResponse.json({ message: '未登录。' }, { status: 401 })
   try {
     const body = await request.json() as { reviewed?: boolean }
-    publishCmsArticle(Number((await params).id), admin.id, body.reviewed === true)
+    await publishCmsArticle(Number((await params).id), admin.id, body.reviewed === true)
     ;['/cn/', '/jp/', '/hk/', '/cn/news/', '/jp/news/', '/hk/news/'].forEach((path) => revalidatePath(path))
     return NextResponse.json({ ok: true })
   } catch (error) {

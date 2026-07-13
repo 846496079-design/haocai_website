@@ -10,7 +10,7 @@ export default async function CmsNewsPreviewPage({ params, searchParams }: { par
   if (!await getCmsAdmin()) redirect('/cms/login/')
   const locale = (await searchParams).site
   const siteCode: SiteCode = locale === 'jp' || locale === 'hk' ? locale : 'cn'
-  const article = getCmsArticle(Number((await params).id))
+  const article = await getCmsArticle(Number((await params).id))
   if (!article) notFound()
   return <OfficialSite site={getSiteContent(siteCode)} page="newsDetail" articleSlug={article.slug} initialArticles={[article.content[siteCode]]} initialArticle={article.content[siteCode]} />
 }

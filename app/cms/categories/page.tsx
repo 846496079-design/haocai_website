@@ -7,5 +7,5 @@ export const metadata = { robots: { index: false, follow: false }, title: 'åˆ†ç±
 
 export default async function CmsCategoriesPage() {
   if (!await getCmsAdmin()) redirect('/cms/login/')
-  return <CmsCategoryManager initial={listCmsCategories()} />
+  return <CmsCategoryManager initial={await listCmsCategories()} />
 }

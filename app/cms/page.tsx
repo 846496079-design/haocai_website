@@ -8,5 +8,5 @@ export const metadata = { robots: { index: false, follow: false }, title: 'æ–°é—
 export default async function CmsPage() {
   const admin = await getCmsAdmin()
   if (!admin) redirect('/cms/login/')
-  return <CmsDashboard items={listCmsArticles()} username={admin.username} />
+  return <CmsDashboard items={await listCmsArticles()} username={admin.username} />
 }

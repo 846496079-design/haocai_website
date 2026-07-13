@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation'
 
 export default async function HKNewsArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const article = getPublishedArticle('hk', slug)
+  const article = await getPublishedArticle('hk', slug)
   if (!article) notFound()
-  return <OfficialSite site={getSiteContent('hk')} page="newsDetail" articleSlug={slug} initialArticles={getPublishedArticles('hk')} initialArticle={article} />
+  return <OfficialSite site={getSiteContent('hk')} page="newsDetail" articleSlug={slug} initialArticles={await getPublishedArticles('hk')} initialArticle={article} />
 }

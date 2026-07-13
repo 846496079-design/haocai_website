@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const body = await request.json() as Partial<ImportPayload>
     if (!body.sourceId?.trim() || !body.content?.cn) throw new Error('sourceId 与中文 content 为必填字段。')
     const content = { ...createEmptyContent(body.content.cn.slug), ...body.content } as CmsArticleContent
-    const articleId = importCmsArticle(content, body.sourceId)
+    const articleId = await importCmsArticle(content, body.sourceId)
     const category = content.cn.category.trim()
     return NextResponse.json({ articleId, category: category || null, categoryNotice: category ? '已接收分类；若为新分类，系统已自动建立并标记为外部导入。' : '未接收到分类；稿件已保存为草稿，请管理员补充分类。' })
   } catch (error) {

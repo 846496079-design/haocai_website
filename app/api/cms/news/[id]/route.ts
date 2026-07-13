@@ -13,7 +13,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const admin = await getCmsAdmin()
   if (!admin) return NextResponse.json({ message: '未登录。' }, { status: 401 })
   try {
-    const article = getCmsArticle(parseId((await params).id))
+    const article = await getCmsArticle(parseId((await params).id))
     return article ? NextResponse.json(article) : NextResponse.json({ message: '新闻不存在。' }, { status: 404 })
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : '读取失败。' }, { status: 400 })
@@ -26,7 +26,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const body = await request.json() as { content?: CmsArticleContent }
     if (!body.content) throw new Error('缺少新闻内容。')
-    return NextResponse.json(updateCmsDraft(parseId((await params).id), body.content, admin.id))
+    return NextResponse.json(await updateCmsDraft(parseId((await params).id), body.content, admin.id))
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : '保存失败。' }, { status: 400 })
   }
@@ -36,7 +36,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   const admin = await getCmsAdmin()
   if (!admin) return NextResponse.json({ message: '未登录。' }, { status: 401 })
   try {
-    offlineCmsArticle(parseId((await params).id), admin.id)
+    await offlineCmsArticle(parseId((await params).id), admin.id)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : '下线失败。' }, { status: 400 })

@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { neon } from '@neondatabase/serverless'
+import { createHash } from 'node:crypto'
 import type { NewsArticle } from '@/lib/news-content'
 import type { SiteCode } from '@/lib/site-content'
 import { CMS_LOCALES, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult } from './types'
@@ -30,6 +31,18 @@ function text(value: unknown) { return value == null ? '' : String(value) }
 async function ready() {
   if (!schemaReady) schemaReady = (async () => {
     const sql = db()
+    const existing = await sql(`
+      SELECT
+        to_regclass('public.cms_admin') AS cms_admin,
+        to_regclass('public.cms_asset') AS cms_asset,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'news_article'
+            AND column_name = 'translation_status'
+        ) AS has_translation_status
+    `)
+    if (existing[0]?.cms_admin && existing[0]?.cms_asset && existing[0]?.has_translation_status) return
     await sql(`CREATE TABLE IF NOT EXISTS cms_admin (id BIGSERIAL PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, failed_login_count INTEGER NOT NULL DEFAULT 0, locked_until TIMESTAMPTZ, last_login_at TIMESTAMPTZ, is_active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`)
     await sql(`CREATE TABLE IF NOT EXISTS cms_session (id BIGSERIAL PRIMARY KEY, admin_id BIGINT NOT NULL REFERENCES cms_admin(id), token_hash TEXT NOT NULL UNIQUE, expires_at TIMESTAMPTZ NOT NULL, revoked_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`)
     await sql(`CREATE TABLE IF NOT EXISTS news_category (id BIGSERIAL PRIMARY KEY, name TEXT NOT NULL UNIQUE, slug TEXT NOT NULL UNIQUE, status TEXT NOT NULL DEFAULT 'ACTIVE', source TEXT NOT NULL DEFAULT 'MANUAL', sort_order INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`)
@@ -97,8 +110,7 @@ export async function getPublishedArticle(locale: SiteCode, slug: string) { retu
 
 export async function writeAudit(adminId: number | null, action: string, targetType: string, targetId: string, detail: unknown) { await ready(); await db()('INSERT INTO cms_audit_log (admin_id, action, target_type, target_id, detail_json) VALUES ($1, $2, $3, $4, $5::jsonb)', [adminId, action, targetType, targetId, JSON.stringify(detail)]) }
 
-export async function createCmsArticle(slug: string, adminId: number) {
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('文章路径仅支持小写字母、数字和连字符。')
+export async function createCmsArticle(adminId: number) {
   await ready()
   const rows = await atomic(`
     WITH allocated AS (
@@ -106,20 +118,28 @@ export async function createCmsArticle(slug: string, adminId: number) {
         nextval(pg_get_serial_sequence('news_version', 'id')) AS version_id
     ), article AS (
       INSERT INTO news_article (id, slug, status, draft_version_id)
-      SELECT article_id, $1, 'DRAFT', version_id FROM allocated
-      RETURNING id, draft_version_id
+      SELECT article_id, 'draft-' || article_id::text, 'DRAFT', version_id FROM allocated
+      RETURNING id, slug, draft_version_id
     ), version AS (
       INSERT INTO news_version (id, article_id, version_no, state, content_json)
-      SELECT a.draft_version_id, a.id, 1, 'DRAFT', $2::jsonb FROM article a
+      SELECT a.draft_version_id, a.id, 1, 'DRAFT',
+        jsonb_set(
+          jsonb_set(
+            jsonb_set($1::jsonb, '{cn,slug}', to_jsonb(a.slug), true),
+            '{jp,slug}', to_jsonb(a.slug), true
+          ),
+          '{hk,slug}', to_jsonb(a.slug), true
+        )
+      FROM article a
       RETURNING id
     ), audit AS (
       INSERT INTO cms_audit_log (admin_id, action, target_type, target_id, detail_json)
-      SELECT $3, 'CREATE_DRAFT', 'news_article', a.id::text, jsonb_build_object('slug', $1::text)
+      SELECT $2, 'CREATE_DRAFT', 'news_article', a.id::text, jsonb_build_object('slug', a.slug)
       FROM article a, version v
       RETURNING id
     )
-    SELECT id FROM article
-  `, [slug, JSON.stringify(createEmptyContent(slug)), adminId])
+    SELECT id, slug FROM article
+  `, [JSON.stringify(createEmptyContent()), adminId])
   if (!rows[0]) throw new Error('创建草稿失败。')
   return numeric(rows[0].id)
 }
@@ -405,13 +425,9 @@ export async function reorderCmsPublishedArticles(ids: number[], adminId: number
 export async function importCmsArticle(draft: CmsArticleContent, sourceId: string) {
   const slug = draft.cn.slug.trim()
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('导入稿件的 slug 仅支持小写字母、数字和连字符。')
-  await ready()
-  const existing = await db()('SELECT id FROM news_article WHERE slug = $1', [slug])
-  const id = existing[0] ? numeric(existing[0].id) : await createCmsArticle(slug, 0)
-  if (draft.cn.category.trim()) await ensureCategory(draft.cn.category, 'IMPORT')
-  await updateCmsDraft(id, draft, 0)
-  await writeAudit(null, existing[0] ? 'IMPORT_UPDATE_DRAFT' : 'IMPORT_CREATE_DRAFT', 'news_article', String(id), { sourceId })
-  return id
+  const payloadHash = createHash('sha256').update(JSON.stringify(draft)).digest('hex')
+  const result = await importCmsArticleIdempotent(draft, sourceId, `legacy-${slug}-${payloadHash}`, payloadHash)
+  return result.articleId
 }
 
 export async function importCmsArticleIdempotent(draft: CmsArticleContent, sourceId: string, idempotencyKey: string, payloadHash: string): Promise<CmsImportResult> {

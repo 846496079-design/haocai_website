@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowDown,
@@ -73,7 +73,6 @@ export default function CmsDashboard({ items, username }: { items: DashboardArti
   const [dateFrom, setDateFrom] = useState(() => searchParams.get('from') ?? '')
   const [dateTo, setDateTo] = useState(() => searchParams.get('to') ?? '')
   const [pinnedOnly, setPinnedOnly] = useState(() => searchParams.get('pinned') === '1')
-  const [slug, setSlug] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [creating, setCreating] = useState(false)
@@ -125,17 +124,15 @@ export default function CmsDashboard({ items, username }: { items: DashboardArti
     setError('')
   }
 
-  async function createArticle(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!slug.trim()) return setError('请填写文章路径。')
+  async function createArticle() {
     setCreating(true)
     setError('')
-    setNotice('')
+    setNotice('正在创建草稿…')
     try {
       const response = await fetch('/api/cms/news', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: slug.trim() }),
+        body: '{}',
       })
       if (!response.ok) return setError(await responseMessage(response, '创建草稿失败，请稍后重试。'))
       const data = await response.json() as { id?: number }
@@ -152,7 +149,8 @@ export default function CmsDashboard({ items, username }: { items: DashboardArti
     if ((action === 'trash' || action === 'delete') && !window.confirm(action === 'delete' ? '确认永久删除吗？此操作无法撤销。' : '确认移入回收站吗？')) return false
     setPending(true)
     setError('')
-    setNotice('')
+    const actionLabel = action === 'pin' ? '正在置顶…' : action === 'unpin' ? '正在取消置顶…' : action === 'reorder' ? '正在更新展示顺序…' : '正在处理…'
+    setNotice(actionLabel)
     try {
       const response = await fetch(`/api/cms/news/${id}/lifecycle`, {
         method: 'POST',
@@ -163,7 +161,7 @@ export default function CmsDashboard({ items, username }: { items: DashboardArti
         setError(await responseMessage(response, '操作失败，请稍后重试。'))
         return false
       }
-      setNotice(action === 'reorder' ? '展示顺序已更新。' : '操作已完成。')
+      setNotice(action === 'pin' ? '已置顶，官网会优先展示。' : action === 'unpin' ? '已取消置顶。' : action === 'reorder' ? '展示顺序已更新。' : '操作已完成。')
       router.refresh()
       return true
     } catch {
@@ -228,10 +226,7 @@ export default function CmsDashboard({ items, username }: { items: DashboardArti
         <section className="min-w-0" aria-labelledby="workspace-title">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div><p className="text-sm font-semibold text-indigo-600">{current.label}</p><h2 id="workspace-title" className="mt-1 text-xl font-bold">{current.hint}</h2></div>
-            <form onSubmit={createArticle} className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_auto] xl:w-auto">
-              <label className="min-w-0"><span className="sr-only">新稿件文章路径</span><input value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="文章路径，例如 product-update" autoComplete="off" className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 xl:w-64 ${focusRing}`} /></label>
-              <button type="submit" disabled={creating} className={`inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 ${focusRing}`}><Plus className="size-4" aria-hidden="true" />{creating ? '创建中…' : '新建稿件'}</button>
-            </form>
+            <button type="button" onClick={() => void createArticle()} disabled={creating} className={`inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 ${focusRing}`}><Plus className="size-4" aria-hidden="true" />{creating ? '正在创建…' : '新建稿件'}</button>
           </div>
 
           <div aria-live="polite" className="mt-3 space-y-2">
@@ -240,12 +235,12 @@ export default function CmsDashboard({ items, username }: { items: DashboardArti
           </div>
 
           <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-              <label className="relative md:col-span-2 xl:col-span-2"><span className="sr-only">搜索稿件</span><Search className="pointer-events-none absolute left-3 top-3 size-4 text-slate-400" aria-hidden="true"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题、路径、分类或标签" className={`w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-indigo-500 ${focusRing}`}/></label>
-              <label><span className="mb-1 block text-xs font-medium text-slate-500">分类</span><select value={category} onChange={(event) => setCategory(event.target.value)} className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${focusRing}`}><option value="">全部分类</option>{categories.map((value) => <option key={value}>{value}</option>)}</select></label>
-              <label><span className="mb-1 block text-xs font-medium text-slate-500">标签</span><input value={tag} onChange={(event) => setTag(event.target.value)} placeholder="输入标签关键词" className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${focusRing}`}/></label>
-              <label><span className="mb-1 block text-xs font-medium text-slate-500">开始日期</span><input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${focusRing}`}/></label>
-              <label><span className="mb-1 block text-xs font-medium text-slate-500">结束日期</span><input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${focusRing}`}/></label>
+            <div className="grid items-end gap-3 md:grid-cols-2 xl:grid-cols-6">
+              <label className="relative flex flex-col gap-1 md:col-span-2 xl:col-span-2"><span className="text-xs font-medium text-slate-500">搜索</span><Search className="pointer-events-none absolute bottom-3 left-3 size-4 text-slate-400" aria-hidden="true"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题、路径、分类或标签" className={`w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-indigo-500 ${focusRing}`}/></label>
+              <label className="flex flex-col gap-1"><span className="text-xs font-medium text-slate-500">分类</span><select value={category} onChange={(event) => setCategory(event.target.value)} className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${focusRing}`}><option value="">全部分类</option>{categories.map((value) => <option key={value}>{value}</option>)}</select></label>
+              <label className="flex flex-col gap-1"><span className="text-xs font-medium text-slate-500">标签</span><input value={tag} onChange={(event) => setTag(event.target.value)} placeholder="输入标签关键词" className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${focusRing}`}/></label>
+              <label className="flex flex-col gap-1"><span className="text-xs font-medium text-slate-500">开始日期</span><input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${focusRing}`}/></label>
+              <label className="flex flex-col gap-1"><span className="text-xs font-medium text-slate-500">结束日期</span><input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${focusRing}`}/></label>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
               <div>{workspace === 'PUBLISHED' && <label className="inline-flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={pinnedOnly} onChange={(event) => setPinnedOnly(event.target.checked)} className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />仅看置顶</label>}</div>
@@ -311,5 +306,5 @@ function ArticleActions({ item, workspace, canReorder, pending, onMove, onLifecy
 }
 
 function EmptyState({ hasFilters, workspace, onClear }: { hasFilters: boolean; workspace: CmsArticleStatus; onClear: () => void }) {
-  return <div className="px-5 py-14 text-center"><div className="mx-auto flex size-11 items-center justify-center rounded-full bg-slate-100 text-slate-500">{hasFilters ? <Search className="size-5" aria-hidden="true"/> : <FilePlus2 className="size-5" aria-hidden="true"/>}</div><h3 className="mt-4 font-semibold text-slate-800">{hasFilters ? '没有找到匹配稿件' : `${workspaces.find((item) => item.id === workspace)?.label ?? ''}中暂无稿件`}</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{hasFilters ? '尝试更换关键词、日期或分类，也可以清除全部筛选条件。' : workspace === 'DRAFT' ? '在上方填写文章路径即可创建第一篇草稿。' : '符合此状态的稿件会显示在这里。'}</p>{hasFilters && <button type="button" onClick={onClear} className={`mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 ${focusRing}`}><RotateCcw className="size-4" aria-hidden="true"/>清除筛选</button>}</div>
+  return <div className="px-5 py-14 text-center"><div className="mx-auto flex size-11 items-center justify-center rounded-full bg-slate-100 text-slate-500">{hasFilters ? <Search className="size-5" aria-hidden="true"/> : <FilePlus2 className="size-5" aria-hidden="true"/>}</div><h3 className="mt-4 font-semibold text-slate-800">{hasFilters ? '没有找到匹配稿件' : `${workspaces.find((item) => item.id === workspace)?.label ?? ''}中暂无稿件`}</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{hasFilters ? '尝试更换关键词、日期或分类，也可以清除全部筛选条件。' : workspace === 'DRAFT' ? '点击上方“新建稿件”即可创建第一篇草稿，系统会自动分配内部路径。' : '符合此状态的稿件会显示在这里。'}</p>{hasFilters && <button type="button" onClick={onClear} className={`mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 ${focusRing}`}><RotateCcw className="size-4" aria-hidden="true"/>清除筛选</button>}</div>
 }

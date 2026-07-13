@@ -14,7 +14,7 @@ X-CMS-Signature: sha256=<小写十六进制 HMAC>
 
 接口只创建或更新 CMS 草稿，不能发布、下架、删除、置顶或排序。中文是唯一源稿；日文和港文由 CMS 管理员保存后手动触发一次翻译。
 
-当前版本使用 `content.cn.slug` 作为稿件更新键，使用 `Idempotency-Key` 和请求体哈希防止重复交付。调用方必须对同一外部稿件持续使用同一 slug，不得把 slug 复用于另一篇稿件。
+当前版本使用 `sourceId` 识别同一外部稿件，使用 `Idempotency-Key` 和请求体哈希防止重复交付。CMS 会根据 `sourceId` 自动分配内部文章路径；调用方不得传入或管理 `slug`。
 
 ## 请求签名
 
@@ -55,8 +55,7 @@ const headers = {
 
 | 路径 | 类型 | 必填 | 约束/说明 |
 | --- | --- | --- | --- |
-| `sourceId` | string | 是 | 外部系统稳定稿件 ID；非空。当前版本不以此做数据库唯一约束。 |
-| `content.cn.slug` | string | 是 | 小写字母、数字和连字符；格式 `^[a-z0-9]+(?:-[a-z0-9]+)*$`。发布后应保持不变。 |
+| `sourceId` | string | 是 | 外部系统稳定稿件 ID；非空。同一稿件更新时必须保持不变。 |
 | `content.cn.date` | string | 是 | 发布日期，当前 CMS 使用 `YYYY.MM.DD`，例如 `2026.07.13`。 |
 | `content.cn.category` | string | 否 | 已有分类名；新名称会自动创建并标记为外部导入。空值会保留草稿并提示后台补充，不能发布。 |
 | `content.cn.tags` | string[] | 否 | 标签数组；去除空值与重复项后提交。 |
@@ -81,7 +80,6 @@ const headers = {
   "sourceId": "workspace-news-20260713-001",
   "content": {
     "cn": {
-      "slug": "ai-finance-update-20260713",
       "date": "2026.07.13",
       "category": "产品动态",
       "tags": ["AI 财务", "产品升级"],
@@ -113,7 +111,7 @@ const headers = {
 ```json
 {
   "articleId": 123,
-  "slug": "ai-finance-update-20260713",
+  "slug": "workspace-6c315a5a65b3c76d2af0",
   "duplicate": false,
   "category": "产品动态",
   "categoryCreated": true,
@@ -131,7 +129,7 @@ const headers = {
 | --- | --- |
 | `401` | 签名、时间戳或幂等键缺失/无效，或服务端未配置签名密钥。 |
 | `413` | 请求体超过 2 MB。 |
-| `422` | `sourceId`、中文内容、slug 或正文结构校验失败，或数据库写入失败。 |
+| `422` | `sourceId`、中文内容或正文结构校验失败，或数据库写入失败。 |
 
 错误体格式：
 
@@ -143,7 +141,7 @@ const headers = {
 
 ## 幂等与安全边界
 
-- 相同 slug 的新交付会更新该稿件的草稿，不覆盖已发布版本；不同 slug 会创建新稿件。
+- 相同 `sourceId` 的新交付会更新同一稿件的草稿，不覆盖已发布版本；新的 `sourceId` 会创建新稿件。
 - 相同幂等键与相同正文安全返回第一次结果；相同幂等键配不同正文会拒绝。
 - HMAC 密钥只能放在服务端，不得由浏览器直调。日志不得记录签名密钥、签名头或完整正文。
 - 图片 URL 必须来自受信任 HTTPS 源；推荐先通过 CMS 上传能力写入 Vercel Blob。

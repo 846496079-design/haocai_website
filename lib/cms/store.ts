@@ -311,16 +311,19 @@ export function getPublishedArticle(locale: SiteCode, slug: string) {
   return getPublishedArticles(locale).find((article) => article.slug === slug)
 }
 
-export function createCmsArticle(slug: string, adminId: number) {
-  if (usesPostgres()) return postgresStore.createCmsArticle(slug, adminId)
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('文章路径仅支持小写字母、数字和连字符。')
+export function createCmsArticle(adminId: number) {
+  if (usesPostgres()) return postgresStore.createCmsArticle(adminId)
   const timestamp = now()
   const operation = database.transaction(() => {
-    const result = database.prepare('INSERT INTO news_article (slug, status, created_at, updated_at) VALUES (?, ?, ?, ?)').run(slug, 'DRAFT', timestamp, timestamp)
-    const versionResult = database.prepare('INSERT INTO news_version (article_id, version_no, state, content_json, created_at, updated_at) VALUES (?, 1, ?, ?, ?, ?)').run(result.lastInsertRowid, 'DRAFT', JSON.stringify(createEmptyContent(slug)), timestamp, timestamp)
+    const temporarySlug = `draft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const result = database.prepare('INSERT INTO news_article (slug, status, created_at, updated_at) VALUES (?, ?, ?, ?)').run(temporarySlug, 'DRAFT', timestamp, timestamp)
+    const articleId = Number(result.lastInsertRowid)
+    const slug = `draft-${articleId}`
+    database.prepare('UPDATE news_article SET slug = ? WHERE id = ?').run(slug, articleId)
+    const versionResult = database.prepare('INSERT INTO news_version (article_id, version_no, state, content_json, created_at, updated_at) VALUES (?, 1, ?, ?, ?, ?)').run(articleId, 'DRAFT', JSON.stringify(createEmptyContent(slug)), timestamp, timestamp)
     database.prepare('UPDATE news_article SET draft_version_id = ? WHERE id = ?').run(versionResult.lastInsertRowid, result.lastInsertRowid)
     writeAudit(adminId, 'CREATE_DRAFT', 'news_article', String(result.lastInsertRowid), { slug })
-    return Number(result.lastInsertRowid)
+    return articleId
   })
   return operation()
 }

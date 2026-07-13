@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
-import { createEmptyContent, type CmsArticleContent } from '@/lib/cms/types'
+import { CMS_LOCALES, createEmptyContent, type CmsArticleContent } from '@/lib/cms/types'
 import { importCmsArticleIdempotent } from '@/lib/cms/store'
 import { verifyCmsImportRequest } from '@/lib/cms/import-auth'
 
 type ImportPayload = {
   sourceId: string
-  content: CmsArticleContent
+  content: Partial<CmsArticleContent>
 }
 
 export async function POST(request: Request) {
@@ -16,11 +16,13 @@ export async function POST(request: Request) {
     const { idempotencyKey } = verifyCmsImportRequest(request, rawBody)
     const body = JSON.parse(rawBody) as Partial<ImportPayload>
     if (!body.sourceId?.trim() || !body.content?.cn) throw new Error('sourceId 与中文 content 为必填字段。')
-    const content = { ...createEmptyContent(body.content.cn.slug), ...body.content } as CmsArticleContent
-    const slug = content.cn.slug?.trim()
-    if (!slug || !content.cn.title?.trim()) throw new Error('content.cn.slug 与 content.cn.title 为必填字段。')
+    const sourceId = body.sourceId.trim()
+    const slug = `workspace-${createHash('sha256').update(sourceId).digest('hex').slice(0, 20)}`
+    const defaults = createEmptyContent(slug)
+    const content = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, { ...defaults[locale], ...(body.content?.[locale] ?? {}), slug }])) as CmsArticleContent
+    if (!content.cn.title?.trim()) throw new Error('content.cn.title 为必填字段。')
     const payloadHash = createHash('sha256').update(rawBody).digest('hex')
-    const result = await importCmsArticleIdempotent(content, body.sourceId.trim(), idempotencyKey, payloadHash)
+    const result = await importCmsArticleIdempotent(content, sourceId, idempotencyKey, payloadHash)
     const category = content.cn.category.trim()
     return NextResponse.json({
       articleId: result.articleId,

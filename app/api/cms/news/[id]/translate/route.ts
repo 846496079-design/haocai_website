@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCmsAdmin } from '@/lib/cms/auth'
-import { getCmsArticle, updateCmsDraft } from '@/lib/cms/store'
+import { getCmsArticle, markCmsTranslated, updateCmsDraft } from '@/lib/cms/store'
 import { translateCmsContent } from '@/lib/cms/translation'
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +13,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   try {
     const content = await translateCmsContent(article.content)
     await updateCmsDraft(id, content, admin.id)
+    await markCmsTranslated(id, admin.id)
     return NextResponse.json({ ok: true, message: '日文与繁体中文草稿已生成，请逐项人工审核。' })
   } catch (error) {
     const message = error instanceof Error ? error.message : '翻译失败。'

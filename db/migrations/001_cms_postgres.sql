@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS news_article (
   is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
   pinned_position DOUBLE PRECISION,
   manual_position DOUBLE PRECISION,
+  translation_status TEXT NOT NULL DEFAULT 'NOT_TRANSLATED' CHECK (translation_status IN ('CURRENT', 'STALE', 'NOT_TRANSLATED')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

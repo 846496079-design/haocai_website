@@ -15,6 +15,11 @@ type ArticleRow = {
   draft_version_id: number | null
   published_at: string | null
   updated_at: string
+  category_id: number | null
+  deleted_at: string | null
+  is_pinned: number
+  pinned_position: number | null
+  manual_position: number | null
 }
 
 type VersionRow = {
@@ -91,7 +96,23 @@ function initialize() {
       detail_json TEXT,
       created_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS news_category (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      slug TEXT NOT NULL UNIQUE,
+      status TEXT NOT NULL DEFAULT 'ACTIVE',
+      source TEXT NOT NULL DEFAULT 'MANUAL',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `)
+  const columns = new Set((database.prepare('PRAGMA table_info(news_article)').all() as { name: string }[]).map((column) => column.name))
+  const additions = [
+    ['category_id', 'INTEGER'], ['deleted_at', 'TEXT'], ['deleted_from_status', 'TEXT'],
+    ['is_pinned', 'INTEGER NOT NULL DEFAULT 0'], ['pinned_position', 'REAL'], ['manual_position', 'REAL'],
+  ] as const
+  additions.forEach(([name, definition]) => { if (!columns.has(name)) database.exec(`ALTER TABLE news_article ADD COLUMN ${name} ${definition}`) })
 }
 
 initialize()
@@ -151,18 +172,23 @@ function toRecord(row: ArticleRow, version: VersionRow): CmsArticleRecord {
     slug: row.slug,
     status: row.status,
     date: first.date,
+    category: first.category,
+    tags: first.tags ?? [],
     cover: first.cover,
     updatedAt: row.updated_at,
     publishedAt: row.published_at,
     localesComplete: isContentComplete(content),
+    isPinned: Boolean(row.is_pinned),
+    deletedAt: row.deleted_at,
     content,
     previewedAt: version.previewed_at,
     versionNo: version.version_no,
   }
 }
 
-export function listCmsArticles(): CmsArticleSummary[] {
-  return (database.prepare('SELECT * FROM news_article ORDER BY updated_at DESC').all() as ArticleRow[]).flatMap((row) => {
+export function listCmsArticles(status?: CmsArticleStatus): CmsArticleSummary[] {
+  const query = status ? 'SELECT * FROM news_article WHERE status = ? ORDER BY is_pinned DESC, pinned_position, manual_position, published_at DESC, updated_at DESC' : 'SELECT * FROM news_article ORDER BY is_pinned DESC, pinned_position, manual_position, published_at DESC, updated_at DESC'
+  return (database.prepare(query).all(...(status ? [status] : [])) as ArticleRow[]).flatMap((row) => {
     const version = versionFor(row)
     if (!version) return []
     const record = toRecord(row, version)
@@ -183,7 +209,7 @@ export function getCmsPreviewArticle(id: number, locale: SiteCode) {
 }
 
 export function getPublishedArticles(locale: SiteCode): NewsArticle[] {
-  const rows = database.prepare("SELECT * FROM news_article WHERE status = 'PUBLISHED' AND published_version_id IS NOT NULL ORDER BY published_at DESC").all() as ArticleRow[]
+  const rows = database.prepare("SELECT * FROM news_article WHERE status = 'PUBLISHED' AND published_version_id IS NOT NULL ORDER BY is_pinned DESC, pinned_position, manual_position, published_at DESC, id DESC").all() as ArticleRow[]
   return rows.flatMap((row) => {
     const version = versionFor(row, false)
     return version ? [parseContent(version.content_json)[locale]] : []

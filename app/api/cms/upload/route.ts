@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
 import sharp from 'sharp'
 import { getCmsAdmin } from '@/lib/cms/auth'
-import { writeAudit } from '@/lib/cms/store'
+import { recordCmsAsset } from '@/lib/cms/store'
 
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const maximumSize = 10 * 1024 * 1024
@@ -19,6 +19,7 @@ async function saveAsset(key: string, name: string, content: Buffer) {
     })
     return result.url
   }
+  if (process.env.NODE_ENV === 'production') throw new Error('生产环境未配置 BLOB_READ_WRITE_TOKEN，禁止写入临时文件系统。')
   const directory = join(process.cwd(), 'public', 'uploads', 'cms', 'news')
   await mkdir(directory, { recursive: true })
   await writeFile(join(directory, name), content)
@@ -31,6 +32,10 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData()
     const file = formData.get('file')
+    const articleIdValue = Number(formData.get('articleId'))
+    const articleId = Number.isInteger(articleIdValue) && articleIdValue > 0 ? articleIdValue : null
+    const usage = formData.get('usage') === 'CONTENT' ? 'CONTENT' : 'COVER'
+    const altText = String(formData.get('altText') ?? '').trim()
     if (!(file instanceof File)) throw new Error('请选择封面图片。')
     if (!allowedTypes.has(file.type) || file.size > maximumSize) throw new Error('仅支持不超过 10MB 的 JPEG、PNG 或 WebP 图片。')
     const source = Buffer.from(await file.arrayBuffer())
@@ -44,8 +49,8 @@ export async function POST(request: Request) {
       sharp(source).rotate().resize({ width: 960, height: 540, fit: 'cover', position: 'attention' }).webp({ quality: 78 }).toBuffer(),
     ])
     const [url, thumbnailUrl] = await Promise.all([saveAsset(key, mainName, main), saveAsset(key, thumbnailName, thumbnail)])
-    await writeAudit(admin.id, 'UPLOAD_ASSET', 'cms_asset', key, { sourceType: file.type, width: metadata.width, height: metadata.height, url })
-    return NextResponse.json({ url, thumbnailUrl, width: metadata.width, height: metadata.height })
+    await recordCmsAsset({ id: key, articleId, blobUrl: url, thumbnailUrl, mimeType: 'image/webp', width: metadata.width, height: metadata.height, altText, usage }, admin.id)
+    return NextResponse.json({ assetId: key, url, thumbnailUrl, width: metadata.width, height: metadata.height, usage })
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : '上传失败。' }, { status: 400 })
   }

@@ -13,6 +13,8 @@ export interface NewsArticle {
     title: string
     paragraphs: string[]
     image?: string
+    imageAlt?: string
+    imageCaption?: string
   }[]
   closing: string[]
 }

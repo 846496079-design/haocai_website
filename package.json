@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "optimize:news-images": "node scripts/optimize-news-images.mjs"
+    "optimize:news-images": "node scripts/optimize-news-images.mjs",
+    "cms:migrate": "node scripts/cms/migrate-neon.mjs",
+    "cms:seed-legacy": "node scripts/cms/seed-legacy-neon.mjs",
+    "cms:verify": "node scripts/cms/verify-neon.mjs",
+    "typecheck:cms": "tsc -p tsconfig.cms.json"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

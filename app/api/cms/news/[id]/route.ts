@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getCmsAdmin } from '@/lib/cms/auth'
-import { getCmsArticle, offlineCmsArticle, updateCmsDraft } from '@/lib/cms/store'
+import { getCmsArticle, moveCmsArticleToTrash, updateCmsDraft } from '@/lib/cms/store'
 import type { CmsArticleContent } from '@/lib/cms/types'
+import { revalidatePublicNews } from '@/lib/cms/revalidate'
 
 function parseId(value: string) {
   const id = Number(value)
@@ -36,9 +37,12 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   const admin = await getCmsAdmin()
   if (!admin) return NextResponse.json({ message: '未登录。' }, { status: 401 })
   try {
-    await offlineCmsArticle(parseId((await params).id), admin.id)
+    const id = parseId((await params).id)
+    const article = await getCmsArticle(id)
+    await moveCmsArticleToTrash(id, admin.id)
+    revalidatePublicNews(article?.slug)
     return NextResponse.json({ ok: true })
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : '下线失败。' }, { status: 400 })
+    return NextResponse.json({ message: error instanceof Error ? error.message : '删除失败。' }, { status: 400 })
   }
 }

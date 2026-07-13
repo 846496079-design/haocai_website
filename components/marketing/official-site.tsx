@@ -2191,6 +2191,19 @@ export default function OfficialSite({
                     <div className="mt-5 space-y-4 text-base leading-8 text-muted-foreground">
                       {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
                     </div>
+                    {section.image && (
+                      <figure className="mt-7">
+                        {/* CMS images may come from Vercel Blob or another configured object store. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={section.image}
+                          alt={section.imageAlt || section.imageCaption || section.title}
+                          className="h-auto w-full rounded-2xl object-cover"
+                          loading="lazy"
+                        />
+                        {section.imageCaption && <figcaption className="mt-3 text-sm leading-6 text-muted-foreground">{section.imageCaption}</figcaption>}
+                      </figure>
+                    )}
                   </section>
                 ))}
                 <footer className="border-t border-border pt-8 text-base leading-8 text-muted-foreground">

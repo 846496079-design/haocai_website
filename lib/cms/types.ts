@@ -10,13 +10,44 @@ export type CmsCategory = {
   title: string
   status: 'ACTIVE' | 'DISABLED'
   source: 'MANUAL' | 'IMPORT'
+  sortOrder: number
+  referenceCount: number
 }
 
 export type CmsArticleContent = Record<SiteCode, NewsArticle>
 
+export type CmsImportResult = {
+  articleId: number
+  duplicate: boolean
+  categoryCreated: boolean
+}
+
+export type CmsTranslationJobStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED'
+
+export type CmsAssetInput = {
+  id: string
+  blobUrl: string
+  thumbnailUrl?: string | null
+  mimeType: string
+  width: number
+  height: number
+  altText?: string | null
+  usage: 'COVER' | 'CONTENT'
+  articleId?: number | null
+}
+
+export type CmsAuditLog = {
+  id: number
+  action: string
+  createdAt: string
+  adminUsername: string | null
+  detail: unknown
+}
+
 export type CmsArticleSummary = {
   id: number
   slug: string
+  title: string
   status: CmsArticleStatus
   date: string
   category: string
@@ -33,6 +64,7 @@ export type CmsArticleSummary = {
 export type CmsArticleRecord = CmsArticleSummary & {
   content: CmsArticleContent
   previewedAt: string | null
+  versionId: number
   versionNo: number
 }
 

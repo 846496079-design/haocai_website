@@ -265,7 +265,7 @@ export const sites: Record<SiteCode, SiteContent> = {
       primaryCta: '立即使用',
     },
     metrics: [
-      { value: '0.98 元/天', label: '低成本管账', note: '360 元/年，折合每天不到 1 元' },
+      { value: '一天只要一块钱', label: '低成本管账', note: '360 元/年，每天只要一块钱' },
       { value: '3 步上手', label: '资料到报表', note: '录工资、收发票、对流水' },
       { value: '随时查账', label: '手机和电脑都能看', note: '老板看结果，财务处理细节' },
       { value: '专属客服', label: '有人承接咨询', note: '试用、开通、使用问题都能沟通' },
@@ -422,7 +422,7 @@ export const sites: Record<SiteCode, SiteContent> = {
     proofTitle: '随时随地查账，本月情况一眼看懂',
     proofSubtitle: '老板不再等会计月底发报表，财务也不用反复解释同一批数据。',
     proofItems: [
-      { label: '更便宜', value: '0.98 元/天', description: '360 元/年，适合小微企业先低成本用起来。' },
+      { label: '更便宜', value: '一天只要一块钱', description: '360 元/年，适合小微企业先低成本用起来。' },
       { label: '更实时', value: '随时查账', description: '手机和电脑都能看本月收入、成本、税额和待办。' },
       { label: '更省心', value: 'AI 提醒', description: '发票、流水、工资异常提前提醒，减少月底补资料。' },
       { label: '更规范', value: '报表凭证', description: '按工资、发票、流水沉淀报表和凭证视图。' },
@@ -879,7 +879,7 @@ sites.jp.roles = [
 ]
 
 sites.jp.proofItems = [
-  { label: '低コスト', value: '0.98 元/日', description: '年間 360 元で、小規模企業も始めやすい料金です。' },
+  { label: '低コスト', value: '1日わずか1元', description: '年間 360 元で、小規模企業も始めやすい料金です。' },
   { label: '随時確認', value: 'いつでも帳務確認', description: 'スマートフォンと PC で収入、コスト、税額、タスクを確認できます。' },
   { label: '効率向上', value: 'AI リマインド', description: '発票、銀行明細、給与の確認事項を早めに提示します。' },
   { label: '標準化', value: '帳票と凭证', description: '給与、発票、銀行明細から帳票と凭证ビューを整理します。' },
@@ -975,7 +975,7 @@ sites.hk.roles = [
 ]
 
 sites.hk.proofItems = [
-  { label: '更便宜', value: '0.98 元/天', description: '360 元/年，適合小微企業先低成本用起來。' },
+  { label: '更便宜', value: '每天只要一元', description: '360 元/年，適合小微企業先低成本用起來。' },
   { label: '更實時', value: '隨時查賬', description: '手機和電腦都能看本月收入、成本、稅額和待辦。' },
   { label: '更省心', value: 'AI 提醒', description: '發票、流水、工資異常提前提醒，減少月底補資料。' },
   { label: '更規範', value: '報表憑證', description: '按工資、發票、流水沉澱報表和憑證視圖。' },
@@ -1007,7 +1007,7 @@ sites.cn.homeHighlights = {
   title: '一天一块钱，把老板最头疼的账管明白',
   subtitle: '不用懂复杂财务，也不用等到月底。工资、发票、流水、报税，AI 先帮你理清楚，你只做关键确认。',
   items: [
-    { icon: 'coins', title: '一天一块钱的 AI 记账', description: '小规模企业 360 元/年，折合每天不到 1 元，比传统人工代账更省，先低成本用起来。', metric: '¥0.98/天' },
+    { icon: 'coins', title: '一天一块钱的 AI 记账', description: '小规模企业 360 元/年，每天只要一块钱，比传统人工代账更省，先低成本用起来。', metric: '一天一块钱' },
     { icon: 'scan', title: 'AI 三步智能记账', description: '录工资、收发票、对流水，AI 自动生成凭证、税额测算和报表，减少手工录入和反复核对。', metric: '3 步出结果' },
     { icon: 'chart', title: '手机随时查账', description: '老板用手机看收入、成本、税额和待办，不用等会计月底发报表，经营状况一眼看懂。', metric: '随时查' },
     { icon: 'shield', title: 'AI 风险预警', description: '发票待确认、流水待匹配、成本缺口提前提醒，减少漏报、错报和逾期风险。', metric: '提前提醒' },
@@ -1026,7 +1026,7 @@ sites.cn.pricingPlans = {
       name: '小规模企业',
       badge: '最受欢迎',
       audience: '小规模纳税人 · 个体工商户 · 初创公司',
-      perDay: '≈ 0.98 元/天',
+      perDay: '一天只要一块钱',
       yearly: '¥360',
       yearlyNote: '/ 年',
       lifetime: '¥1888',
@@ -1074,7 +1074,7 @@ sites.cn.comparison = {
       rows: [
         ['年度费用', '约 3600–6000 元/年', '¥360 / 年', '¥1056 / 年'],
         ['永久买断', '不支持', '¥1888', '¥3888'],
-        ['折合每天', '约 10–16 元', '≈ 0.98 元', '≈ 2.9 元'],
+        ['折合每天', '约 10–16 元', '一天只要一块钱', '≈ 2.9 元'],
       ],
     },
     {

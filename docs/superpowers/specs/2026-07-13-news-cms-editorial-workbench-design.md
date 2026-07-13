@@ -156,3 +156,11 @@ stateDiagram-v2
 - 编辑器已使用日期与分类选择控件，正文分节支持图片上传与拖拽排序；分类为空时会在发布检查中阻止发布。
 - 一键翻译已接入可配置的服务适配层：未配置 API 时返回可执行的配置提示，配置后一次生成日文与繁体草稿，仍需人工审核后发布。
 - 当前 SQLite 与本地图片目录仅用于开发验收。部署到 Vercel 前必须完成 Neon PostgreSQL、Vercel Blob 与翻译服务环境变量配置；外部工作台导入接口在字段契约确定后再接入。
+
+## 14. 外部工作台导入接口（已预留）
+
+- 地址：`POST /api/integrations/news/import`。
+- 认证：`Authorization: Bearer <CMS_IMPORT_SHARED_SECRET>`，密钥仅由服务端保存。
+- 请求体包含 `sourceId` 与三语 `content`；其中 `content.cn.slug` 必填。重复 slug 会更新草稿，不会直接覆盖线上已发布版本。
+- 若 `content.cn.category` 是新名称，CMS 自动创建来源为 `IMPORT` 的分类并在响应中提示；未传分类时保留空值并返回待补充提示。
+- 外部接口只能创建或更新草稿，不能发布、下架、删除、置顶或调整排序。

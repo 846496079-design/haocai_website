@@ -263,6 +263,34 @@ export function createCmsArticle(slug: string, adminId: number) {
   return operation()
 }
 
+export function importCmsArticle(content: CmsArticleContent, sourceId: string) {
+  const slug = content.cn.slug.trim()
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('导入稿件的 slug 仅支持小写字母、数字和连字符。')
+  const existing = database.prepare('SELECT * FROM news_article WHERE slug = ?').get(slug) as ArticleRow | undefined
+  const timestamp = now()
+  const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, normalizeArticle(content[locale], slug)])) as CmsArticleContent
+  const categoryId = ensureCategory(normalized.cn.category, 'IMPORT')
+  const operation = database.transaction(() => {
+    if (!existing) {
+      const articleResult = database.prepare('INSERT INTO news_article (slug, status, category_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)').run(slug, 'DRAFT', categoryId, timestamp, timestamp)
+      const versionResult = database.prepare('INSERT INTO news_version (article_id, version_no, state, content_json, created_at, updated_at) VALUES (?, 1, ?, ?, ?, ?)').run(articleResult.lastInsertRowid, 'DRAFT', JSON.stringify(normalized), timestamp, timestamp)
+      database.prepare('UPDATE news_article SET draft_version_id = ? WHERE id = ?').run(versionResult.lastInsertRowid, articleResult.lastInsertRowid)
+      writeAudit(null, 'IMPORT_CREATE_DRAFT', 'news_article', String(articleResult.lastInsertRowid), { sourceId })
+      return Number(articleResult.lastInsertRowid)
+    }
+    let version = versionFor(existing)
+    if (!version || version.id === existing.published_version_id) {
+      const result = database.prepare('INSERT INTO news_version (article_id, version_no, state, content_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').run(existing.id, (version?.version_no ?? 0) + 1, 'DRAFT', JSON.stringify(normalized), timestamp, timestamp)
+      database.prepare('UPDATE news_article SET draft_version_id = ? WHERE id = ?').run(result.lastInsertRowid, existing.id)
+      version = database.prepare('SELECT * FROM news_version WHERE id = ?').get(result.lastInsertRowid) as VersionRow
+    } else database.prepare('UPDATE news_version SET content_json = ?, previewed_at = NULL, updated_at = ? WHERE id = ?').run(JSON.stringify(normalized), timestamp, version.id)
+    database.prepare('UPDATE news_article SET category_id = ?, updated_at = ? WHERE id = ?').run(categoryId, timestamp, existing.id)
+    writeAudit(null, 'IMPORT_UPDATE_DRAFT', 'news_article', String(existing.id), { sourceId, versionId: version.id })
+    return existing.id
+  })
+  return operation()
+}
+
 export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: number) {
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   if (!row) throw new Error('新闻不存在。')

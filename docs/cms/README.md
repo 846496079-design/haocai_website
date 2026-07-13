@@ -9,6 +9,7 @@
 | [data-operations.md](./data-operations.md) | schema 迁移、历史新闻导入、校验、备份、恢复和回滚 |
 | [admin-bootstrap.md](./admin-bootstrap.md) | 唯一管理员首次初始化、凭据保管和应急重置 |
 | [integration-api.md](./integration-api.md) | 新媒体工作台导入字段和接口清单 |
+| [translation-api.md](./translation-api.md) | 自有翻译 API 的请求、响应和字段约定 |
 
 ## 可执行命令
 

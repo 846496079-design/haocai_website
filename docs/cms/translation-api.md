@@ -12,6 +12,18 @@ CMS 不绑定具体翻译供应商。自有服务只要提供 OpenAI Chat Comple
 
 三个变量只配置在 Vercel 服务端环境，不写入仓库，也不下发浏览器。
 
+### DeepSeek 配置示例
+
+DeepSeek 提供 OpenAI Chat Completions 兼容接口，可直接使用以下非敏感配置；真实密钥从服务器的 Secret Manager 或部署环境变量注入：
+
+```env
+CMS_TRANSLATION_API_URL=https://api.deepseek.com/chat/completions
+CMS_TRANSLATION_API_KEY=<仅在服务器配置真实值>
+CMS_TRANSLATION_MODEL=deepseek-v4-flash
+```
+
+自有服务器修改以上变量后必须重启 Next.js 服务；Vercel 修改后必须重新部署。密钥不能使用 `NEXT_PUBLIC_` 前缀。
+
 ## 2. CMS 发出的请求
 
 ```http

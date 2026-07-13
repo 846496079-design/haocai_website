@@ -1,7 +1,15 @@
 import type { NewsArticle } from '@/lib/news-content'
 import type { SiteCode } from '@/lib/site-content'
 
-export type CmsArticleStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
+export type CmsArticleStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE' | 'TRASH'
+
+export type CmsCategory = {
+  id: number
+  name: string
+  slug: string
+  status: 'ACTIVE' | 'DISABLED'
+  source: 'MANUAL' | 'IMPORT'
+}
 
 export type CmsArticleContent = Record<SiteCode, NewsArticle>
 
@@ -10,10 +18,14 @@ export type CmsArticleSummary = {
   slug: string
   status: CmsArticleStatus
   date: string
+  category: string
+  tags: string[]
   cover: string
   updatedAt: string
   publishedAt: string | null
   localesComplete: boolean
+  isPinned: boolean
+  deletedAt: string | null
 }
 
 export type CmsArticleRecord = CmsArticleSummary & {

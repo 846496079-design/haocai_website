@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A0F22"/><stop offset="1" stop-color="#152a63"/></linearGradient>
+<linearGradient id="tx" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+<radialGradient id="gl1" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#3b82f6" stop-opacity="0.75"/><stop offset="1" stop-color="#3b82f6" stop-opacity="0"/></radialGradient>
+<radialGradient id="gl2" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#8b5cf6" stop-opacity="0.6"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
+<pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#8b5cf6" stroke-width="1" opacity="0.08"/></pattern>
+</defs>
+<rect width="1200" height="675" fill="url(#bg)"/>
+<rect width="1200" height="675" fill="url(#grid)"/>
+<circle cx="140" cy="560" r="320" fill="url(#gl1)"/>
+<circle cx="1080" cy="120" r="300" fill="url(#gl2)"/>
+<circle cx="985" cy="180" r="70" fill="none" stroke="#8b5cf6" stroke-width="2" opacity="0.28"/><circle cx="985" cy="180" r="116" fill="none" stroke="#8b5cf6" stroke-width="2" opacity="0.25"/><circle cx="985" cy="180" r="162" fill="none" stroke="#8b5cf6" stroke-width="2" opacity="0.22000000000000003"/><circle cx="985" cy="180" r="208" fill="none" stroke="#8b5cf6" stroke-width="2" opacity="0.19000000000000003"/><circle cx="985" cy="180" r="254" fill="none" stroke="#8b5cf6" stroke-width="2" opacity="0.16000000000000003"/><circle cx="985" cy="180" r="300" fill="none" stroke="#8b5cf6" stroke-width="2" opacity="0.13000000000000003"/><circle cx="985" cy="180" r="40" fill="#3b82f6" opacity="0.5"/>
+<rect x="80" y="96" width="176" height="52" rx="26" fill="#8b5cf6" fill-opacity="0.16" stroke="#8b5cf6" stroke-opacity="0.5"/>
+<circle cx="112" cy="122" r="6" fill="#8b5cf6"/>
+<text x="132" y="131" fill="#dbe4ff" font-size="26" font-weight="600">公司动态</text>
+<text x="80" y="380" fill="url(#tx)" font-size="96" font-weight="800" letter-spacing="1">全国代理合作</text>
+<text x="80" y="450" fill="#9fb0d6" font-size="30" font-weight="500">账大师 · AI 财税观察</text>
+<g opacity="0.9"><text x="80" y="600" fill="#6c7aa6" font-size="24" letter-spacing="3">ZHANGDASHI · 360 元 AI 记账</text></g>
+</svg>

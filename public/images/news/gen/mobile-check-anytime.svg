@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A1024"/><stop offset="1" stop-color="#132a6b"/></linearGradient>
+<linearGradient id="tx" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#22c1dc"/></linearGradient>
+<radialGradient id="gl1" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#4f7bff" stop-opacity="0.75"/><stop offset="1" stop-color="#4f7bff" stop-opacity="0"/></radialGradient>
+<radialGradient id="gl2" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#22c1dc" stop-opacity="0.6"/><stop offset="1" stop-color="#22c1dc" stop-opacity="0"/></radialGradient>
+<pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#22c1dc" stroke-width="1" opacity="0.08"/></pattern>
+</defs>
+<rect width="1200" height="675" fill="url(#bg)"/>
+<rect width="1200" height="675" fill="url(#grid)"/>
+<circle cx="140" cy="560" r="320" fill="url(#gl1)"/>
+<circle cx="1080" cy="120" r="300" fill="url(#gl2)"/>
+<line x1="880" y1="140" x2="1040" y2="110" stroke="#22c1dc" stroke-width="2" opacity="0.35"/><line x1="1040" y1="110" x2="1120" y2="240" stroke="#22c1dc" stroke-width="2" opacity="0.35"/><line x1="1120" y1="240" x2="980" y2="300" stroke="#22c1dc" stroke-width="2" opacity="0.35"/><line x1="980" y1="300" x2="860" y2="280" stroke="#22c1dc" stroke-width="2" opacity="0.35"/><line x1="880" y1="140" x2="860" y2="280" stroke="#22c1dc" stroke-width="2" opacity="0.35"/><line x1="980" y1="300" x2="1060" y2="380" stroke="#22c1dc" stroke-width="2" opacity="0.35"/><line x1="1120" y1="240" x2="1060" y2="380" stroke="#22c1dc" stroke-width="2" opacity="0.35"/><circle cx="880" cy="140" r="14" fill="#4f7bff"/><circle cx="880" cy="140" r="14" fill="none" stroke="#22c1dc" stroke-width="2" opacity="0.6"/><circle cx="1040" cy="110" r="14" fill="#4f7bff"/><circle cx="1040" cy="110" r="14" fill="none" stroke="#22c1dc" stroke-width="2" opacity="0.6"/><circle cx="1120" cy="240" r="14" fill="#4f7bff"/><circle cx="1120" cy="240" r="14" fill="none" stroke="#22c1dc" stroke-width="2" opacity="0.6"/><circle cx="980" cy="300" r="14" fill="#4f7bff"/><circle cx="980" cy="300" r="14" fill="none" stroke="#22c1dc" stroke-width="2" opacity="0.6"/><circle cx="860" cy="280" r="14" fill="#4f7bff"/><circle cx="860" cy="280" r="14" fill="none" stroke="#22c1dc" stroke-width="2" opacity="0.6"/><circle cx="1060" cy="380" r="14" fill="#4f7bff"/><circle cx="1060" cy="380" r="14" fill="none" stroke="#22c1dc" stroke-width="2" opacity="0.6"/>
+<rect x="80" y="96" width="176" height="52" rx="26" fill="#22c1dc" fill-opacity="0.16" stroke="#22c1dc" stroke-opacity="0.5"/>
+<circle cx="112" cy="122" r="6" fill="#22c1dc"/>
+<text x="132" y="131" fill="#dbe4ff" font-size="26" font-weight="600">产品动态</text>
+<text x="80" y="380" fill="url(#tx)" font-size="96" font-weight="800" letter-spacing="1">手机随时查账</text>
+<text x="80" y="450" fill="#9fb0d6" font-size="30" font-weight="500">账大师 · AI 财税观察</text>
+<g opacity="0.9"><text x="80" y="600" fill="#6c7aa6" font-size="24" letter-spacing="3">ZHANGDASHI · 360 元 AI 记账</text></g>
+</svg>

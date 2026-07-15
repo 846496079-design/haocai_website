@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#140A24"/><stop offset="1" stop-color="#3a1a5e"/></linearGradient>
+<linearGradient id="tx" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#4f7bff"/></linearGradient>
+<radialGradient id="gl1" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#a855f7" stop-opacity="0.75"/><stop offset="1" stop-color="#a855f7" stop-opacity="0"/></radialGradient>
+<radialGradient id="gl2" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#4f7bff" stop-opacity="0.6"/><stop offset="1" stop-color="#4f7bff" stop-opacity="0"/></radialGradient>
+<pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#4f7bff" stroke-width="1" opacity="0.08"/></pattern>
+</defs>
+<rect width="1200" height="675" fill="url(#bg)"/>
+<rect width="1200" height="675" fill="url(#grid)"/>
+<circle cx="140" cy="560" r="320" fill="url(#gl1)"/>
+<circle cx="1080" cy="120" r="300" fill="url(#gl2)"/>
+<rect x="820" y="440" width="34" height="120" rx="8" fill="#4f7bff" opacity="0.4"/><rect x="872" y="360" width="34" height="200" rx="8" fill="#a855f7" opacity="0.48000000000000004"/><rect x="924" y="400" width="34" height="160" rx="8" fill="#4f7bff" opacity="0.56"/><rect x="976" y="300" width="34" height="260" rx="8" fill="#a855f7" opacity="0.64"/><rect x="1028" y="350" width="34" height="210" rx="8" fill="#4f7bff" opacity="0.72"/><rect x="1080" y="260" width="34" height="300" rx="8" fill="#a855f7" opacity="0.8"/>
+<rect x="80" y="96" width="176" height="52" rx="26" fill="#4f7bff" fill-opacity="0.16" stroke="#4f7bff" stroke-opacity="0.5"/>
+<circle cx="112" cy="122" r="6" fill="#4f7bff"/>
+<text x="132" y="131" fill="#dbe4ff" font-size="26" font-weight="600">客户故事</text>
+<text x="80" y="380" fill="url(#tx)" font-size="96" font-weight="800" letter-spacing="1">初创财税起步</text>
+<text x="80" y="450" fill="#9fb0d6" font-size="30" font-weight="500">账大师 · AI 财税观察</text>
+<g opacity="0.9"><text x="80" y="600" fill="#6c7aa6" font-size="24" letter-spacing="3">ZHANGDASHI · 360 元 AI 记账</text></g>
+</svg>

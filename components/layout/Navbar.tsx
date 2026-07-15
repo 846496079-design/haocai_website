@@ -15,9 +15,9 @@ interface NavbarProps {
 const siteList = [sites.cn, sites.jp, sites.hk]
 const siteLabel = { cn: '站点', jp: 'サイト', hk: '站點' } as const
 const logoSrc = {
-  cn: '/images/brand/official-logo-cn.png',
-  jp: '/images/brand/official-logo-jp.png',
-  hk: '/images/brand/official-logo-hk.png',
+  cn: '/images/brand/official-logo-cn-20260715.png',
+  jp: '/images/brand/official-logo-jp-20260715.png',
+  hk: '/images/brand/official-logo-hk-20260715.png',
 } as const
 const localizedSiteNames = {
   cn: { cn: '中国站', jp: '日本站', hk: '香港站' },

@@ -9,9 +9,9 @@ interface FooterProps {
 const siteList = [sites.cn, sites.jp, sites.hk]
 const footerActionCopy = { cn: '关于我们', jp: '会社紹介', hk: '關於我們' } as const
 const logoSrc = {
-  cn: '/images/brand/official-logo-cn.png',
-  jp: '/images/brand/official-logo-jp.png',
-  hk: '/images/brand/official-logo-hk.png',
+  cn: '/images/brand/official-logo-cn-20260715.png',
+  jp: '/images/brand/official-logo-jp-20260715.png',
+  hk: '/images/brand/official-logo-hk-20260715.png',
 } as const
 
 const mobileFooterCopy = {

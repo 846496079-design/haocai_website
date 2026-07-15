@@ -121,6 +121,17 @@ function trimPartnerLeadField(value: string) {
   return value.trim().slice(0, partnerLeadMaxLength)
 }
 
+function getInviteCodeFromSearch(search: string) {
+  const searchParams = new URLSearchParams(search)
+
+  for (const key of ['inviteCode', 'c', 'C']) {
+    const inviteCode = searchParams.get(key)
+    if (inviteCode?.trim()) return trimPartnerLeadField(inviteCode)
+  }
+
+  return ''
+}
+
 const pageCopy = {
   cn: {
     sideNavTitle: '本页导览',
@@ -926,7 +937,7 @@ export default function OfficialSite({
   const [partnerErrors, setPartnerErrors] = useState<Partial<Record<PartnerField, string>>>({})
 
   useEffect(() => {
-    const inviteCode = new URLSearchParams(window.location.search).get('inviteCode')
+    const inviteCode = getInviteCodeFromSearch(window.location.search)
     if (inviteCode) {
       setPartnerForm((form) => ({ ...form, inviteCode }))
     }
@@ -1025,8 +1036,7 @@ export default function OfficialSite({
     setPartnerApiError('')
     setPartnerSubmitting(true)
 
-    const inviteCode =
-      partnerForm.inviteCode.trim() || new URLSearchParams(window.location.search).get('inviteCode') || undefined
+    const inviteCode = trimPartnerLeadField(partnerForm.inviteCode) || getInviteCodeFromSearch(window.location.search) || undefined
     const companyName = trimPartnerLeadField(partnerForm.company)
     const position = trimPartnerLeadField(partnerForm.role)
     const city = trimPartnerLeadField(partnerForm.city)
@@ -1399,7 +1409,7 @@ export default function OfficialSite({
           </FadeInSection>
           <FadeInSection delay={100}>
             <div className="mt-10 overflow-x-auto rounded-[28px] border border-border bg-card shadow-[0_18px_54px_rgba(24,36,61,.08)]">
-              <table className="w-full min-w-[640px] border-collapse text-left">
+              <table className={`w-full border-collapse text-left ${comparison.columns.length >= 4 ? 'min-w-[880px]' : 'min-w-[640px]'}`}>
                 <thead>
                   <tr className="bg-[linear-gradient(135deg,rgba(79,123,255,.08),rgba(108,92,255,.05))]">
                     {comparison.columns.map((column, index) => (
@@ -1954,7 +1964,7 @@ export default function OfficialSite({
                     <p className="mt-6 text-lg leading-8 text-muted-foreground">{copy.companyHeroDesc}</p>
                     <div className="mt-8">
                       <Image
-                        src={site.code === 'jp' ? '/images/brand/official-logo-jp.png' : site.code === 'hk' ? '/images/brand/official-logo-hk.png' : '/images/brand/official-logo-cn.png'}
+                        src={site.code === 'jp' ? '/images/brand/official-logo-jp-20260715.png' : site.code === 'hk' ? '/images/brand/official-logo-hk-20260715.png' : '/images/brand/official-logo-cn-20260715.png'}
                         alt="账大师 · 360 元 AI 记账"
                         width={720}
                         height={238}
@@ -2096,7 +2106,7 @@ export default function OfficialSite({
               </section>
             )}
 
-            <section className="px-6 py-20">
+            <section id="partner-form" className="scroll-mt-24 px-6 py-20">
               <div className="mx-auto grid max-w-[1280px] gap-10 lg:grid-cols-[1fr_1fr]">
                 <FadeInSection>
                   <div>

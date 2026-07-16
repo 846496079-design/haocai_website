@@ -49,6 +49,7 @@ import Footer from '@/components/layout/Footer'
 import FadeInSection from '@/components/ui/fade-in-section'
 import type { IconKey, SiteContent } from '@/lib/site-content'
 import { getNewsArticle, newsArticles, type NewsArticle } from '@/lib/news-content'
+import { articleUsesPublication } from '@/lib/cms/publication'
 
 const icons: Record<IconKey, typeof Building2> = {
   building: Building2,
@@ -2194,32 +2195,39 @@ export default function OfficialSite({
               <div className="relative mt-10 aspect-[16/9] overflow-hidden rounded-[30px] border border-border bg-secondary shadow-[0_18px_54px_rgba(24,36,61,.10)]">
                 <Image src={article.cover} alt={article.title} fill className="object-cover" priority sizes="(min-width: 1024px) 896px, 100vw" />
               </div>
-              <div className="mx-auto mt-12 max-w-3xl space-y-12">
-                {article.sections.map((section) => (
-                  <section key={section.title}>
-                    <h2 className="text-2xl font-semibold leading-snug">{section.title}</h2>
-                    <div className="mt-5 space-y-4 text-base leading-8 text-muted-foreground">
-                      {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-                    </div>
-                    {section.image && (
-                      <figure className="mt-7">
-                        {/* CMS images may come from Vercel Blob or another configured object store. */}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={section.image}
-                          alt={section.imageAlt || section.imageCaption || section.title}
-                          className="h-auto w-full rounded-2xl object-cover"
-                          loading="lazy"
-                        />
-                        {section.imageCaption && <figcaption className="mt-3 text-sm leading-6 text-muted-foreground">{section.imageCaption}</figcaption>}
-                      </figure>
-                    )}
-                  </section>
-                ))}
-                <footer className="border-t border-border pt-8 text-base leading-8 text-muted-foreground">
-                  {article.closing.map((paragraph) => <p key={paragraph} className="mt-4 first:mt-0">{paragraph}</p>)}
-                </footer>
-              </div>
+              {articleUsesPublication(article) && article.publication.contentHtml ? (
+                <div
+                  className="mx-auto mt-12 max-w-[677px] overflow-hidden"
+                  dangerouslySetInnerHTML={{ __html: article.publication.contentHtml }}
+                />
+              ) : (
+                <div className="mx-auto mt-12 max-w-3xl space-y-12">
+                  {article.sections.map((section) => (
+                    <section key={section.title}>
+                      <h2 className="text-2xl font-semibold leading-snug">{section.title}</h2>
+                      <div className="mt-5 space-y-4 text-base leading-8 text-muted-foreground">
+                        {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                      </div>
+                      {section.image && (
+                        <figure className="mt-7">
+                          {/* CMS images may come from Vercel Blob or another configured object store. */}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={section.image}
+                            alt={section.imageAlt || section.imageCaption || section.title}
+                            className="h-auto w-full rounded-2xl object-cover"
+                            loading="lazy"
+                          />
+                          {section.imageCaption && <figcaption className="mt-3 text-sm leading-6 text-muted-foreground">{section.imageCaption}</figcaption>}
+                        </figure>
+                      )}
+                    </section>
+                  ))}
+                  <footer className="border-t border-border pt-8 text-base leading-8 text-muted-foreground">
+                    {article.closing.map((paragraph) => <p key={paragraph} className="mt-4 first:mt-0">{paragraph}</p>)}
+                  </footer>
+                </div>
+              )}
             </article>
           </section>
         )}

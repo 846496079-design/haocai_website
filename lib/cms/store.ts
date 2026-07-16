@@ -6,6 +6,8 @@ import { basename, dirname, extname, join } from 'node:path'
 import { newsArticles, type NewsArticle } from '@/lib/news-content'
 import type { SiteCode } from '@/lib/site-content'
 import { CMS_LOCALES, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult } from './types'
+import type { CmsLocalizedArticle } from './publication'
+import { prepareCmsPublicationContent } from './publication-server'
 import * as postgresStore from './store-postgres'
 import { usesPostgres } from './config'
 
@@ -179,7 +181,7 @@ function optimizedCoverPath(cover: string) {
   return `/images/news/optimized/${basename(cover, extname(cover))}.webp`
 }
 
-function normalizeArticle(article: NewsArticle, slug: string): NewsArticle {
+function normalizeArticle(article: CmsLocalizedArticle, slug: string): CmsLocalizedArticle {
   return { ...article, slug, cover: optimizedCoverPath(article.cover), tags: article.tags ?? [], sections: article.sections.map((section) => ({ ...section, paragraphs: [...section.paragraphs] })), closing: [...article.closing] }
 }
 
@@ -329,12 +331,13 @@ export function createCmsArticle(adminId: number) {
 }
 
 export function importCmsArticle(content: CmsArticleContent, sourceId: string) {
-  if (usesPostgres()) return postgresStore.importCmsArticle(content, sourceId)
-  const slug = content.cn.slug.trim()
+  const preparedContent = prepareCmsPublicationContent(content)
+  if (usesPostgres()) return postgresStore.importCmsArticle(preparedContent, sourceId)
+  const slug = preparedContent.cn.slug.trim()
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('导入稿件的 slug 仅支持小写字母、数字和连字符。')
   const existing = database.prepare('SELECT * FROM news_article WHERE slug = ?').get(slug) as ArticleRow | undefined
   const timestamp = now()
-  const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, normalizeArticle(content[locale], slug)])) as CmsArticleContent
+  const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, normalizeArticle(preparedContent[locale], slug)])) as CmsArticleContent
   const categoryId = ensureCategory(normalized.cn.category, 'IMPORT')
   const operation = database.transaction(() => {
     if (!existing) {
@@ -358,7 +361,8 @@ export function importCmsArticle(content: CmsArticleContent, sourceId: string) {
 }
 
 export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: number) {
-  if (usesPostgres()) return postgresStore.updateCmsDraft(id, content, adminId) as unknown as CmsArticleRecord | undefined
+  const preparedContent = prepareCmsPublicationContent(content)
+  if (usesPostgres()) return postgresStore.updateCmsDraft(id, preparedContent, adminId) as unknown as CmsArticleRecord | undefined
   const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
   if (!row) throw new Error('新闻不存在。')
   if (row.status === 'TRASH') throw new Error('回收站稿件必须先恢复后才能编辑。')
@@ -371,7 +375,7 @@ export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: 
       database.prepare('UPDATE news_article SET draft_version_id = ? WHERE id = ?').run(result.lastInsertRowid, row.id)
       version = database.prepare('SELECT * FROM news_version WHERE id = ?').get(result.lastInsertRowid) as VersionRow
     }
-    const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, normalizeArticle(content[locale], row.slug)])) as CmsArticleContent
+    const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, normalizeArticle(preparedContent[locale], row.slug)])) as CmsArticleContent
     const previous = version ? parseContent(version.content_json) : createEmptyContent(row.slug)
     const chineseChanged = JSON.stringify(previous.cn) !== JSON.stringify(normalized.cn)
     const categoryName = normalized.cn.category.trim()
@@ -605,7 +609,8 @@ export function reorderCmsPublishedArticles(ids: number[], adminId: number) {
 }
 
 export function importCmsArticleIdempotent(content: CmsArticleContent, sourceId: string, idempotencyKey: string, payloadHash: string): CmsImportResult | Promise<CmsImportResult> {
-  if (usesPostgres()) return postgresStore.importCmsArticleIdempotent(content, sourceId, idempotencyKey, payloadHash)
+  const preparedContent = prepareCmsPublicationContent(content)
+  if (usesPostgres()) return postgresStore.importCmsArticleIdempotent(preparedContent, sourceId, idempotencyKey, payloadHash)
   const key = idempotencyKey.trim()
   const hash = payloadHash.trim()
   if (!key || !hash) throw new Error('导入请求缺少幂等键或载荷摘要。')
@@ -620,9 +625,9 @@ export function importCmsArticleIdempotent(content: CmsArticleContent, sourceId:
     }
     const timestamp = now()
     database.prepare('INSERT INTO integration_delivery (source, external_id, idempotency_key, payload_hash, result, created_at, updated_at) VALUES (?, ?, ?, ?, NULL, ?, ?)').run(source, sourceId, key, hash, timestamp, timestamp)
-    const categoryName = content.cn.category.trim()
+    const categoryName = preparedContent.cn.category.trim()
     const categoryCreated = Boolean(categoryName && !database.prepare('SELECT id FROM news_category WHERE name = ?').get(categoryName))
-    const articleId = importCmsArticle(content, sourceId) as number
+    const articleId = importCmsArticle(preparedContent, sourceId) as number
     const result: CmsImportResult = { articleId, duplicate: false, categoryCreated }
     database.prepare('UPDATE integration_delivery SET result = ?, updated_at = ? WHERE source = ? AND idempotency_key = ?').run(JSON.stringify(result), now(), source, key)
     return result

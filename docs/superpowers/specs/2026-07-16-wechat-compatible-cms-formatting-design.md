@@ -2,9 +2,9 @@
 
 | 项目 | 内容 |
 | --- | --- |
-| 版本 | V1.0 |
+| 版本 | V1.1 |
 | 日期 | 2026-07-16 |
-| 状态 | 设计已固化，等待实现与端到端效果验收 |
+| 状态 | 第一阶段已实现并通过本地端到端回归，等待真实微信公众号粘贴验收 |
 | 适用范围 | 新闻 CMS 排版、官网预览与发布、微信公众号富文本复制、未来新媒体工作台对接 |
 | 验收方式 | 以官网实际展示和微信公众号后台实际粘贴结果为准 |
 
@@ -418,3 +418,65 @@ flowchart LR
 - 如果字段变化只影响 CMS 内部编辑扩展且不改变 `content` 和对外契约，可保持 `publication-draft.v1`。
 - 如果字段变化会改变外部必填、字段语义、正文安全边界或幂等行为，必须升级契约版本并同步接口清单。
 - 已发布内容和旧新闻兼容优先于模板重构；任何迁移都先生成草稿并经过预览、人工确认后发布。
+
+## 17. 实施结果与当前接口清单
+
+### 17.1 已落地能力
+
+截至 2026-07-16，以下能力已经进入代码，不再只是设计假设：
+
+| 能力 | 实现位置 | 结果口径 |
+| --- | --- | --- |
+| 版本化排版正文 | `lib/cms/publication.ts` | 新正文使用 `wechat-html-v1`；旧分节结构原样保留，不自动迁移 |
+| 六类 72 套模板 | `lib/cms/publication-templates.ts` | 每类 12 套，模板 ID 和版本进入保存快照 |
+| Markdown 确定性渲染 | `lib/cms/publication-renderer.ts` | 同一源稿、模板和参数生成相同内联样式 HTML |
+| 服务端清洗与哈希 | `lib/cms/publication-sanitizer.ts`、`lib/cms/publication-server.ts` | 保存前执行白名单清洗，保存 `renderVersion`、`templateVersion` 和 SHA-256 `contentHash` |
+| 排版工作台 | `components/cms/cms-publication-editor.tsx` | Markdown、工具栏、实时预览、字符统计、图片、模板、样式微调、微信字段和一键复制 |
+| AI 结构建议 | `lib/cms/ai-structure.ts`、`/api/cms/news/{id}/ai-format/` | 只返回建议；语义指纹不一致时拒绝；管理员采用后才修改正文 |
+| 官网快照渲染 | `components/marketing/official-site.tsx` | 新格式读取已清洗 `contentHtml`；旧文章继续走原分节渲染 |
+| 审计 | `/api/cms/news/{id}/audit/` | 记录 `COPY_WECHAT_HTML` 和 `AI_STRUCTURE_ACCEPT` |
+| 三语翻译衔接 | `lib/cms/translation.ts` | 翻译 Markdown 自然语言并保留结构、链接、图片地址和代码；保存时重新生成快照 |
+
+### 17.2 当前 CMS 内部接口
+
+这些接口服务于本期 CMS 管理页面，不等同于未来新媒体工作台的公开契约：
+
+| 方法与地址 | 输入重点 | 输出或副作用 |
+| --- | --- | --- |
+| `PATCH /api/cms/news/{id}/` | 完整 `CmsArticleContent`，其中各语言可带 `publication` | 服务端重新渲染、清洗和计算哈希，返回已规范化稿件 |
+| `POST /api/cms/upload/` | `file`、`articleId`、`usage`、`altText` | 返回 `assetId`、CMS 公网 URL、缩略图、宽高和用途 |
+| `POST /api/cms/news/{id}/ai-format/` | `sourceMarkdown` | 返回未自动采用的 `proposal` |
+| `POST /api/cms/news/{id}/audit/` | 白名单动作和明细 | 写入编辑操作审计记录 |
+| `POST /api/cms/news/{id}/preview/` | 无正文参数 | 标记当前保存版本已预览 |
+| `POST /api/cms/news/{id}/publish/` | `reviewed: true` | 通过完整性和预览门禁后发布官网版本 |
+
+### 17.3 当前字段到未来发布契约的点对点映射
+
+| CMS 当前字段 | 未来统一字段 | 微信草稿字段 | 说明 |
+| --- | --- | --- | --- |
+| `article.title` | `articles[].title` | `title` | CMS 仍保留三语标题；工作台按目标发布平台选择语言 |
+| `article.summary` | `articles[].digest` | `digest` | 未来接口执行微信长度限制，本期官网保存沿用现有规则 |
+| `publication.wechat.author` | `articles[].author` | `author` | 当前编辑器限制 16 字符 |
+| `publication.contentHtml` | `articles[].content` | `content` | 对外正文的唯一发布快照，不要求上游提交 Markdown |
+| `publication.wechat.contentSourceUrl` | `articles[].content_source_url` | `content_source_url` | 可为空 |
+| `publication.wechat.thumbMediaId` | `articles[].thumb_media_id` | `thumb_media_id` | 本期允许为空，不阻止官网发布 |
+| `publication.wechat.needOpenComment` | `articles[].need_open_comment` | `need_open_comment` | `0` 或 `1` |
+| `publication.wechat.onlyFansCanComment` | `articles[].only_fans_can_comment` | `only_fans_can_comment` | `0` 或 `1` |
+| `publication.assets[].cmsPublicUrl` | `extensions.assets[].cms_public_url` | 无直接同名字段 | 官网和复制阶段使用；未来上传微信后补 `wechat_url` |
+| `publication.assets[].wechatUrl` | `extensions.assets[].wechat_url` | 正文图片 URL | 本期不生成 |
+| `publication.assets[].wechatMediaId` | `extensions.assets[].wechat_media_id` | 素材 Media ID | 本期不生成 |
+| `publication.sourceMarkdown` | `extensions.cms.source_markdown` | 无 | 仅用于 CMS 再编辑，未来上游非必填 |
+| `publication.templateId` | `extensions.editor.template_id` | 无 | 只影响 CMS 的确定性渲染 |
+| `publication.contentHash` | `extensions.cms.content_hash` | 无 | 用于幂等、验收和漂移定位 |
+
+### 17.4 已执行验证
+
+| 验证 | 命令或路径 | 结果 |
+| --- | --- | --- |
+| CMS 类型检查 | `npm run typecheck:cms` | 通过 |
+| 72 模板与 Markdown 回归 | `npm run verify:publication-formatting` | 通过，验证 6 类、每类 12 套、确定性渲染和危险 HTML 转义 |
+| 生产构建 | `npm run build` | 通过 |
+| 隔离数据库端到端 | 临时 SQLite：登录、建稿、三语保存、快照、哈希、预览、发布、官网读取 | 通过；三语无乱码，脚本标签被移除，官网返回 200 |
+| 旧文章兼容 | 临时数据库中的既有已发布文章 | 通过；仍使用旧分节渲染，没有被自动切换到新格式 |
+
+真实微信公众号编辑器和手机端的粘贴效果仍是上线前人工验收项。该项需要业务人员在公众号后台执行，结果应按第 13 节记录；本地回归通过不等于微信侧验收完成。

@@ -1,5 +1,6 @@
 import type { NewsArticle } from '@/lib/news-content'
 import type { SiteCode } from '@/lib/site-content'
+import { publicationHasBody, type CmsLocalizedArticle } from './publication'
 
 export type CmsArticleStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE' | 'TRASH'
 
@@ -14,7 +15,7 @@ export type CmsCategory = {
   referenceCount: number
 }
 
-export type CmsArticleContent = Record<SiteCode, NewsArticle>
+export type CmsArticleContent = Record<SiteCode, CmsLocalizedArticle>
 
 export type CmsImportResult = {
   articleId: number
@@ -81,6 +82,6 @@ export function createEmptyContent(slug = ''): CmsArticleContent {
 export function isContentComplete(content: CmsArticleContent) {
   return CMS_LOCALES.every((locale) => {
     const article = content[locale]
-    return Boolean(article.title.trim() && article.summary.trim() && article.lead.trim() && article.category.trim() && article.cover && article.sections.length && article.closing.length)
+    return Boolean(article.title.trim() && article.summary.trim() && article.lead.trim() && article.category.trim() && article.cover && publicationHasBody(article))
   })
 }

@@ -19,14 +19,6 @@ import {
   type CmsAuditLog as CmsAuditLogRecord,
 } from "@/lib/cms/types";
 import CmsAuditLog from "@/components/cms/cms-audit-log";
-import CmsPublicationEditor from "@/components/cms/cms-publication-editor";
-import {
-  articleUsesPublication,
-  createPublicationBody,
-  legacyArticleToMarkdown,
-  type CmsLocalizedArticle,
-  type PublicationAsset,
-} from "@/lib/cms/publication";
 
 const localeNames: Record<SiteCode, string> = {
   cn: "简体中文",
@@ -36,17 +28,6 @@ const localeNames: Record<SiteCode, string> = {
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function initializeContent(value: CmsArticleContent) {
-  const next = clone(value);
-  CMS_LOCALES.forEach((code) => {
-    const article = next[code];
-    if (!articleUsesPublication(article) && !article.sections.length && !article.closing.length) {
-      article.publication = createPublicationBody();
-    }
-  });
-  return next;
 }
 
 export default function CmsNewsEditor({
@@ -59,7 +40,7 @@ export default function CmsNewsEditor({
   initialAuditItems?: CmsAuditLogRecord[];
 }) {
   const [content, setContent] = useState<CmsArticleContent>(() =>
-    initializeContent(initial.content),
+    clone(initial.content),
   );
   const [locale, setLocale] = useState<SiteCode>("cn");
   const [reviewed, setReviewed] = useState(false);
@@ -88,9 +69,8 @@ export default function CmsNewsEditor({
           item.lead &&
           item.category &&
           item.cover &&
-          (articleUsesPublication(item)
-            ? item.publication.sourceMarkdown.trim()
-            : item.sections.length && item.closing.length)
+          item.sections.length &&
+          item.closing.length
         );
       }),
     [content],
@@ -110,7 +90,7 @@ export default function CmsNewsEditor({
     });
   }, []);
 
-  function updateArticle(update: Partial<CmsLocalizedArticle>) {
+  function updateArticle(update: Partial<NewsArticle>) {
     setContent((current) => ({
       ...current,
       [locale]: { ...current[locale], ...update },
@@ -153,84 +133,52 @@ export default function CmsNewsEditor({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content }),
     });
-    const data = (await response.json()) as CmsArticleRecord & { message?: string };
+    const data = (await response.json()) as { message?: string };
     setSaving(false);
     if (!response.ok) {
       setNotice(data.message ?? "保存失败。");
       return false;
     }
-    setContent(clone(data.content));
-    setHasCurrentPreview(Boolean(data.previewedAt));
     setDirty(false);
     setNotice("草稿已保存。");
     return true;
   }
 
-  async function uploadImage(
-    file: File,
-    usage: "COVER" | "CONTENT",
-    altText = "",
-  ): Promise<PublicationAsset | undefined> {
+  async function uploadImage(file: File, usage: "COVER" | "CONTENT") {
     const formData = new FormData();
     formData.set("file", file);
     formData.set("articleId", String(initial.id));
     formData.set("usage", usage);
-    formData.set("altText", altText);
     setSaving(true);
-    try {
-      const response = await fetch("/api/cms/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = (await response.json()) as {
-        assetId?: string;
-        url?: string;
-        width?: number;
-        height?: number;
-        message?: string;
-      };
-      if (!response.ok || !data.url) {
-        setNotice(data.message ?? "图片上传失败。");
-        return undefined;
-      }
-      return {
-        assetId: data.assetId ?? data.url,
-        type: "image",
-        originalUrl: null,
-        cmsPublicUrl: data.url,
-        wechatUrl: null,
-        wechatMediaId: null,
-        altText: altText || "正文图片",
-        caption: null,
-        width: data.width ?? 0,
-        height: data.height ?? 0,
-        mimeType: "image/webp",
-        contentHash: null,
-      };
-    } catch {
-      setNotice("图片上传失败，请检查网络后重试。");
+    const response = await fetch("/api/cms/upload", {
+      method: "POST",
+      body: formData,
+    });
+    const data = (await response.json()) as { url?: string; message?: string };
+    setSaving(false);
+    if (!response.ok || !data.url) {
+      setNotice(data.message ?? "图片上传失败。");
       return undefined;
-    } finally {
-      setSaving(false);
     }
+    return data.url;
   }
 
   async function uploadCover(file: File) {
-    const asset = await uploadImage(file, "COVER", "新闻封面");
-    if (!asset) return;
+    const url = await uploadImage(file, "COVER");
+    if (!url) return;
     setContent(
       (current) =>
         Object.fromEntries(
-          CMS_LOCALES.map((code) => [code, { ...current[code], cover: asset.cmsPublicUrl }]),
+          CMS_LOCALES.map((code) => [code, { ...current[code], cover: url }]),
         ) as CmsArticleContent,
     );
     setNotice("封面已优化上传，请保存草稿。");
   }
 
   async function uploadSectionImage(index: number, file: File) {
-    const asset = await uploadImage(file, "CONTENT", "正文图片");
-    if (!asset) return;
-    updateSection(index, { image: asset.cmsPublicUrl });
+    const url = await uploadImage(file, "CONTENT");
+    if (!url) return;
+    updateSection(index, { image: url });
     setNotice("正文图片已上传，请保存草稿。");
   }
 
@@ -295,7 +243,7 @@ export default function CmsNewsEditor({
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 md:px-8">
-      <div className="mx-auto max-w-[1600px]">
+      <div className="mx-auto max-w-6xl">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
           <div>
             <Link
@@ -452,34 +400,7 @@ export default function CmsNewsEditor({
                   />
                 </div>
               </Field>
-              {articleUsesPublication(article) ? (
-                <CmsPublicationEditor
-                  articleId={initial.id}
-                  value={article.publication}
-                  onChange={(publication) => updateArticle({ publication })}
-                  onUpload={(file, altText) => uploadImage(file, "CONTENT", altText)}
-                  onNotice={setNotice}
-                />
-              ) : (
-                <>
-                  <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-                    <h2 className="font-semibold text-indigo-950">当前文章使用旧版内容块</h2>
-                    <p className="mt-1 text-sm leading-6 text-indigo-900">
-                      旧文章继续按原格式编辑和发布。只有点击启用后，系统才会把现有分节复制为 Markdown，并切换到微信兼容排版。
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateArticle({
-                          publication: createPublicationBody(legacyArticleToMarkdown(article)),
-                        })
-                      }
-                      className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-                    >
-                      启用微信兼容排版
-                    </button>
-                  </div>
-                  <div className="border-t border-slate-200 pt-5">
+              <div className="border-t border-slate-200 pt-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-semibold">正文内容块</h2>
@@ -648,22 +569,20 @@ export default function CmsNewsEditor({
                   ))}
                 </div>
               </div>
-                  <Field label="结语（每行一段）">
-                    <textarea
-                      value={article.closing.join("\n")}
-                      onChange={(event) =>
-                        updateArticle({
-                          closing: event.target.value
-                            .split("\n")
-                            .map((line) => line.trim())
-                            .filter(Boolean),
-                        })
-                      }
-                      rows={4}
-                    />
-                  </Field>
-                </>
-              )}
+              <Field label="结语（每行一段）">
+                <textarea
+                  value={article.closing.join("\n")}
+                  onChange={(event) =>
+                    updateArticle({
+                      closing: event.target.value
+                        .split("\n")
+                        .map((line) => line.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  rows={4}
+                />
+              </Field>
             </div>
           </section>
           <aside className="h-fit rounded-xl border border-slate-200 bg-white p-5 lg:sticky lg:top-6">

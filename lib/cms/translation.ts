@@ -1,7 +1,7 @@
 import 'server-only'
 
+import type { NewsArticle } from '@/lib/news-content'
 import type { CmsArticleContent } from './types'
-import { articleUsesPublication, type CmsLocalizedArticle } from './publication'
 
 type TranslationTarget = 'jp' | 'hk'
 export type TranslationMode = 'overwrite' | 'fill-missing'
@@ -12,15 +12,12 @@ function endpoint() {
   return value
 }
 
-function translationPrompt(source: CmsLocalizedArticle, target: TranslationTarget) {
+function translationPrompt(source: NewsArticle, target: TranslationTarget) {
   const language = target === 'jp' ? '日语' : '繁体中文（香港用语）'
-  const publicationField = articleUsesPublication(source)
-    ? '另外必须返回 publicationSourceMarkdown 字段：翻译完整 Markdown 正文，严格保留 Markdown 结构、链接、图片地址和代码，只翻译自然语言。'
-    : ''
-  return `你是企业官网编辑翻译。将以下简体中文新闻翻译为${language}，保持事实、日期、数字、产品名和链接准确，不得扩写或省略。只输出 JSON，不要 Markdown 代码围栏。JSON 必须有 title、summary、lead、category、tags、sections、closing 字段；sections 为对象数组，每项包含 title、paragraphs、image、imageAlt、imageCaption；paragraphs 为字符串数组；image 保留原始图片 URL，imageAlt 和 imageCaption 需要翻译。${publicationField}\n\n源稿：${JSON.stringify(source)}`
+  return `你是企业官网编辑翻译。将以下简体中文新闻翻译为${language}，保持事实、日期、数字、产品名和链接准确，不得扩写或省略。只输出 JSON，不要 Markdown。JSON 必须有 title、summary、lead、category、tags、sections、closing 字段；sections 为对象数组，每项包含 title、paragraphs、image、imageAlt、imageCaption；paragraphs 为字符串数组；image 保留原始图片 URL，imageAlt 和 imageCaption 需要翻译。\n\n源稿：${JSON.stringify(source)}`
 }
 
-async function requestTranslation(source: CmsLocalizedArticle, target: TranslationTarget): Promise<CmsLocalizedArticle> {
+async function requestTranslation(source: NewsArticle, target: TranslationTarget): Promise<NewsArticle> {
   const apiKey = process.env.CMS_TRANSLATION_API_KEY?.trim()
   const model = process.env.CMS_TRANSLATION_MODEL?.trim()
   if (!apiKey || !model) throw new Error('尚未完整配置翻译服务凭据。请设置 CMS_TRANSLATION_API_KEY 与 CMS_TRANSLATION_MODEL。')
@@ -35,31 +32,13 @@ async function requestTranslation(source: CmsLocalizedArticle, target: Translati
   const payload = await response.json() as { choices?: { message?: { content?: string } }[] }
   const raw = payload.choices?.[0]?.message?.content
   if (!raw) throw new Error('翻译服务未返回可用内容。')
-  let translated: Partial<CmsLocalizedArticle> & { publicationSourceMarkdown?: string }
-  try { translated = JSON.parse(raw) as Partial<CmsLocalizedArticle> & { publicationSourceMarkdown?: string } } catch { throw new Error('翻译服务返回的内容不是有效 JSON。') }
+  let translated: Partial<NewsArticle>
+  try { translated = JSON.parse(raw) as Partial<NewsArticle> } catch { throw new Error('翻译服务返回的内容不是有效 JSON。') }
   if (!translated.title || !translated.summary || !translated.lead || !translated.category || !Array.isArray(translated.sections) || !Array.isArray(translated.closing)) throw new Error('翻译服务返回字段不完整。')
-  if (articleUsesPublication(source) && !translated.publicationSourceMarkdown?.trim()) throw new Error('翻译服务未返回排版正文。')
-  return {
-    ...source,
-    ...translated,
-    slug: source.slug,
-    date: source.date,
-    cover: source.cover,
-    tags: translated.tags ?? [],
-    sections: translated.sections.map((section) => ({ title: section.title ?? '', paragraphs: section.paragraphs ?? [], image: section.image, imageAlt: section.imageAlt, imageCaption: section.imageCaption })),
-    closing: translated.closing,
-    publication: articleUsesPublication(source) ? {
-      ...source.publication,
-      sourceMarkdown: translated.publicationSourceMarkdown ?? '',
-      contentHtml: undefined,
-      contentHash: undefined,
-      renderVersion: undefined,
-      templateVersion: undefined,
-    } : undefined,
-  }
+  return { ...source, ...translated, slug: source.slug, date: source.date, cover: source.cover, tags: translated.tags ?? [], sections: translated.sections.map((section) => ({ title: section.title ?? '', paragraphs: section.paragraphs ?? [], image: section.image, imageAlt: section.imageAlt, imageCaption: section.imageCaption })), closing: translated.closing }
 }
 
-function keepManualValues(existing: CmsLocalizedArticle, generated: CmsLocalizedArticle): CmsLocalizedArticle {
+function keepManualValues(existing: NewsArticle, generated: NewsArticle): NewsArticle {
   return {
     ...generated,
     title: existing.title.trim() || generated.title,
@@ -80,14 +59,6 @@ function keepManualValues(existing: CmsLocalizedArticle, generated: CmsLocalized
       }
     }) : generated.sections,
     closing: existing.closing.some((paragraph) => paragraph.trim()) ? existing.closing : generated.closing,
-    publication: articleUsesPublication(generated) ? {
-      ...generated.publication,
-      sourceMarkdown: articleUsesPublication(existing) && existing.publication.sourceMarkdown.trim()
-        ? existing.publication.sourceMarkdown
-        : generated.publication.sourceMarkdown,
-      contentHtml: undefined,
-      contentHash: undefined,
-    } : undefined,
   }
 }
 

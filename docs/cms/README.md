@@ -12,7 +12,6 @@
 | [admin-bootstrap.md](./admin-bootstrap.md) | 唯一管理员首次初始化、凭据保管和应急重置 |
 | [integration-api.md](./integration-api.md) | 新媒体工作台导入字段和接口清单 |
 | [translation-api.md](./translation-api.md) | 自有翻译 API 的请求、响应和字段约定 |
-| [CMS 微信兼容排版与统一发布字段设计](../superpowers/specs/2026-07-16-wechat-compatible-cms-formatting-design.md) | 过渡排版板块、微信公众号兼容字段、复制规则、实施结果、当前内部接口、端到端验收和未来接口交付清单；第一阶段已实现，真实微信粘贴仍需人工验收 |
 
 ## 可执行命令
 
@@ -20,8 +19,6 @@
 npm run cms:migrate -- --help
 npm run cms:seed-legacy -- --help
 npm run cms:verify -- --help
-npm run typecheck:cms
-npm run verify:publication-formatting
 ```
 
 所有命令只从 `CMS_DATABASE_URL` 或 `DATABASE_URL` 读取数据库连接串，不把连接串或其他密钥写入仓库和日志。首次执行前先使用 `--dry-run`。

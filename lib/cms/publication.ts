@@ -148,6 +148,7 @@ export function publicationCopyIssues(body: PublicationBody, renderedHtml?: stri
   const source = body.sourceMarkdown
   const html = renderedHtml ?? body.contentHtml ?? ''
   if (!source.trim()) issues.push('正文不能为空。')
+  if (/<!--cms-image-upload:/i.test(source)) issues.push('仍有图片正在上传，请等待完成。')
   if (/\bblob:/i.test(source) || /\bdata:image\//i.test(source)) issues.push('正文包含尚未上传的本地图片。')
   if (html.length > 20_000) issues.push('排版后的 HTML 超过微信公众号图文兼容长度，请精简内容或拆分文章。')
   if (new Blob([html]).size > 1024 * 1024) issues.push('排版后的 HTML 超过 1MB。')

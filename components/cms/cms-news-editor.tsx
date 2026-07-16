@@ -177,36 +177,42 @@ export default function CmsNewsEditor({
     formData.set("usage", usage);
     formData.set("altText", altText);
     setSaving(true);
-    const response = await fetch("/api/cms/upload", {
-      method: "POST",
-      body: formData,
-    });
-    const data = (await response.json()) as {
-      assetId?: string;
-      url?: string;
-      width?: number;
-      height?: number;
-      message?: string;
-    };
-    setSaving(false);
-    if (!response.ok || !data.url) {
-      setNotice(data.message ?? "图片上传失败。");
+    try {
+      const response = await fetch("/api/cms/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = (await response.json()) as {
+        assetId?: string;
+        url?: string;
+        width?: number;
+        height?: number;
+        message?: string;
+      };
+      if (!response.ok || !data.url) {
+        setNotice(data.message ?? "图片上传失败。");
+        return undefined;
+      }
+      return {
+        assetId: data.assetId ?? data.url,
+        type: "image",
+        originalUrl: null,
+        cmsPublicUrl: data.url,
+        wechatUrl: null,
+        wechatMediaId: null,
+        altText: altText || "正文图片",
+        caption: null,
+        width: data.width ?? 0,
+        height: data.height ?? 0,
+        mimeType: "image/webp",
+        contentHash: null,
+      };
+    } catch {
+      setNotice("图片上传失败，请检查网络后重试。");
       return undefined;
+    } finally {
+      setSaving(false);
     }
-    return {
-      assetId: data.assetId ?? data.url,
-      type: "image",
-      originalUrl: null,
-      cmsPublicUrl: data.url,
-      wechatUrl: null,
-      wechatMediaId: null,
-      altText: altText || "正文图片",
-      caption: null,
-      width: data.width ?? 0,
-      height: data.height ?? 0,
-      mimeType: "image/webp",
-      contentHash: null,
-    };
   }
 
   async function uploadCover(file: File) {

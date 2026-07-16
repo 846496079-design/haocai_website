@@ -83,7 +83,10 @@ export default function CmsPublicationEditor({
   onNotice,
 }: Props) {
   const body = normalizePublicationBody(value ?? createPublicationBody());
+  const bodyRef = useRef(body);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const selectionRef = useRef({ start: body.sourceMarkdown.length, end: body.sourceMarkdown.length });
+  const pendingUploadCountRef = useRef(0);
   const [category, setCategory] = useState(publicationTemplateCategories[0].id);
   const [imageAlt, setImageAlt] = useState("正文图片");
   const [onlineImage, setOnlineImage] = useState("");
@@ -98,9 +101,12 @@ export default function CmsPublicationEditor({
   const categoryTemplates = publicationTemplates.filter(
     (template) => template.category === category,
   );
+  bodyRef.current = body;
 
   function update(updateValue: Partial<PublicationBody>) {
-    onChange(normalizePublicationBody({ ...body, ...updateValue }));
+    const next = normalizePublicationBody({ ...bodyRef.current, ...updateValue });
+    bodyRef.current = next;
+    onChange(next);
   }
 
   function updateStyle<K extends keyof PublicationStyleConfig>(
@@ -127,17 +133,57 @@ export default function CmsPublicationEditor({
     });
   }
 
-  async function addUploadedImage(file: File) {
+  function rememberSelection() {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    selectionRef.current = { start: textarea.selectionStart, end: textarea.selectionEnd };
+  }
+
+  function insertImagePlaceholder(selection = selectionRef.current) {
+    const source = bodyRef.current.sourceMarkdown;
+    const start = Math.max(0, Math.min(selection.start, source.length));
+    const end = Math.max(start, Math.min(selection.end, source.length));
+    const uploadId = typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const token = `<!--cms-image-upload:${uploadId}-->`;
+    const prefix = start > 0 && source[start - 1] !== "\n" ? "\n" : "";
+    const suffix = end < source.length && source[end] !== "\n" ? "\n" : "";
+    const selected = source.slice(start, end);
+    update({ sourceMarkdown: `${source.slice(0, start)}${token}${source.slice(end)}` });
+    const cursor = start + token.length;
+    selectionRef.current = { start: cursor, end: cursor };
+    return { token, selected, prefix, suffix };
+  }
+
+  async function addUploadedImage(file: File, selection = selectionRef.current) {
+    const placeholder = insertImagePlaceholder(selection);
+    pendingUploadCountRef.current += 1;
     setUploadBusy(true);
-    const asset = await onUpload(file, imageAlt.trim() || "正文图片");
-    setUploadBusy(false);
-    if (!asset) return;
-    const source = body.sourceMarkdown.trimEnd();
-    update({
-      sourceMarkdown: `${source}${source ? "\n\n" : ""}![${asset.altText}](${asset.cmsPublicUrl})`,
-      assets: [...body.assets.filter((item) => item.assetId !== asset.assetId), asset],
-    });
-    onNotice("正文图片已上传并插入 Markdown，请保存草稿。");
+    try {
+      const asset = await onUpload(file, imageAlt.trim() || "正文图片");
+      const current = bodyRef.current;
+      if (!asset) {
+        update({ sourceMarkdown: current.sourceMarkdown.replace(placeholder.token, placeholder.selected) });
+        return;
+      }
+      const imageMarkdown = `![${asset.altText.replace(/[\[\]\r\n]/g, " ")}](${asset.cmsPublicUrl})`;
+      update({
+        sourceMarkdown: current.sourceMarkdown.replace(
+          placeholder.token,
+          `${placeholder.prefix}${imageMarkdown}${placeholder.suffix}`,
+        ),
+        assets: [...current.assets.filter((item) => item.assetId !== asset.assetId), asset],
+      });
+      onNotice("正文图片已上传并插入 Markdown，请保存草稿。");
+    } catch {
+      const current = bodyRef.current;
+      update({ sourceMarkdown: current.sourceMarkdown.replace(placeholder.token, placeholder.selected) });
+      onNotice("图片上传失败，原正文已保留，请检查网络后重试。");
+    } finally {
+      pendingUploadCountRef.current = Math.max(0, pendingUploadCountRef.current - 1);
+      setUploadBusy(pendingUploadCountRef.current > 0);
+    }
   }
 
   function addOnlineImage() {
@@ -268,11 +314,23 @@ export default function CmsPublicationEditor({
             aria-label="Markdown 正文"
             value={body.sourceMarkdown}
             onChange={(event) => update({ sourceMarkdown: event.target.value })}
+            onClick={rememberSelection}
+            onKeyUp={rememberSelection}
+            onSelect={rememberSelection}
             onPaste={(event) => {
-              const file = Array.from(event.clipboardData.files).find((item) => item.type.startsWith("image/"));
-              if (!file) return;
-              event.preventDefault();
-              void addUploadedImage(file);
+              const items = event.clipboardData?.items;
+              if (!items) return;
+              for (let index = 0; index < items.length; index += 1) {
+                const item = items[index];
+                if (!item.type.includes("image")) continue;
+                event.preventDefault();
+                const file = item.getAsFile();
+                if (file) {
+                  const selection = { start: event.currentTarget.selectionStart, end: event.currentTarget.selectionEnd };
+                  void addUploadedImage(file, selection);
+                }
+                break;
+              }
             }}
             rows={26}
             spellCheck={false}

@@ -170,6 +170,7 @@ export function renderPublicationMarkdown(value: PublicationBody): PublicationRe
   const rendered = String(parser.parse(body.sourceMarkdown, { async: false }))
   const html = `<section data-publication-root="true" data-template-id="${template.id}" style="box-sizing:border-box;width:100%;padding:${styleConfig.pagePaddingTop}px ${styleConfig.pagePaddingRight}px ${styleConfig.pagePaddingBottom}px ${styleConfig.pagePaddingLeft}px;background:${template.background};color:${template.text};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;word-break:break-word;overflow-wrap:anywhere;">${rendered}</section>`
   const warnings: string[] = []
+  if (/<!--cms-image-upload:/i.test(body.sourceMarkdown)) warnings.push('正文仍有图片正在上传。')
   if (/\bblob:/i.test(body.sourceMarkdown)) warnings.push('正文包含临时 blob 图片地址。')
   if (/\bdata:image\//i.test(body.sourceMarkdown)) warnings.push('正文包含未上传的 base64 图片。')
   return { html, template, styleConfig, warnings }

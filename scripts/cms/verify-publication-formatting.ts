@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { createPublicationBody } from '../../lib/cms/publication'
+import { createPublicationBody, publicationCopyIssues } from '../../lib/cms/publication'
 import { renderPublicationMarkdown } from '../../lib/cms/publication-renderer'
 import { publicationTemplateCategories, publicationTemplates } from '../../lib/cms/publication-templates'
 
@@ -46,5 +46,10 @@ for (const template of publicationTemplates) {
   assert.doesNotMatch(first.html, /<script>/i)
   assert.equal(first.warnings.length, 0)
 }
+
+const uploadingBody = createPublicationBody('正文前\n\n<!--cms-image-upload:test-id-->\n\n正文后')
+const uploadingResult = renderPublicationMarkdown(uploadingBody)
+assert.match(uploadingResult.warnings.join('；'), /图片正在上传/)
+assert.match(publicationCopyIssues(uploadingBody, uploadingResult.html).join('；'), /图片正在上传/)
 
 console.log('微信兼容排版回归验证通过：72 套模板、Markdown 组件和确定性渲染均符合预期。')

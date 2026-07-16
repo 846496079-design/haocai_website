@@ -12,6 +12,7 @@
 | [admin-bootstrap.md](./admin-bootstrap.md) | 唯一管理员首次初始化、凭据保管和应急重置 |
 | [integration-api.md](./integration-api.md) | 新媒体工作台导入字段和接口清单 |
 | [translation-api.md](./translation-api.md) | 自有翻译 API 的请求、响应和字段约定 |
+| [CMS 微信兼容排版与统一发布字段设计](../superpowers/specs/2026-07-16-wechat-compatible-cms-formatting-design.md) | 过渡排版板块、微信公众号兼容字段、复制规则、端到端验收和未来接口交付清单；当前为设计依据，尚未替代生产接口 |
 
 ## 可执行命令
 

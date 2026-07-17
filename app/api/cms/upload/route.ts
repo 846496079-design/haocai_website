@@ -10,11 +10,11 @@ import { recordCmsAsset } from '@/lib/cms/store'
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const maximumSize = 10 * 1024 * 1024
 
-async function saveAsset(key: string, name: string, content: Buffer) {
+async function saveAsset(key: string, name: string, content: Buffer, contentType: string) {
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     const result = await put(`cms/news/${key}/${name}`, content, {
       access: 'public',
-      contentType: 'image/webp',
+      contentType,
       addRandomSuffix: false,
     })
     return result.url
@@ -42,15 +42,23 @@ export async function POST(request: Request) {
     const metadata = await sharp(source).metadata()
     if (!metadata.width || !metadata.height) throw new Error('图片文件无效。')
     const key = randomUUID()
-    const mainName = `${key}.webp`
-    const thumbnailName = `${key}-thumb.webp`
+    const preserveTransparency = Boolean(metadata.hasAlpha)
+    const mimeType = preserveTransparency ? 'image/png' : 'image/jpeg'
+    const extension = preserveTransparency ? 'png' : 'jpg'
+    const mainName = `${key}.${extension}`
+    const thumbnailName = `${key}-thumb.${extension}`
+    const mainPipeline = sharp(source).rotate().resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+    const thumbnailPipeline = sharp(source).rotate().resize({ width: 960, height: 540, fit: 'cover', position: 'attention' })
     const [main, thumbnail] = await Promise.all([
-      sharp(source).rotate().resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toBuffer(),
-      sharp(source).rotate().resize({ width: 960, height: 540, fit: 'cover', position: 'attention' }).webp({ quality: 78 }).toBuffer(),
+      preserveTransparency ? mainPipeline.png({ compressionLevel: 9 }).toBuffer() : mainPipeline.jpeg({ quality: 86, mozjpeg: true }).toBuffer(),
+      preserveTransparency ? thumbnailPipeline.png({ compressionLevel: 9 }).toBuffer() : thumbnailPipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer(),
     ])
-    const [url, thumbnailUrl] = await Promise.all([saveAsset(key, mainName, main), saveAsset(key, thumbnailName, thumbnail)])
-    await recordCmsAsset({ id: key, articleId, blobUrl: url, thumbnailUrl, mimeType: 'image/webp', width: metadata.width, height: metadata.height, altText, usage }, admin.id)
-    return NextResponse.json({ assetId: key, url, thumbnailUrl, width: metadata.width, height: metadata.height, usage })
+    const [url, thumbnailUrl] = await Promise.all([
+      saveAsset(key, mainName, main, mimeType),
+      saveAsset(key, thumbnailName, thumbnail, mimeType),
+    ])
+    await recordCmsAsset({ id: key, articleId, blobUrl: url, thumbnailUrl, mimeType, width: metadata.width, height: metadata.height, altText, usage }, admin.id)
+    return NextResponse.json({ assetId: key, url, thumbnailUrl, mimeType, width: metadata.width, height: metadata.height, usage })
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : '上传失败。' }, { status: 400 })
   }

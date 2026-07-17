@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
-import { CMS_LOCALES, createEmptyContent, type CmsArticleContent } from '@/lib/cms/types'
+import type { SiteCode } from '@/lib/site-content'
+import { CMS_RICH_TEXT_SCHEMA_VERSION } from '@/lib/cms/types'
+import { normalizeCmsContent } from '@/lib/cms/rich-text'
 import { importCmsArticleIdempotent } from '@/lib/cms/store'
 import { verifyCmsImportRequest } from '@/lib/cms/import-auth'
 
 type ImportPayload = {
   sourceId: string
-  content: Partial<CmsArticleContent>
+  contentVersion?: string
+  content: Partial<Record<SiteCode, unknown>>
 }
 
 export async function POST(request: Request) {
@@ -16,10 +19,10 @@ export async function POST(request: Request) {
     const { idempotencyKey } = verifyCmsImportRequest(request, rawBody)
     const body = JSON.parse(rawBody) as Partial<ImportPayload>
     if (!body.sourceId?.trim() || !body.content?.cn) throw new Error('sourceId 与中文 content 为必填字段。')
+    if (body.contentVersion && body.contentVersion !== CMS_RICH_TEXT_SCHEMA_VERSION) throw new Error(`不支持的 contentVersion：${body.contentVersion}。`)
     const sourceId = body.sourceId.trim()
     const slug = `workspace-${createHash('sha256').update(sourceId).digest('hex').slice(0, 20)}`
-    const defaults = createEmptyContent(slug)
-    const content = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, { ...defaults[locale], ...(body.content?.[locale] ?? {}), slug }])) as CmsArticleContent
+    const content = normalizeCmsContent(body.content, slug)
     if (!content.cn.title?.trim()) throw new Error('content.cn.title 为必填字段。')
     const payloadHash = createHash('sha256').update(rawBody).digest('hex')
     const result = await importCmsArticleIdempotent(content, sourceId, idempotencyKey, payloadHash)

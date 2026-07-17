@@ -11,14 +11,17 @@
 | [data-operations.md](./data-operations.md) | schema 迁移、历史新闻导入、校验、备份、恢复和回滚 |
 | [admin-bootstrap.md](./admin-bootstrap.md) | 唯一管理员首次初始化、凭据保管和应急重置 |
 | [integration-api.md](./integration-api.md) | 新媒体工作台导入字段和接口清单 |
+| [wechat-richtext-workflow.md](./wechat-richtext-workflow.md) | CMS 统一富文本、官网快照和微信公众号复制边界 |
 | [translation-api.md](./translation-api.md) | 自有翻译 API 的请求、响应和字段约定 |
 
 ## 可执行命令
 
 ```bash
 npm run cms:migrate -- --help
+npm run cms:migrate-richtext -- --help
 npm run cms:seed-legacy -- --help
 npm run cms:verify -- --help
+npm run cms:verify-richtext
 ```
 
 所有命令只从 `CMS_DATABASE_URL` 或 `DATABASE_URL` 读取数据库连接串，不把连接串或其他密钥写入仓库和日志。首次执行前先使用 `--dry-run`。

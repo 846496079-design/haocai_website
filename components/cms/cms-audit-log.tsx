@@ -26,7 +26,8 @@ const actionNames: Record<string, string> = {
   PIN_ARTICLE: "置顶新闻",
   UNPIN_ARTICLE: "取消置顶",
   REORDER_PUBLISHED: "调整展示顺序",
-  UPLOAD_ASSET: "上传图片",
+  RECORD_ASSET: "上传图片",
+  COPY_WECHAT_HTML: "复制公众号富文本",
 };
 
 const focusRing =

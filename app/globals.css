@@ -449,3 +449,118 @@
   }
 
 }
+
+/* CMS 富文本编辑器：只服务后台任务界面，不影响公开页面。 */
+.cms-rich-editor-content {
+  min-height: 38rem;
+  padding: 1.25rem;
+  color: #18243d;
+  font-size: 1rem;
+  line-height: 1.8;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.cms-rich-editor-content > * + * {
+  margin-top: 0.9rem;
+}
+
+.cms-rich-editor-content h2,
+.cms-rich-editor-content h3,
+.cms-rich-editor-content h4 {
+  color: #18243d;
+  font-weight: 700;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.cms-rich-editor-content h2 { font-size: 1.5rem; }
+.cms-rich-editor-content h3 { font-size: 1.25rem; }
+.cms-rich-editor-content h4 { font-size: 1.125rem; }
+
+.cms-rich-editor-content ul,
+.cms-rich-editor-content ol {
+  padding-left: 1.5rem;
+}
+
+.cms-rich-editor-content ul { list-style: disc; }
+.cms-rich-editor-content ol { list-style: decimal; }
+
+.cms-rich-editor-content blockquote {
+  border: 1px solid #c7d2fe;
+  border-radius: 0.5rem;
+  background: #f5f7ff;
+  padding: 0.75rem 1rem;
+  color: #475569;
+}
+
+.cms-rich-editor-content pre {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: #172033;
+  padding: 0.875rem 1rem;
+  color: #f8fafc;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.cms-rich-editor-content :not(pre) > code {
+  border-radius: 0.25rem;
+  background: #f1f5f9;
+  padding: 0.125rem 0.3rem;
+  color: #4f46e5;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.cms-rich-editor-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.cms-rich-editor-content .tableWrapper {
+  overflow-x: auto;
+}
+
+.cms-rich-editor-content table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cms-rich-editor-content th,
+.cms-rich-editor-content td {
+  min-width: 7rem;
+  border: 1px solid #d8dee9;
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.cms-rich-editor-content th {
+  background: #eef2ff;
+  font-weight: 700;
+}
+
+.cms-rich-editor-content p.is-editor-empty:first-child::before {
+  float: left;
+  height: 0;
+  color: #526078;
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+
+.cms-rich-editor-content .ProseMirror-selectednode {
+  outline: 2px solid #5b6cff;
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .cms-rich-editor-content {
+    min-height: 30rem;
+    padding: 1rem;
+  }
+}

@@ -1,24 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowDown,
-  ArrowUp,
-  Copy,
-  GripVertical,
-  ImagePlus,
-  Trash2,
-} from "lucide-react";
-import type { NewsArticle } from "@/lib/news-content";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Copy, ImagePlus } from "lucide-react";
 import type { SiteCode } from "@/lib/site-content";
 import {
   CMS_LOCALES,
+  isContentComplete,
   type CmsArticleContent,
   type CmsArticleRecord,
   type CmsAuditLog as CmsAuditLogRecord,
+  type CmsLocaleArticle,
+  type CmsPublicationAsset,
+  type CmsPublicationBody,
 } from "@/lib/cms/types";
 import CmsAuditLog from "@/components/cms/cms-audit-log";
+import CmsRichTextEditor from "@/components/cms/cms-rich-text-editor";
 
 const localeNames: Record<SiteCode, string> = {
   cn: "简体中文",
@@ -30,6 +27,69 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("图片读取失败。"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function prepareClipboardHtml(html: string) {
+  const documentValue = new DOMParser().parseFromString(html, "text/html");
+  const images = Array.from(documentValue.querySelectorAll<HTMLImageElement>("img[src]"));
+  let embeddedBytes = 0;
+  let fallbackImages = 0;
+  for (const image of images) {
+    const source = image.getAttribute("src");
+    if (!source) continue;
+    const absolute = new URL(source, window.location.origin).href;
+    image.setAttribute("src", absolute);
+    try {
+      const response = await fetch(absolute);
+      if (!response.ok) throw new Error("图片读取失败。");
+      const blob = await response.blob();
+      if (!blob.type.startsWith("image/") || blob.size > 2 * 1024 * 1024 || embeddedBytes + blob.size > 8 * 1024 * 1024) {
+        fallbackImages += 1;
+        continue;
+      }
+      image.setAttribute("src", await blobToDataUrl(blob));
+      embeddedBytes += blob.size;
+    } catch {
+      fallbackImages += 1;
+    }
+  }
+  return { html: documentValue.body.innerHTML, fallbackImages };
+}
+
+async function writeRichClipboard(html: string, plainText: string) {
+  if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([plainText], { type: "text/plain" }),
+      }),
+    ]);
+    return;
+  }
+  const holder = document.createElement("div");
+  holder.contentEditable = "true";
+  holder.style.position = "fixed";
+  holder.style.left = "-10000px";
+  holder.innerHTML = html;
+  document.body.appendChild(holder);
+  const range = document.createRange();
+  range.selectNodeContents(holder);
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+  const copied = document.execCommand("copy");
+  selection?.removeAllRanges();
+  holder.remove();
+  if (!copied) throw new Error("浏览器未允许写入富文本剪贴板。");
+}
+
 export default function CmsNewsEditor({
   initial,
   initialCategories = [],
@@ -39,147 +99,154 @@ export default function CmsNewsEditor({
   initialCategories?: string[];
   initialAuditItems?: CmsAuditLogRecord[];
 }) {
-  const [content, setContent] = useState<CmsArticleContent>(() =>
-    clone(initial.content),
-  );
+  const [content, setContent] = useState<CmsArticleContent>(() => clone(initial.content));
   const [locale, setLocale] = useState<SiteCode>("cn");
   const [reviewed, setReviewed] = useState(false);
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [serverVersionId, setServerVersionId] = useState(initial.versionId);
+  const [serverUpdatedAt, setServerUpdatedAt] = useState(initial.updatedAt);
   const [dirty, setDirty] = useState(false);
-  const [hasCurrentPreview, setHasCurrentPreview] = useState(
-    Boolean(initial.previewedAt),
-  );
-  const [translationStatus, setTranslationStatus] = useState(
-    initial.translationStatus,
-  );
-  const [translationMode, setTranslationMode] = useState<
-    "overwrite" | "fill-missing"
-  >("fill-missing");
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [hasCurrentPreview, setHasCurrentPreview] = useState(Boolean(initial.previewedAt));
+  const [translationStatus, setTranslationStatus] = useState(initial.translationStatus);
+  const [translationMode, setTranslationMode] = useState<"overwrite" | "fill-missing">("fill-missing");
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const article = content[locale];
-  const complete = useMemo(
-    () =>
-      CMS_LOCALES.every((code) => {
-        const item = content[code];
-        return (
-          item.title &&
-          item.summary &&
-          item.lead &&
-          item.category &&
-          item.cover &&
-          item.sections.length &&
-          item.closing.length
-        );
-      }),
-    [content],
-  );
+  const complete = useMemo(() => isContentComplete(content), [content]);
+  const recoveryKey = `cms-richtext-draft-${initial.id}`;
 
   useEffect(() => {
     void fetch("/api/cms/categories").then(async (response) => {
       if (!response.ok) return;
-      const data = (await response.json()) as {
-        items?: { name: string; status: string }[];
-      };
-      setCategories(
-        (data.items ?? [])
-          .filter((item) => item.status === "ACTIVE")
-          .map((item) => item.name),
-      );
+      const data = (await response.json()) as { items?: { name: string; status: string }[] };
+      setCategories((data.items ?? []).filter((item) => item.status === "ACTIVE").map((item) => item.name));
     });
   }, []);
 
-  function updateArticle(update: Partial<NewsArticle>) {
-    setContent((current) => ({
-      ...current,
-      [locale]: { ...current[locale], ...update },
-    }));
+  useEffect(() => {
+    const stored = window.localStorage.getItem(recoveryKey);
+    if (!stored) return;
+    try {
+      const recovered = JSON.parse(stored) as { content?: CmsArticleContent; versionId?: number; savedAt?: string };
+      const recoveredAt = Date.parse(recovered.savedAt ?? "");
+      const serverAt = Date.parse(serverUpdatedAt);
+      if (recovered.versionId !== serverVersionId || !Number.isFinite(recoveredAt) || recoveredAt <= serverAt) {
+        window.localStorage.removeItem(recoveryKey);
+        return;
+      }
+      if (recovered.content && JSON.stringify(recovered.content) !== JSON.stringify(initial.content)) {
+        setContent(recovered.content);
+        setDirty(true);
+        setHasCurrentPreview(false);
+        setNotice("已恢复上次未完成的本地草稿，请检查后保存。");
+      }
+    } catch {
+      window.localStorage.removeItem(recoveryKey);
+    }
+  }, [initial.content, recoveryKey, serverUpdatedAt, serverVersionId]);
+
+  useEffect(() => {
+    if (dirty) window.localStorage.setItem(recoveryKey, JSON.stringify({ content, versionId: serverVersionId, savedAt: new Date().toISOString() }));
+    else window.localStorage.removeItem(recoveryKey);
+  }, [content, dirty, recoveryKey, serverVersionId]);
+
+  useEffect(() => {
+    if (!dirty || saving || uploading) return;
+    const timer = window.setTimeout(() => void saveDraft(true), 3500);
+    return () => window.clearTimeout(timer);
+  }, [content, dirty, saving, uploading]);
+
+  function updateArticle(update: Partial<CmsLocaleArticle>) {
+    setContent((current) => ({ ...current, [locale]: { ...current[locale], ...update } }));
     setDirty(true);
     setHasCurrentPreview(false);
-    if (locale === "cn" && translationStatus === "CURRENT")
-      setTranslationStatus("STALE");
+    if (locale === "cn" && translationStatus === "CURRENT") setTranslationStatus("STALE");
   }
 
-  function updateSection(
-    index: number,
-    update: Partial<NewsArticle["sections"][number]>,
-  ) {
-    const sections = article.sections.map((section, sectionIndex) =>
-      sectionIndex === index ? { ...section, ...update } : section,
-    );
-    updateArticle({ sections });
+  function updateBody(body: CmsPublicationBody) {
+    updateArticle({ body });
   }
 
-  function moveSection(from: number, to: number) {
-    if (from === to) return;
-    const sections = [...article.sections];
-    const [moved] = sections.splice(from, 1);
-    sections.splice(to, 0, moved);
-    updateArticle({ sections });
-  }
-
-  function duplicateSection(index: number) {
-    const sections = [...article.sections];
-    sections.splice(index + 1, 0, clone(article.sections[index]));
-    updateArticle({ sections });
-  }
-
-  async function saveDraft() {
+  async function saveDraft(silent = false): Promise<CmsArticleContent | undefined> {
+    if (savingRef.current) return undefined;
+    if (!dirty) return content;
+    savingRef.current = true;
     setSaving(true);
-    setNotice("");
-    const response = await fetch(`/api/cms/news/${initial.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    const data = (await response.json()) as { message?: string };
-    setSaving(false);
-    if (!response.ok) {
-      setNotice(data.message ?? "保存失败。");
-      return false;
+    if (!silent) setNotice("");
+    try {
+      const response = await fetch(`/api/cms/news/${initial.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, expectedVersionId: serverVersionId, expectedUpdatedAt: serverUpdatedAt }),
+      });
+      const data = (await response.json()) as CmsArticleRecord & { message?: string };
+      if (!response.ok || !data.content) {
+        setNotice(data.message ?? "保存失败。");
+        return undefined;
+      }
+      setContent(clone(data.content));
+      setServerVersionId(data.versionId);
+      setServerUpdatedAt(data.updatedAt);
+      setDirty(false);
+      setHasCurrentPreview(Boolean(data.previewedAt));
+      if (!silent) setNotice("草稿已保存，发布快照已更新。");
+      return data.content;
+    } catch {
+      setNotice("保存失败，内容已保留在本机，请检查网络后重试。");
+      return undefined;
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
-    setDirty(false);
-    setNotice("草稿已保存。");
-    return true;
   }
 
-  async function uploadImage(file: File, usage: "COVER" | "CONTENT") {
+  async function uploadImage(file: File, usage: "COVER" | "CONTENT", altText = "") {
     const formData = new FormData();
     formData.set("file", file);
     formData.set("articleId", String(initial.id));
     formData.set("usage", usage);
-    setSaving(true);
-    const response = await fetch("/api/cms/upload", {
-      method: "POST",
-      body: formData,
-    });
-    const data = (await response.json()) as { url?: string; message?: string };
-    setSaving(false);
-    if (!response.ok || !data.url) {
-      setNotice(data.message ?? "图片上传失败。");
-      return undefined;
-    }
-    return data.url;
+    formData.set("altText", altText);
+    const response = await fetch("/api/cms/upload", { method: "POST", body: formData });
+    const data = (await response.json()) as {
+      assetId?: string;
+      url?: string;
+      thumbnailUrl?: string;
+      width?: number;
+      height?: number;
+      mimeType?: string;
+      message?: string;
+    };
+    if (!response.ok || !data.url || !data.assetId) throw new Error(data.message ?? "图片上传失败。");
+    return {
+      assetId: data.assetId,
+      cmsPublicUrl: data.url,
+      thumbnailUrl: data.thumbnailUrl,
+      mimeType: data.mimeType ?? "image/jpeg",
+      width: data.width ?? 1,
+      height: data.height ?? 1,
+      altText,
+    } satisfies CmsPublicationAsset;
   }
 
   async function uploadCover(file: File) {
-    const url = await uploadImage(file, "COVER");
-    if (!url) return;
-    setContent(
-      (current) =>
-        Object.fromEntries(
-          CMS_LOCALES.map((code) => [code, { ...current[code], cover: url }]),
-        ) as CmsArticleContent,
-    );
-    setNotice("封面已优化上传，请保存草稿。");
+    setUploading(true);
+    try {
+      const asset = await uploadImage(file, "COVER", article.title || "新闻封面");
+      setContent((current) => Object.fromEntries(CMS_LOCALES.map((code) => [code, { ...current[code], cover: asset.cmsPublicUrl }])) as CmsArticleContent);
+      setDirty(true);
+      setHasCurrentPreview(false);
+      setNotice("封面已优化上传，请保存草稿。");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "封面上传失败。");
+    } finally {
+      setUploading(false);
+    }
   }
 
-  async function uploadSectionImage(index: number, file: File) {
-    const url = await uploadImage(file, "CONTENT");
-    if (!url) return;
-    updateSection(index, { image: url });
-    setNotice("正文图片已上传，请保存草稿。");
+  async function uploadContentImage(file: File, altText: string) {
+    return uploadImage(file, "CONTENT", altText);
   }
 
   async function translate() {
@@ -198,36 +265,50 @@ export default function CmsNewsEditor({
 
   async function preview() {
     if (!(await saveDraft())) return;
-    const response = await fetch(`/api/cms/news/${initial.id}/preview`, {
-      method: "POST",
-    });
+    const response = await fetch(`/api/cms/news/${initial.id}/preview`, { method: "POST" });
     if (!response.ok) return setNotice("无法记录预览状态，请稍后重试。");
     setHasCurrentPreview(true);
-    window.open(
-      `/cms/preview/${initial.id}/?site=${locale}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-    setNotice("已打开官网样式预览。");
+    window.open(`/cms/preview/${initial.id}/?site=${locale}`, "_blank", "noopener,noreferrer");
+    setNotice("已打开官网发布快照预览。");
+  }
+
+  async function copyForWechat() {
+    const saved = await saveDraft();
+    if (!saved) return;
+    const snapshot = saved[locale].body.publicationHtml;
+    if (!snapshot) return setNotice("当前语言还没有可复制的发布快照。");
+    try {
+      const prepared = await prepareClipboardHtml(snapshot);
+      const plain = new DOMParser().parseFromString(prepared.html, "text/html").body.innerText;
+      await writeRichClipboard(prepared.html, plain);
+      void fetch(`/api/cms/news/${initial.id}/audit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "COPY_WECHAT_HTML",
+          locale,
+          templateId: saved[locale].body.styleConfig.templateId,
+          fallbackImages: prepared.fallbackImages,
+        }),
+      });
+      setNotice(prepared.fallbackImages
+        ? `已复制微信兼容富文本，其中 ${prepared.fallbackImages} 张图片使用稳定公网地址；粘贴后请检查预览。`
+        : "已复制微信兼容图文，可直接粘贴到微信公众号编辑器并检查预览。");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "复制失败，请检查浏览器剪贴板权限。");
+    }
   }
 
   async function publish() {
     if (!reviewed) return setNotice("请先勾选人工审核确认。");
-    if (dirty || !hasCurrentPreview)
-      return setNotice(
-        "当前内容尚未完成预览。请先点击“预览官网效果”，确认后再发布。",
-      );
+    if (dirty || !hasCurrentPreview) return setNotice("当前内容尚未完成预览，请先预览当前保存版本。");
     const response = await fetch(`/api/cms/news/${initial.id}/publish`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reviewed: true }),
     });
     const data = (await response.json()) as { message?: string };
-    setNotice(
-      response.ok
-        ? "正式发布成功，公开新闻页已更新。"
-        : (data.message ?? "发布失败。"),
-    );
+    setNotice(response.ok ? "正式发布成功，公开新闻页已更新。" : (data.message ?? "发布失败。"));
   }
 
   async function offline() {
@@ -243,452 +324,87 @@ export default function CmsNewsEditor({
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 md:px-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-[1680px]">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
           <div>
-            <Link
-              href="/cms/"
-              className="text-sm font-semibold text-indigo-700 hover:text-indigo-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4"
-            >
-              返回新闻管理
-            </Link>
+            <Link href="/cms/" className="text-sm font-semibold text-indigo-700 hover:text-indigo-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">返回新闻管理</Link>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold">编辑草稿：{initial.slug}</h1>
-              {dirty && (
-                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
-                  有未保存修改
-                </span>
-              )}
+              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${saving ? "bg-blue-100 text-blue-800" : dirty ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+                {saving ? "正在保存" : dirty ? "有未保存修改" : "已保存"}
+              </span>
             </div>
-            <p className="mt-1 text-sm text-slate-600">
-              状态：
-              {initial.status === "PUBLISHED"
-                ? "已发布，当前编辑将作为新草稿保存"
-                : initial.status === "OFFLINE"
-                  ? "已下架，可修改后重新发布"
-                  : "草稿"}
-              。发布前必须完成三语预览与人工确认。
-            </p>
+            <p className="mt-1 text-sm text-slate-600">正文采用统一富文本模型；官网与公众号复制使用同一发布快照。</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void saveDraft()}
-              disabled={saving || !dirty}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-            >
-              {saving ? "处理中…" : dirty ? "保存草稿" : "已保存"}
-            </button>
-            <button
-              type="button"
-              onClick={() => void preview()}
-              disabled={saving}
-              className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60"
-            >
-              预览官网效果
-            </button>
+            <button type="button" onClick={() => void saveDraft()} disabled={saving || uploading || !dirty} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">{saving ? "处理中" : dirty ? "保存草稿" : "已保存"}</button>
+            <button type="button" onClick={() => void copyForWechat()} disabled={saving || uploading} className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-50"><Copy className="size-4" />一键复制到公众号</button>
+            <button type="button" onClick={() => void preview()} disabled={saving || uploading} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60">预览官网效果</button>
           </div>
         </header>
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_280px]">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+        <div className="mt-6 grid gap-6 2xl:grid-cols-[minmax(0,1fr)_300px]">
+          <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-5">
             <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-4">
               {CMS_LOCALES.map((code) => (
-                <button
-                  key={code}
-                  onClick={() => setLocale(code)}
-                  className={`rounded-lg px-3 py-2 text-sm font-semibold ${locale === code ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600"}`}
-                >
-                  {localeNames[code]}
-                </button>
+                <button key={code} type="button" onClick={() => setLocale(code)} className={`rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${locale === code ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>{localeNames[code]}</button>
               ))}
             </div>
+
             <div className="mt-6 space-y-5">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="发布日期">
-                  <input
-                    aria-label="发布日期"
-                    type="date"
-                    value={article.date.replaceAll(".", "-")}
-                    onChange={(event) =>
-                      updateArticle({
-                        date: event.target.value.replaceAll("-", "."),
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="分类">
-                  <select
-                    aria-label="新闻分类"
-                    value={article.category}
-                    onChange={(event) =>
-                      updateArticle({ category: event.target.value })
-                    }
-                  >
-                    <option value="">请选择分类</option>
-                    {categories.map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                  {!article.category ? (
-                    <p className="mt-2 text-xs font-semibold text-amber-700">
-                      待填写分类：未选择分类时不能发布。
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-xs font-normal text-slate-600">
-                      没有合适分类时，请先在分类管理中创建；外部导入的新分类会标记来源。
-                    </p>
-                  )}
-                </Field>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Field label="发布日期"><input aria-label="发布日期" type="date" value={article.date.replaceAll(".", "-")} onChange={(event) => updateArticle({ date: event.target.value.replaceAll("-", ".") })} /></Field>
+                <Field label="分类"><select aria-label="新闻分类" value={article.category} onChange={(event) => updateArticle({ category: event.target.value })}><option value="">请选择分类</option>{categories.map((name) => <option key={name} value={name}>{name}</option>)}</select></Field>
+                <Field label="作者"><input value={article.author} onChange={(event) => updateArticle({ author: event.target.value })} /></Field>
               </div>
-              <Field label="新闻标题">
-                <input
-                  value={article.title}
-                  onChange={(event) =>
-                    updateArticle({ title: event.target.value })
-                  }
-                />
-              </Field>
-              <Field label="摘要">
-                <textarea
-                  value={article.summary}
-                  onChange={(event) =>
-                    updateArticle({ summary: event.target.value })
-                  }
-                  rows={3}
-                />
-              </Field>
-              <Field label="导语">
-                <textarea
-                  value={article.lead}
-                  onChange={(event) =>
-                    updateArticle({ lead: event.target.value })
-                  }
-                  rows={4}
-                />
-              </Field>
-              <Field label="标签（用英文逗号分隔）">
-                <input
-                  value={(article.tags ?? []).join(", ")}
-                  onChange={(event) =>
-                    updateArticle({
-                      tags: event.target.value
-                        .split(",")
-                        .map((tag) => tag.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                />
-              </Field>
+              <Field label="新闻标题"><input value={article.title} onChange={(event) => updateArticle({ title: event.target.value })} /></Field>
+              <Field label="摘要"><textarea value={article.summary} onChange={(event) => updateArticle({ summary: event.target.value })} rows={3} /></Field>
+              <Field label="标签（用英文逗号分隔）"><input value={article.tags.join(", ")} onChange={(event) => updateArticle({ tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} /></Field>
               <Field label="新闻封面">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  {article.cover && (
-                    <img
-                      src={article.cover}
-                      alt="封面预览"
-                      className="h-24 w-40 rounded-lg border border-slate-200 object-cover"
-                    />
-                  )}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void uploadCover(file);
-                    }}
-                  />
+                  {article.cover && <img src={article.cover} alt="封面预览" className="h-24 w-40 rounded-lg border border-slate-200 object-cover" />}
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ImagePlus className="size-4" />{uploading ? "上传中" : "选择封面"}<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadCover(file); event.target.value = ""; }} /></label>
                 </div>
               </Field>
+
               <div className="border-t border-slate-200 pt-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold">正文内容块</h2>
-                    <p className="mt-1 text-sm text-slate-600">
-                      可拖拽，也可用上移、下移按钮调整顺序；每个分节支持独立图片、替代文字和图片说明。
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateArticle({
-                        sections: [
-                          ...article.sections,
-                          { title: "", paragraphs: [""] },
-                        ],
-                      })
-                    }
-                    className="rounded-lg border border-indigo-300 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  >
-                    新增分节
-                  </button>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">正文排版</h2>
+                  <p className="mt-1 text-sm text-slate-600">直接编辑最终图文效果，图片会先上传到 CMS；保存时由服务端重新生成并净化发布 HTML。</p>
                 </div>
-                <div className="mt-4 space-y-5">
-                  {article.sections.map((section, index) => (
-                    <div
-                      key={index}
-                      draggable
-                      onDragStart={() => setDraggingIndex(index)}
-                      onDragEnd={() => setDraggingIndex(null)}
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={() => {
-                        if (draggingIndex !== null)
-                          moveSection(draggingIndex, index);
-                        setDraggingIndex(null);
-                      }}
-                      className={`rounded-xl border p-4 ${draggingIndex === index ? "border-indigo-400 bg-indigo-50" : "border-slate-200 bg-white"}`}
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <span className="inline-flex cursor-grab items-center gap-2 text-sm font-semibold text-slate-600">
-                          <GripVertical className="size-4" aria-hidden="true" />
-                          分节 {index + 1}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            aria-label={`上移分节 ${index + 1}`}
-                            disabled={index === 0}
-                            onClick={() => moveSection(index, index - 1)}
-                            className="rounded-md p-2 text-slate-600 hover:bg-slate-100 disabled:opacity-30"
-                          >
-                            <ArrowUp className="size-4" />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`下移分节 ${index + 1}`}
-                            disabled={index === article.sections.length - 1}
-                            onClick={() => moveSection(index, index + 1)}
-                            className="rounded-md p-2 text-slate-600 hover:bg-slate-100 disabled:opacity-30"
-                          >
-                            <ArrowDown className="size-4" />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`复制分节 ${index + 1}`}
-                            onClick={() => duplicateSection(index)}
-                            className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
-                          >
-                            <Copy className="size-4" />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`删除分节 ${index + 1}`}
-                            onClick={() =>
-                              updateArticle({
-                                sections: article.sections.filter(
-                                  (_, sectionIndex) => sectionIndex !== index,
-                                ),
-                              })
-                            }
-                            className="rounded-md p-2 text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      </div>
-                      <Field label="分节标题">
-                        <input
-                          value={section.title}
-                          onChange={(event) =>
-                            updateSection(index, { title: event.target.value })
-                          }
-                        />
-                      </Field>
-                      <Field label="正文段落（段落之间空一行）">
-                        <textarea
-                          value={section.paragraphs.join("\n\n")}
-                          onChange={(event) =>
-                            updateSection(index, {
-                              paragraphs: event.target.value
-                                .split(/\n\s*\n/)
-                                .map((paragraph) => paragraph.trim())
-                                .filter(Boolean),
-                            })
-                          }
-                          rows={8}
-                        />
-                      </Field>
-                      <Field label="分节图片">
-                        <div className="space-y-3">
-                          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                            <ImagePlus className="size-4" />
-                            选择图片
-                            <input
-                              className="sr-only"
-                              type="file"
-                              accept="image/jpeg,image/png,image/webp"
-                              onChange={(event) => {
-                                const file = event.target.files?.[0];
-                                if (file) void uploadSectionImage(index, file);
-                              }}
-                            />
-                          </label>
-                          {section.image && (
-                            <>
-                              <img
-                                src={section.image}
-                                alt={section.imageAlt || "正文图片预览"}
-                                className="max-h-72 w-full rounded-lg object-cover"
-                              />
-                              <input
-                                value={section.imageAlt ?? ""}
-                                onChange={(event) =>
-                                  updateSection(index, {
-                                    imageAlt: event.target.value,
-                                  })
-                                }
-                                placeholder="图片替代文字（用于无障碍访问）"
-                              />
-                              <input
-                                value={section.imageCaption ?? ""}
-                                onChange={(event) =>
-                                  updateSection(index, {
-                                    imageCaption: event.target.value,
-                                  })
-                                }
-                                placeholder="图片说明（可选）"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  updateSection(index, {
-                                    image: undefined,
-                                    imageAlt: undefined,
-                                    imageCaption: undefined,
-                                  })
-                                }
-                                className="text-sm font-semibold text-red-600"
-                              >
-                                移除图片
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </Field>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <Field label="结语（每行一段）">
-                <textarea
-                  value={article.closing.join("\n")}
-                  onChange={(event) =>
-                    updateArticle({
-                      closing: event.target.value
-                        .split("\n")
-                        .map((line) => line.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                  rows={4}
+                <CmsRichTextEditor
+                  key={locale}
+                  value={article.body}
+                  disabled={saving}
+                  onChange={updateBody}
+                  onUpload={uploadContentImage}
+                  onNotice={setNotice}
+                  onUploadStateChange={setUploading}
                 />
-              </Field>
+              </div>
             </div>
           </section>
-          <aside className="h-fit rounded-xl border border-slate-200 bg-white p-5 lg:sticky lg:top-6">
+
+          <aside className="h-fit rounded-xl border border-slate-200 bg-white p-5 2xl:sticky 2xl:top-6">
             <h2 className="font-semibold">发布检查</h2>
             <ul className="mt-4 space-y-3 text-sm text-slate-700">
-              <li>
-                三语内容：
-                {complete ? (
-                  <b className="text-emerald-700">完整</b>
-                ) : (
-                  <b className="text-amber-700">待补全</b>
-                )}
-              </li>
-              <li>
-                译稿状态：
-                {translationStatus === "CURRENT" ? (
-                  <b className="text-emerald-700">已基于当前中文生成</b>
-                ) : translationStatus === "STALE" ? (
-                  <b className="text-amber-700">中文已修改，请重新翻译</b>
-                ) : (
-                  <b className="text-amber-700">尚未生成译稿</b>
-                )}
-              </li>
-              <li>
-                当前版本预览：
-                {hasCurrentPreview && !dirty ? (
-                  <b className="text-emerald-700">已完成</b>
-                ) : (
-                  <b className="text-amber-700">需要重新预览</b>
-                )}
-              </li>
-              <li>正式发布后，草稿将替换当前线上版本。</li>
+              <li>三语内容：<b className={complete ? "text-emerald-700" : "text-amber-700"}>{complete ? "完整" : "待补全或保存"}</b></li>
+              <li>译稿状态：<b className={translationStatus === "CURRENT" ? "text-emerald-700" : "text-amber-700"}>{translationStatus === "CURRENT" ? "已基于当前中文生成" : translationStatus === "STALE" ? "中文已修改，请重新翻译" : "尚未生成译稿"}</b></li>
+              <li>当前版本预览：<b className={hasCurrentPreview && !dirty ? "text-emerald-700" : "text-amber-700"}>{hasCurrentPreview && !dirty ? "已完成" : "需要重新预览"}</b></li>
+              <li>图片上传：<b className={uploading ? "text-amber-700" : "text-emerald-700"}>{uploading ? "进行中" : "已完成"}</b></li>
             </ul>
+
             <fieldset className="mt-5 space-y-2">
-              <legend className="text-sm font-semibold text-slate-800">
-                重新翻译方式
-              </legend>
-              <label className="flex items-start gap-2 text-sm text-slate-700">
-                <input
-                  type="radio"
-                  name="translation-mode"
-                  value="fill-missing"
-                  checked={translationMode === "fill-missing"}
-                  onChange={() => setTranslationMode("fill-missing")}
-                  className="mt-1"
-                />
-                保留人工已填写内容，仅补全空白字段
-              </label>
-              <label className="flex items-start gap-2 text-sm text-slate-700">
-                <input
-                  type="radio"
-                  name="translation-mode"
-                  value="overwrite"
-                  checked={translationMode === "overwrite"}
-                  onChange={() => setTranslationMode("overwrite")}
-                  className="mt-1"
-                />
-                重新生成并覆盖日文、繁体全文
-              </label>
+              <legend className="text-sm font-semibold text-slate-800">重新翻译方式</legend>
+              <label className="flex items-start gap-2 text-sm text-slate-700"><input type="radio" name="translation-mode" value="fill-missing" checked={translationMode === "fill-missing"} onChange={() => setTranslationMode("fill-missing")} className="mt-1" />保留已有人工内容，仅补全变化文字</label>
+              <label className="flex items-start gap-2 text-sm text-slate-700"><input type="radio" name="translation-mode" value="overwrite" checked={translationMode === "overwrite"} onChange={() => setTranslationMode("overwrite")} className="mt-1" />重新生成并覆盖日文、繁体全文</label>
             </fieldset>
-            <button
-              type="button"
-              onClick={() => void translate()}
-              disabled={saving}
-              className="mt-4 w-full rounded-lg border border-indigo-300 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
-            >
-              保存并一键翻译日文、繁体
-            </button>
-            <p className="mt-2 text-xs text-slate-600">
-              翻译只在此按钮触发时执行一次，完成后仍需人工审核。
-            </p>
-            <label className="mt-5 flex cursor-pointer gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950">
-              <input
-                type="checkbox"
-                checked={reviewed}
-                onChange={(event) => setReviewed(event.target.checked)}
-                className="mt-1"
-              />
-              我已人工审核三语内容、封面和预览效果，确认正式发布。
-            </label>
-            <button
-              type="button"
-              onClick={() => void publish()}
-              disabled={saving || !complete || dirty || !hasCurrentPreview}
-              className="mt-3 w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              确认发布
-            </button>
-            {initial.status === "PUBLISHED" && (
-              <button
-                type="button"
-                onClick={() => void offline()}
-                className="mt-3 w-full rounded-lg border border-red-300 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50"
-              >
-                下线新闻
-              </button>
-            )}
-            {notice && (
-              <p
-                role="status"
-                aria-live="polite"
-                className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-700"
-              >
-                {notice}
-              </p>
-            )}
+            <button type="button" onClick={() => void translate()} disabled={saving || uploading} className="mt-4 w-full rounded-lg border border-indigo-300 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">保存并翻译日文、繁体</button>
+
+            <label className="mt-5 flex cursor-pointer gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} className="mt-1" />我已人工审核三语内容、封面和当前发布快照。</label>
+            <button type="button" onClick={() => void publish()} disabled={saving || uploading || !complete || dirty || !hasCurrentPreview} className="mt-3 w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">确认发布</button>
+            {initial.status === "PUBLISHED" && <button type="button" onClick={() => void offline()} className="mt-3 w-full rounded-lg border border-red-300 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50">下线新闻</button>}
+            {notice && <p role="status" aria-live="polite" className="mt-4 rounded-lg bg-slate-100 p-3 text-sm leading-6 text-slate-700">{notice}</p>}
             <CmsAuditLog articleId={initial.id} initialItems={initialAuditItems} />
           </aside>
         </div>
@@ -697,17 +413,11 @@ export default function CmsNewsEditor({
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="mt-4 block text-sm font-medium text-slate-700">
+    <label className="block text-sm font-medium text-slate-700">
       <span>{label}</span>
-      <div className="mt-2 [&_input]:w-full [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:px-3 [&_input]:py-2.5 [&_input]:outline-none [&_input]:ring-indigo-500 [&_input:focus]:ring-2 [&_select]:w-full [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:px-3 [&_select]:py-2.5 [&_select]:outline-none [&_select]:ring-indigo-500 [&_select:focus]:ring-2 [&_textarea]:w-full [&_textarea]:rounded-lg [&_textarea]:border [&_textarea]:border-slate-200 [&_textarea]:px-3 [&_textarea]:py-2.5 [&_textarea]:outline-none [&_textarea]:ring-indigo-500 [&_textarea:focus]:ring-2">
+      <div className="mt-2 [&>input]:w-full [&>input]:rounded-lg [&>input]:border [&>input]:border-slate-300 [&>input]:px-3 [&>input]:py-2.5 [&>input]:outline-none [&>input]:ring-indigo-500 [&>input:focus]:ring-2 [&>select]:w-full [&>select]:rounded-lg [&>select]:border [&>select]:border-slate-300 [&>select]:px-3 [&>select]:py-2.5 [&>select]:outline-none [&>select]:ring-indigo-500 [&>select:focus]:ring-2 [&>textarea]:w-full [&>textarea]:rounded-lg [&>textarea]:border [&>textarea]:border-slate-300 [&>textarea]:px-3 [&>textarea]:py-2.5 [&>textarea]:outline-none [&>textarea]:ring-indigo-500 [&>textarea:focus]:ring-2">
         {children}
       </div>
     </label>

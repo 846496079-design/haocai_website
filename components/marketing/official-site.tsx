@@ -49,6 +49,7 @@ import Footer from '@/components/layout/Footer'
 import FadeInSection from '@/components/ui/fade-in-section'
 import type { IconKey, SiteContent } from '@/lib/site-content'
 import { getNewsArticle, newsArticles, type NewsArticle } from '@/lib/news-content'
+import type { CmsLocaleArticle } from '@/lib/cms/types'
 
 const icons: Record<IconKey, typeof Building2> = {
   building: Building2,
@@ -885,6 +886,12 @@ type TrialField = 'contactName' | 'contactPhone' | 'inviteCode'
 
 type OfficialPage = 'home' | 'product' | 'company' | 'partners' | 'join' | 'news' | 'newsDetail' | 'cases'
 
+type DisplayNewsArticle = NewsArticle | CmsLocaleArticle
+
+function isRichTextNewsArticle(article: DisplayNewsArticle): article is CmsLocaleArticle {
+  return 'body' in article
+}
+
 export default function OfficialSite({
   site,
   page = 'home',
@@ -895,8 +902,8 @@ export default function OfficialSite({
   site: SiteContent
   page?: OfficialPage
   articleSlug?: string
-  initialArticles?: NewsArticle[]
-  initialArticle?: NewsArticle
+  initialArticles?: DisplayNewsArticle[]
+  initialArticle?: DisplayNewsArticle
 }) {
   const contactHref = `tel:${site.company.contact}`
   const copy = pageCopy[site.code]
@@ -2189,37 +2196,46 @@ export default function OfficialSite({
                   <span className="text-muted-foreground">{article.date}</span>
                 </div>
                 <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight md:text-5xl">{article.title}</h1>
-                <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">{article.lead}</p>
+                <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">
+                  {isRichTextNewsArticle(article) ? article.summary : article.lead}
+                </p>
               </header>
               <div className="relative mt-10 aspect-[16/9] overflow-hidden rounded-[30px] border border-border bg-secondary shadow-[0_18px_54px_rgba(24,36,61,.10)]">
                 <Image src={article.cover} alt={article.title} fill className="object-cover" priority sizes="(min-width: 1024px) 896px, 100vw" />
               </div>
-              <div className="mx-auto mt-12 max-w-3xl space-y-12">
-                {article.sections.map((section) => (
-                  <section key={section.title}>
-                    <h2 className="text-2xl font-semibold leading-snug">{section.title}</h2>
-                    <div className="mt-5 space-y-4 text-base leading-8 text-muted-foreground">
-                      {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-                    </div>
-                    {section.image && (
-                      <figure className="mt-7">
-                        {/* CMS images may come from Vercel Blob or another configured object store. */}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={section.image}
-                          alt={section.imageAlt || section.imageCaption || section.title}
-                          className="h-auto w-full rounded-2xl object-cover"
-                          loading="lazy"
-                        />
-                        {section.imageCaption && <figcaption className="mt-3 text-sm leading-6 text-muted-foreground">{section.imageCaption}</figcaption>}
-                      </figure>
-                    )}
-                  </section>
-                ))}
-                <footer className="border-t border-border pt-8 text-base leading-8 text-muted-foreground">
-                  {article.closing.map((paragraph) => <p key={paragraph} className="mt-4 first:mt-0">{paragraph}</p>)}
-                </footer>
-              </div>
+              {isRichTextNewsArticle(article) ? (
+                <div
+                  className="mx-auto mt-12 max-w-3xl overflow-hidden"
+                  dangerouslySetInnerHTML={{ __html: article.body.publicationHtml }}
+                />
+              ) : (
+                <div className="mx-auto mt-12 max-w-3xl space-y-12">
+                  {article.sections.map((section) => (
+                    <section key={section.title}>
+                      <h2 className="text-2xl font-semibold leading-snug">{section.title}</h2>
+                      <div className="mt-5 space-y-4 text-base leading-8 text-muted-foreground">
+                        {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                      </div>
+                      {section.image && (
+                        <figure className="mt-7">
+                          {/* CMS images may come from Vercel Blob or another configured object store. */}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={section.image}
+                            alt={section.imageAlt || section.imageCaption || section.title}
+                            className="h-auto w-full rounded-2xl object-cover"
+                            loading="lazy"
+                          />
+                          {section.imageCaption && <figcaption className="mt-3 text-sm leading-6 text-muted-foreground">{section.imageCaption}</figcaption>}
+                        </figure>
+                      )}
+                    </section>
+                  ))}
+                  <footer className="border-t border-border pt-8 text-base leading-8 text-muted-foreground">
+                    {article.closing.map((paragraph) => <p key={paragraph} className="mt-4 first:mt-0">{paragraph}</p>)}
+                  </footer>
+                </div>
+              )}
             </article>
           </section>
         )}

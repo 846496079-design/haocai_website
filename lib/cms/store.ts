@@ -3,9 +3,10 @@ import 'server-only'
 import Database from 'better-sqlite3'
 import { mkdirSync } from 'node:fs'
 import { basename, dirname, extname, join } from 'node:path'
-import { newsArticles, type NewsArticle } from '@/lib/news-content'
+import { newsArticles } from '@/lib/news-content'
 import type { SiteCode } from '@/lib/site-content'
-import { CMS_LOCALES, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult } from './types'
+import { prepareCmsContent } from './publication-server'
+import { CMS_LOCALES, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult, type CmsLocaleArticle } from './types'
 import * as postgresStore from './store-postgres'
 import { usesPostgres } from './config'
 
@@ -179,10 +180,6 @@ function optimizedCoverPath(cover: string) {
   return `/images/news/optimized/${basename(cover, extname(cover))}.webp`
 }
 
-function normalizeArticle(article: NewsArticle, slug: string): NewsArticle {
-  return { ...article, slug, cover: optimizedCoverPath(article.cover), tags: article.tags ?? [], sections: article.sections.map((section) => ({ ...section, paragraphs: [...section.paragraphs] })), closing: [...article.closing] }
-}
-
 function seedLegacyArticles() {
   const count = database.prepare('SELECT COUNT(*) AS total FROM news_article').get() as { total: number }
   if (count.total) return
@@ -191,10 +188,11 @@ function seedLegacyArticles() {
     const versionStatement = database.prepare('INSERT INTO news_version (article_id, version_no, state, content_json, created_at, updated_at) VALUES (?, 1, ?, ?, ?, ?)')
     const updateStatement = database.prepare('UPDATE news_article SET published_version_id = ?, updated_at = ? WHERE id = ?')
     newsArticles.cn.forEach((cnArticle) => {
-      const content = Object.fromEntries(CMS_LOCALES.map((locale) => {
+      const legacy = Object.fromEntries(CMS_LOCALES.map((locale) => {
         const article = newsArticles[locale].find((item) => item.slug === cnArticle.slug) ?? cnArticle
-        return [locale, normalizeArticle(article, cnArticle.slug)]
-      })) as CmsArticleContent
+        return [locale, { ...article, slug: cnArticle.slug, cover: optimizedCoverPath(article.cover) }]
+      }))
+      const content = prepareCmsContent(legacy, cnArticle.slug)
       const timestamp = now()
       const articleResult = articleStatement.run(cnArticle.slug, 'PUBLISHED', timestamp, timestamp, timestamp)
       const versionResult = versionStatement.run(articleResult.lastInsertRowid, 'PUBLISHED', JSON.stringify(content), timestamp, timestamp)
@@ -233,12 +231,7 @@ function seedCategories() {
 }
 
 function parseContent(value: string): CmsArticleContent {
-  const parsed = JSON.parse(value) as Partial<CmsArticleContent>
-  const fallback = createEmptyContent()
-  CMS_LOCALES.forEach((locale) => {
-    fallback[locale] = normalizeArticle(parsed[locale] ?? fallback[locale], parsed[locale]?.slug ?? '')
-  })
-  return fallback
+  return prepareCmsContent(JSON.parse(value))
 }
 
 function versionFor(row: ArticleRow, preferDraft = true) {
@@ -297,8 +290,8 @@ export function getCmsPreviewArticle(id: number, locale: SiteCode) {
   return record ? record.content[locale] : undefined
 }
 
-export function getPublishedArticles(locale: SiteCode): NewsArticle[] {
-  if (usesPostgres()) return postgresStore.getPublishedArticles(locale) as unknown as NewsArticle[]
+export function getPublishedArticles(locale: SiteCode): CmsLocaleArticle[] {
+  if (usesPostgres()) return postgresStore.getPublishedArticles(locale) as unknown as CmsLocaleArticle[]
   const rows = database.prepare("SELECT * FROM news_article WHERE status = 'PUBLISHED' AND published_version_id IS NOT NULL ORDER BY is_pinned DESC, pinned_position, manual_position, published_at DESC, id DESC").all() as ArticleRow[]
   return rows.flatMap((row) => {
     const version = versionFor(row, false)
@@ -334,7 +327,7 @@ export function importCmsArticle(content: CmsArticleContent, sourceId: string) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('导入稿件的 slug 仅支持小写字母、数字和连字符。')
   const existing = database.prepare('SELECT * FROM news_article WHERE slug = ?').get(slug) as ArticleRow | undefined
   const timestamp = now()
-  const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, normalizeArticle(content[locale], slug)])) as CmsArticleContent
+  const normalized = prepareCmsContent(content, slug)
   const categoryId = ensureCategory(normalized.cn.category, 'IMPORT')
   const operation = database.transaction(() => {
     if (!existing) {
@@ -357,21 +350,26 @@ export function importCmsArticle(content: CmsArticleContent, sourceId: string) {
   return operation()
 }
 
-export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: number) {
-  if (usesPostgres()) return postgresStore.updateCmsDraft(id, content, adminId) as unknown as CmsArticleRecord | undefined
-  const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
-  if (!row) throw new Error('新闻不存在。')
-  if (row.status === 'TRASH') throw new Error('回收站稿件必须先恢复后才能编辑。')
+export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: number, expectedVersionId?: number, expectedUpdatedAt?: string) {
+  if (usesPostgres()) return postgresStore.updateCmsDraft(id, content, adminId, expectedVersionId, expectedUpdatedAt) as unknown as CmsArticleRecord | undefined
+  const initialRow = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
+  if (!initialRow) throw new Error('新闻不存在。')
+  if (initialRow.status === 'TRASH') throw new Error('回收站稿件必须先恢复后才能编辑。')
   const timestamp = now()
   const operation = database.transaction(() => {
+    const row = database.prepare('SELECT * FROM news_article WHERE id = ?').get(id) as ArticleRow | undefined
+    if (!row) throw new Error('新闻不存在。')
     let version = versionFor(row)
+    if ((expectedVersionId && version?.id !== expectedVersionId) || (expectedUpdatedAt && row.updated_at !== expectedUpdatedAt)) {
+      throw new Error('稿件已在其他窗口发生变化，请复制当前内容后刷新再处理。')
+    }
     if (!version || version.id === row.published_version_id) {
       const source = version ? parseContent(version.content_json) : createEmptyContent(row.slug)
       const result = database.prepare('INSERT INTO news_version (article_id, version_no, state, content_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').run(row.id, (version?.version_no ?? 0) + 1, 'DRAFT', JSON.stringify(source), timestamp, timestamp)
       database.prepare('UPDATE news_article SET draft_version_id = ? WHERE id = ?').run(result.lastInsertRowid, row.id)
       version = database.prepare('SELECT * FROM news_version WHERE id = ?').get(result.lastInsertRowid) as VersionRow
     }
-    const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, normalizeArticle(content[locale], row.slug)])) as CmsArticleContent
+    const normalized = prepareCmsContent(content, row.slug)
     const previous = version ? parseContent(version.content_json) : createEmptyContent(row.slug)
     const chineseChanged = JSON.stringify(previous.cn) !== JSON.stringify(normalized.cn)
     const categoryName = normalized.cn.category.trim()

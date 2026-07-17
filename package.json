@@ -10,6 +10,8 @@
     "optimize:news-images": "node scripts/optimize-news-images.mjs",
     "export:public-html": "node scripts/export-public-html.mjs",
     "cms:migrate": "node scripts/cms/migrate-neon.mjs",
+    "cms:migrate-richtext": "tsx scripts/cms/migrate-richtext.ts",
+    "cms:verify-richtext": "tsx scripts/cms/migrate-richtext.ts --verify",
     "cms:seed-legacy": "node scripts/cms/seed-legacy-neon.mjs",
     "cms:verify": "node scripts/cms/verify-neon.mjs",
     "typecheck:cms": "tsc -p tsconfig.cms.json"
@@ -20,6 +22,14 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@neondatabase/serverless": "^1.1.0",
+    "@tiptap/extension-image": "3.28.0",
+    "@tiptap/extension-placeholder": "3.28.0",
+    "@tiptap/extension-table": "3.28.0",
+    "@tiptap/extension-text-align": "3.28.0",
+    "@tiptap/extension-text-style": "3.28.0",
+    "@tiptap/pm": "3.28.0",
+    "@tiptap/react": "3.28.0",
+    "@tiptap/starter-kit": "3.28.0",
     "@vercel/analytics": "1.6.1",
     "@vercel/blob": "^2.6.1",
     "bcryptjs": "^3.0.3",
@@ -53,6 +63,7 @@
     "@types/react-dom": "^19",
     "postcss": "^8.5",
     "tailwindcss": "^4.2.0",
+    "tsx": "4.23.1",
     "typescript": "5.7.3"
   },
   "pnpm": {

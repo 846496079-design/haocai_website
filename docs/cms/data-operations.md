@@ -41,6 +41,30 @@ npm run cms:seed-legacy
 - 导入后必须运行 verify；若已有同 slug 但内容不同，verify 会报错，需人工决定保留哪一版。
 - 如 SQLite 位于其他路径，传 `--source <路径>`。
 
+## 统一富文本内容迁移
+
+schema 迁移完成、历史新闻已导入后，将所有草稿和已发布版本转换为 `cms-richtext.v1`。迁移器会逐语言核对文字节点和图片顺序，并重新生成 `publicationHtml` 与 `contentHash`。
+
+本地 SQLite：
+
+```bash
+npm run cms:migrate-richtext
+npm run cms:migrate-richtext -- --apply
+npm run cms:verify-richtext
+```
+
+默认命令只演练。`--apply` 会先在 `.data/backups/` 自动建立 SQLite 备份，再以事务更新全部版本并写入 `MIGRATE_RICHTEXT` 审计记录。
+
+Neon PostgreSQL：
+
+```bash
+npm run cms:migrate-richtext -- --postgres
+npm run cms:migrate-richtext -- --postgres --apply --backup-confirmed
+npm run cms:verify-richtext -- --postgres
+```
+
+生产写入前必须先建立 Neon 恢复点或逻辑备份；脚本要求显式传入 `--backup-confirmed`。若任一版本迁移前后的文字或图片顺序不一致，脚本会停止且不写入。
+
 ## 校验
 
 ```bash
@@ -48,7 +72,7 @@ npm run cms:verify -- --help
 npm run cms:verify
 ```
 
-校验包括必需表、已发布文章版本指针、三语 JSON，以及存在 SQLite 源文件时的逐 slug 内容哈希对账。CI 或发布门禁应使用命令退出码，而不是只读取终端文字。
+`cms:verify` 校验必需表、已发布文章版本指针、三语 JSON，以及存在 SQLite 源文件时的逐 slug 内容哈希对账。`cms:verify-richtext` 进一步检查所有版本是否已是当前统一富文本结构和当前渲染快照。CI 或发布门禁应同时使用两个命令的退出码，而不是只读取终端文字。
 
 只检查 Neon 时使用：
 

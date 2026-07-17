@@ -2,9 +2,9 @@ import 'server-only'
 
 import { neon } from '@neondatabase/serverless'
 import { createHash } from 'node:crypto'
-import type { NewsArticle } from '@/lib/news-content'
 import type { SiteCode } from '@/lib/site-content'
-import { CMS_LOCALES, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult } from './types'
+import { prepareCmsContent } from './publication-server'
+import { createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult, type CmsLocaleArticle } from './types'
 import { requireCmsDatabaseUrl } from './config'
 
 type ArticleRow = Record<string, unknown>
@@ -27,6 +27,10 @@ async function atomic(query: string, parameters: unknown[] = []) {
 function now() { return new Date().toISOString() }
 function numeric(value: unknown) { return Number(value) }
 function text(value: unknown) { return value == null ? '' : String(value) }
+function timestamp(value: unknown) {
+  const date = value instanceof Date ? value : new Date(text(value))
+  return Number.isNaN(date.getTime()) ? text(value) : date.toISOString()
+}
 
 async function ready() {
   if (!schemaReady) schemaReady = (async () => {
@@ -60,15 +64,12 @@ async function ready() {
 export async function ensurePostgresSchema() { await ready() }
 
 function content(value: unknown): CmsArticleContent {
-  const parsed = typeof value === 'string' ? JSON.parse(value) as Partial<CmsArticleContent> : value as Partial<CmsArticleContent>
-  const fallback = createEmptyContent()
-  CMS_LOCALES.forEach((locale) => { fallback[locale] = { ...fallback[locale], ...(parsed[locale] ?? {}), tags: parsed[locale]?.tags ?? [], sections: parsed[locale]?.sections ?? [], closing: parsed[locale]?.closing ?? [] } })
-  return fallback
+  return prepareCmsContent(typeof value === 'string' ? JSON.parse(value) : value)
 }
 
 function record(row: ArticleRow): CmsArticleRecord {
   const data = content(row.content_json)
-  return { id: numeric(row.id), slug: text(row.slug), title: data.cn.title, status: text(row.status) as CmsArticleStatus, date: data.cn.date, category: data.cn.category, tags: data.cn.tags ?? [], cover: data.cn.cover, updatedAt: text(row.updated_at), publishedAt: row.published_at ? text(row.published_at) : null, localesComplete: isContentComplete(data), translationStatus: text(row.translation_status || 'NOT_TRANSLATED') as CmsArticleRecord['translationStatus'], isPinned: Boolean(row.is_pinned), deletedAt: row.deleted_at ? text(row.deleted_at) : null, content: data, previewedAt: row.previewed_at ? text(row.previewed_at) : null, versionId: numeric(row.selected_version_id), versionNo: numeric(row.version_no) }
+  return { id: numeric(row.id), slug: text(row.slug), title: data.cn.title, status: text(row.status) as CmsArticleStatus, date: data.cn.date, category: data.cn.category, tags: data.cn.tags ?? [], cover: data.cn.cover, updatedAt: timestamp(row.updated_at), publishedAt: row.published_at ? timestamp(row.published_at) : null, localesComplete: isContentComplete(data), translationStatus: text(row.translation_status || 'NOT_TRANSLATED') as CmsArticleRecord['translationStatus'], isPinned: Boolean(row.is_pinned), deletedAt: row.deleted_at ? timestamp(row.deleted_at) : null, content: data, previewedAt: row.previewed_at ? timestamp(row.previewed_at) : null, versionId: numeric(row.selected_version_id), versionNo: numeric(row.version_no) }
 }
 
 async function articleRow(id: number) {
@@ -101,7 +102,7 @@ export async function listCmsArticles(status?: CmsArticleStatus): Promise<CmsArt
 export async function getCmsArticle(id: number) { const row = await articleRow(id); return row ? record(row) : undefined }
 export async function getCmsPreviewArticle(id: number, locale: SiteCode) { return (await getCmsArticle(id))?.content[locale] }
 
-export async function getPublishedArticles(locale: SiteCode): Promise<NewsArticle[]> {
+export async function getPublishedArticles(locale: SiteCode): Promise<CmsLocaleArticle[]> {
   await ready()
   const rows = await db()(`SELECT v.content_json FROM news_article a JOIN news_version v ON v.id = a.published_version_id WHERE a.status = 'PUBLISHED' ORDER BY a.is_pinned DESC, a.pinned_position, a.manual_position, a.published_at DESC, a.id DESC`)
   return (rows as ArticleRow[]).map((row) => content(row.content_json)[locale])
@@ -144,10 +145,10 @@ export async function createCmsArticle(adminId: number) {
   return numeric(rows[0].id)
 }
 
-export async function updateCmsDraft(id: number, draft: CmsArticleContent, adminId: number) {
+export async function updateCmsDraft(id: number, draft: CmsArticleContent, adminId: number, expectedVersionId?: number, expectedUpdatedAt?: string) {
   const row = await articleRow(id); if (!row) throw new Error('新闻不存在。')
   if (text(row.status) === 'TRASH') throw new Error('回收站稿件必须先恢复后才能编辑。')
-  const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, { ...draft[locale], slug: text(row.slug) }])) as CmsArticleContent
+  const normalized = prepareCmsContent(draft, text(row.slug))
   const chineseChanged = JSON.stringify(content(row.content_json).cn) !== JSON.stringify(normalized.cn)
   const categoryName = normalized.cn.category.trim()
   const selectedCategories = categoryName ? await db()("SELECT id FROM news_category WHERE name = $1 AND status = 'ACTIVE'", [categoryName]) : []
@@ -159,6 +160,8 @@ export async function updateCmsDraft(id: number, draft: CmsArticleContent, admin
       FROM news_article a
       JOIN news_version v ON v.id = COALESCE(a.draft_version_id, a.published_version_id)
       WHERE a.id = $1 AND a.status <> 'TRASH'
+        AND ($6::bigint IS NULL OR v.id = $6)
+        AND ($7::timestamptz IS NULL OR date_trunc('milliseconds', a.updated_at) = date_trunc('milliseconds', $7::timestamptz))
     ), new_version AS (
       INSERT INTO news_version (article_id, version_no, state, content_json)
       SELECT t.id, t.version_no + 1, 'DRAFT', $2::jsonb
@@ -186,8 +189,8 @@ export async function updateCmsDraft(id: number, draft: CmsArticleContent, admin
       RETURNING id
     )
     SELECT id, version_id FROM updated
-  `, [id, JSON.stringify(normalized), categoryId, chineseChanged, adminId])
-  if (!rows[0]) throw new Error('稿件状态已变化，请刷新后重试。')
+  `, [id, JSON.stringify(normalized), categoryId, chineseChanged, adminId, expectedVersionId ?? null, expectedUpdatedAt ?? null])
+  if (!rows[0]) throw new Error('稿件已在其他窗口发生变化，请复制当前内容后刷新再处理。')
   return getCmsArticle(id)
 }
 
@@ -439,7 +442,7 @@ export async function importCmsArticleIdempotent(draft: CmsArticleContent, sourc
   await ready()
   const source = 'NEWS_WORKBENCH'
   const categoryName = draft.cn.category.trim()
-  const normalized = Object.fromEntries(CMS_LOCALES.map((locale) => [locale, { ...draft[locale], slug }])) as CmsArticleContent
+  const normalized = prepareCmsContent(draft, slug)
   const sql = client()
   const results = await sql.transaction((transaction) => [
     transaction.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [`${source}:${key}`]),
@@ -589,5 +592,5 @@ export async function listCmsAuditLogs(targetType: string, targetId: string, lim
     ORDER BY l.created_at DESC, l.id DESC
     LIMIT $3
   `, [targetType, targetId, safeLimit])
-  return rows.map((row) => ({ id: numeric(row.id), action: text(row.action), createdAt: text(row.created_at), adminUsername: row.admin_username ? text(row.admin_username) : null, detail: row.detail_json ?? null }))
+  return rows.map((row) => ({ id: numeric(row.id), action: text(row.action), createdAt: timestamp(row.created_at), adminUsername: row.admin_username ? text(row.admin_username) : null, detail: row.detail_json ?? null }))
 }

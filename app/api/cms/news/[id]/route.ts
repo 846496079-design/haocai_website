@@ -25,11 +25,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const admin = await getCmsAdmin()
   if (!admin) return NextResponse.json({ message: '未登录。' }, { status: 401 })
   try {
-    const body = await request.json() as { content?: CmsArticleContent }
+    const body = await request.json() as { content?: CmsArticleContent; expectedVersionId?: number; expectedUpdatedAt?: string }
     if (!body.content) throw new Error('缺少新闻内容。')
-    return NextResponse.json(await updateCmsDraft(parseId((await params).id), body.content, admin.id))
+    return NextResponse.json(await updateCmsDraft(parseId((await params).id), body.content, admin.id, body.expectedVersionId, body.expectedUpdatedAt))
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : '保存失败。' }, { status: 400 })
+    const message = error instanceof Error ? error.message : '保存失败。'
+    return NextResponse.json({ message }, { status: message.includes('其他窗口') ? 409 : 400 })
   }
 }
 

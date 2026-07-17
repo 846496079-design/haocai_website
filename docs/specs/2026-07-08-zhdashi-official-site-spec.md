@@ -242,7 +242,8 @@
 
 ### 7.2 系统集成
 
-- CNB 是官网代码的唯一主仓库。根目录 `.cnb.yml` 仅在 `main` 分支的可信 `push` 事件中运行，安全引用 CNB 密钥仓库文件 `github-sync.yml` 的 `GITHUB_TOKEN`，将当前 `main` 与 tags 自动推送至 GitHub 镜像仓库 `846496079-design/haocai_website`。Token 不得写入官网代码、日志或本地 Git 配置；GitHub 镜像不作为反向同步来源。
+- CNB 是官网代码的唯一主仓库。所有分支的可信 `push` 继续通过密钥仓库 `github-sync.yml` 同步同名分支与 tags 到 GitHub 镜像仓库 `846496079-design/haocai_website`；只有 `codex/official-home-trust-redesign` 的 `push` 额外引用 `official-deploy.yml`，执行 Linux standalone 构建、专用 deploy 用户上传和宝塔服务器原子发布。GitHub Token 与 SSH 私钥不得写入官网代码、日志或本地 Git 配置，GitHub 镜像不作为反向同步来源。
+- 生产发布保留最近 5 个 release，切换后的 HTML、实际 CSS 和缓存头检查失败时自动恢复上一版本。公开 HTML 必须重新验证缓存；`/_next/static/` 使用跨版本持久化的内容哈希目录与 immutable 缓存，避免旧 HTML 引用已经删除的 CSS chunk。
 - 产品登录入口可作为产品端地址保留在配置中，但官网试用 CTA 当前不直接跳转登录页。
 - 必须保留代理线索池 API：`POST https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit`。
 - 建议后续接入官网访问统计，记录页面浏览、CTA 点击、表单提交成功/失败。

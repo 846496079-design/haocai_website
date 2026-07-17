@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "package:release": "node scripts/deploy/package-standalone.mjs",
+    "verify:deployment": "node scripts/deploy/verify-deployment.mjs",
     "start": "next start",
     "lint": "eslint .",
     "optimize:news-images": "node scripts/optimize-news-images.mjs",

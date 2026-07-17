@@ -28,11 +28,12 @@
 | 变量 | 说明 |
 | --- | --- |
 | `CMS_DATABASE_PATH` | 本地 SQLite 路径，默认 `.data/news-cms.sqlite`。生产配置了 Postgres 后不会初始化 SQLite。 |
-| `CMS_COOKIE_SECURE` | 仅本地 HTTPS 调试可设为 `true`。生产环境无论该值如何都强制 Secure。 |
+| `CMS_COOKIE_SECURE` | 未配置时生产环境默认 `true`。仅当生产域名暂时仍为 HTTP、且应用端口只监听回环地址并由受控反向代理访问时，才可显式设为 `false`；启用 HTTPS 后必须改回 `true`。 |
 
 ## 配置规则
 
 - 不要把真实值写进 `.env.example`、提交记录、工单截图、构建日志或聊天消息。
+- `CMS_COOKIE_SECURE=false` 是 HTTP 过渡配置，不是长期安全方案；域名完成 HTTPS 后必须轮换为 `true` 并重新登录验收。
 - Vercel 环境变量修改后必须重新部署；自有服务器变量修改后必须重启服务才会生效。
 - Preview 必须指向隔离的 Neon branch/database 与 Blob Store，避免测试发布修改生产新闻。
 - 完成首次管理员创建后，可从运行环境移除 `CMS_ADMIN_PASSWORD` 并重新部署或重启；已有管理员登录不依赖该明文变量。

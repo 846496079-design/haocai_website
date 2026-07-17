@@ -2,7 +2,7 @@
 
 ## 1. 适用范围
 
-本 Runbook 用于把 Next.js 计算服务部署到公司 Linux 服务器，同时继续使用 Neon PostgreSQL 和 Vercel Blob。服务器无需保存业务数据或上传文件，因此可替换、回滚和水平扩容。
+本 Runbook 用于把 Next.js 计算服务部署到公司 Linux 服务器。应用既支持 Neon PostgreSQL 与 Vercel Blob，也兼容单实例服务器上的 SQLite；无论采用哪种存储，应用 release 都不得包含数据库、环境文件、上传目录或运行日志。
 
 当前生产上传代码要求 `BLOB_READ_WRITE_TOKEN`。不要把本地开发用的 `/public/uploads/cms/` 当作生产存储。若需要 S3/MinIO，先完成存储适配器开发和数据迁移方案，再使用本 Runbook。
 
@@ -14,7 +14,21 @@
 - Nginx、Caddy 或等价反向代理负责 HTTPS、域名和请求体限制。
 - 生产密钥由系统环境、Secret Manager 或受控环境文件注入；环境文件权限为仅运行账户可读。
 
+### 2.1 账大师当前生产基线
+
+- 域名：`http://zhangdashi.ai/`，宝塔 Nginx 反向代理到 `127.0.0.1:3000`。
+- CNB 源仓库：`jason.cnb/hc/ai/website_promotion_zds`。
+- 唯一生产触发分支：`codex/official-home-trust-redesign` 的 `push`。
+- 服务名：PM2 `zds-website`；首次自动发布后运行 `/www/zhangdashi-deploy/current/server.js`。
+- 发布根目录：`/www/zhangdashi-deploy`，包含 `incoming`、`releases`、`current` 和 `shared`。
+- 当前生产仍使用原站点目录中的 `.data` 与 `.env.local` 作为持久化源，通过 `shared/data` 和 `shared/env/.env.local` 只读接入 release；自动发布不得移动、复制或删除它们。
+- CNB 使用专用 `deploy` 用户。该用户只能写上传暂存区，不能读取生产环境文件，sudo 仅放行 `/usr/local/sbin/zhangdashi-release`。
+
 ## 3. 构建
+
+正式生产发布由根目录 `.cnb.yml` 在 Linux amd64 的 Node.js 24 镜像中执行 `npm ci`、CMS 类型检查、`next build` 和 standalone 打包。构建后生成 `SHA256SUMS`，服务器核验全部文件后才允许切换。
+
+手工构建只用于排障或预演：
 
 在干净目录检出已签收的 commit：
 
@@ -27,7 +41,7 @@ npm run typecheck:cms
 npm run build
 ```
 
-不要把 `.env.local`、数据库连接串或 Blob 令牌打进镜像和构建产物。构建与运行使用同一 Node 主版本。
+不要把 `.env.local`、`.data`、`public/uploads/cms`、数据库连接串或 Blob 令牌打进镜像和构建产物。构建与运行使用同一 Node 主版本。
 
 ## 4. 运行环境变量
 
@@ -68,7 +82,7 @@ npm run cms:verify
 
 ## 6. 启动与反向代理
 
-先在仅本机监听的端口启动：
+源码目录手工运行时，先在仅本机监听的端口启动：
 
 ```bash
 npm run start -- -H 127.0.0.1 -p 3000
@@ -82,6 +96,14 @@ npm run start -- -H 127.0.0.1 -p 3000
 - 不缓存 `/cms/` 和 `/api/cms/`。
 - 对外只开放 80/443，应用端口不直接暴露公网。
 
+standalone release 由发布脚本使用 `HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=production node server.js` 托管到 PM2。不要把数据库迁移、seed 或生产数据写入加入 PM2 启动命令。
+
+Nginx 缓存边界：
+
+- `/_next/static/` 指向 `/www/zhangdashi-deploy/shared/next-static/`，使用一年 immutable 缓存；旧哈希文件跨 release 保留。
+- `/cn/`、`/jp/`、`/hk/` 及其子页面覆盖为 `no-cache, must-revalidate`，不能继续透传一年 `s-maxage`。
+- `/cms/` 和 `/api/` 保留应用返回的 `private, no-store` 等缓存头，不能被公开页面规则覆盖。
+
 ## 7. 首次启动与验收
 
 1. 访问 `/cn/`，确认公开站点返回 200。
@@ -92,11 +114,15 @@ npm run start -- -H 127.0.0.1 -p 3000
 
 ## 8. 发布、回滚与扩容
 
-- 发布：构建新目录或新镜像，验收后原子切换反向代理或服务版本。
-- 应用回滚：切回上一已签收 commit 或镜像，不执行数据库恢复。
+- 发布：只需向 `codex/official-home-trust-redesign` 推送 commit。CNB 构建后 rsync 到 `incoming/<commit>`，服务器预启动检查通过才原子切换 `current`。
+- 自动回滚：切换后的首页、实际 CSS 或缓存头检查失败时，发布脚本恢复上一 `current` 并重启；新版本仍以失败结束。
+- 手工回滚：root 在宝塔终端把 `current` 原子改回 `/www/zhangdashi-deploy/releases/<上一提交>`，按 standalone 参数重建 PM2 `zds-website`，再验证三站首页和实际 CSS；不执行数据库恢复。
+- release 保留：最近 5 个完整版本；`shared/next-static` 中仍被保留 release 使用的哈希文件不得删除。
 - 数据恢复：仅确认数据库被错误写入时按 [data-operations.md](./data-operations.md) 执行。
 - 扩容：多个实例共用 Neon 和 Blob；所有实例必须使用完全一致的服务端变量。
 - 下线旧实例前先停止新流量，再等待进行中的上传和发布请求结束。
+
+CNB 密钥位于密钥仓库 `jason.cnb/hc/ai/github-sync-secrets` 的 `official-deploy.yml`。轮换时先把新公钥加入 `/home/deploy/.ssh/authorized_keys` 并验证，再替换密钥文件中的 `DEPLOY_SSH_KEY`，触发一次真实发布成功后撤销旧公钥。官网仓库和运维文档不得保存私钥。
 
 ## 9. 监控
 

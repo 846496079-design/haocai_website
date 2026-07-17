@@ -1,10 +1,75 @@
-"**":
+"codex/official-home-trust-redesign":
   push:
-    - imports:
-        - https://cnb.cool/jason.cnb/hc/ai/github-sync-secrets/-/blob/main/github-sync.yml
+    - name: 同步并部署生产官网
+      docker:
+        image: node:24-bookworm
       stages:
         - name: 同步当前分支到 GitHub
+          imports:
+            - https://cnb.cool/jason.cnb/hc/ai/github-sync-secrets/-/blob/main/github-sync.yml
           script: |
+            set -eu
+            set +x
+            cat > /tmp/github-askpass <<'EOF'
+            #!/bin/sh
+            case "$1" in
+              *Username*) echo "x-access-token" ;;
+              *) echo "$GITHUB_TOKEN" ;;
+            esac
+            EOF
+            chmod 700 /tmp/github-askpass
+            export GIT_ASKPASS=/tmp/github-askpass
+            export GIT_TERMINAL_PROMPT=0
+            git push https://github.com/846496079-design/haocai_website.git "HEAD:refs/heads/$CNB_BRANCH"
+            git push https://github.com/846496079-design/haocai_website.git --tags
+            rm -f /tmp/github-askpass
+
+        - name: 构建 standalone 发布包
+          script: |
+            set -euo pipefail
+            test "$(uname -m)" = "x86_64"
+            npm ci --registry=https://registry.npmmirror.com
+            npm run typecheck:cms
+            npm run build
+            npm run package:release
+            cd .deploy/release
+            find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+            cd "$CNB_BUILD_WORKSPACE"
+            printf '%s\n' 'zhangdashi.ai ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOzYZGLs76ZrE0o8E3TOu0NT1xm1xJ4h9skPI4VFKM8+' > .deploy/known_hosts
+            chmod 600 .deploy/known_hosts
+
+        - name: 上传并原子发布
+          imports:
+            - https://cnb.cool/jason.cnb/hc/ai/github-sync-secrets/-/blob/main/official-deploy.yml
+          image: tencentcom/rsync:v1.0.0
+          settings:
+            user: $DEPLOY_USER
+            key: $DEPLOY_SSH_KEY
+            hosts:
+              - $DEPLOY_HOST
+            port: $DEPLOY_PORT
+            source: ./.deploy/release/
+            target: $DEPLOY_ROOT/incoming/$CNB_COMMIT/
+            recursive: true
+            delete: true
+            ssh_args: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$CNB_BUILD_WORKSPACE/.deploy/known_hosts
+            prescript:
+              - mkdir -p "$DEPLOY_ROOT/incoming/$CNB_COMMIT"
+            script:
+              - sudo /usr/local/sbin/zhangdashi-release "$CNB_COMMIT"
+
+        - name: 验收外部 HTML 与 CSS
+          script: node scripts/deploy/verify-deployment.mjs http://zhangdashi.ai/cn/
+
+"$":
+  push:
+    - name: 仅同步当前分支到 GitHub
+      stages:
+        - name: 同步当前分支到 GitHub
+          imports:
+            - https://cnb.cool/jason.cnb/hc/ai/github-sync-secrets/-/blob/main/github-sync.yml
+          script: |
+            set -eu
             set +x
             cat > /tmp/github-askpass <<'EOF'
             #!/bin/sh

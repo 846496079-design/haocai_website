@@ -15,6 +15,9 @@ export function requireCmsDatabaseUrl() {
 }
 
 export function usesSecureCmsCookie() {
+  const configuredValue = process.env.CMS_COOKIE_SECURE?.trim().toLowerCase()
+  if (configuredValue === 'true') return true
+  if (configuredValue === 'false') return false
   if (process.env.NODE_ENV === 'production') return true
-  return process.env.CMS_COOKIE_SECURE === 'true'
+  return false
 }

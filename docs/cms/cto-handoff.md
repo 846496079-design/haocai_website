@@ -2,35 +2,35 @@
 
 ## 一、交接结论
 
-本项目不依赖 Vercel 才能运行。推荐先把部署选择限定在以下两条可直接执行的路径：
+官网生产计算平台已于 2026-07-17 选定为阿里云 Linux 服务器：宝塔 Nginx 反向代理到 PM2 管理的 Next.js standalone 服务。向 `codex/official-home-trust-redesign` 推送 commit 后，CNB 构建不可变发布包并通过受限 `deploy` 用户上传，服务器预启动验收通过后原子切换 `current`。
 
-1. Vercel 托管 Next.js，连接 Neon 与 Vercel Blob。
-2. 公司 Linux 服务器运行 Next.js，继续连接同一套 Neon 与 Vercel Blob。
-
-两条路径共用同一套数据结构、迁移脚本和业务代码，切换计算平台不需要重新迁移新闻。若公司要求数据库和图片都完全私有化，应另立项目接入自建 PostgreSQL 与 S3/MinIO；当前代码尚未提供 S3/MinIO 适配器。
+Vercel、Neon 与 Vercel Blob 仍可作为后续迁移路径，但不是当前官网生产请求的数据来源。若公司要求数据库和图片完全私有化并迁移到 PostgreSQL 与 S3/MinIO，应另立迁移项目；当前代码尚未提供 S3/MinIO 适配器。
 
 ## 二、当前可交付状态
 
 | 项目 | 当前状态 |
 | --- | --- |
 | 代码分支 | `codex/official-home-trust-redesign` |
-| Neon 资源 | `haocai-cms-db`，新加坡区域，已连接项目 |
+| 生产计算平台 | 阿里云 Linux、宝塔 Nginx、PM2、Next.js standalone |
+| 自动发布 | CNB 分支 push 触发，发布根目录 `/www/zhangdashi-deploy`，保留最近 5 个 release |
+| 当前生产数据 | 服务器持久化 `.data` 与 `.env.local`，发布包只通过受控符号链接引用，不复制或覆盖 |
+| Neon 资源 | `haocai-cms-db`，新加坡区域，已连接项目，但尚未切为当前官网生产数据源 |
 | 数据库迁移 | `001_cms_postgres.sql`、`002_cms_operations.sql` 已执行 |
 | 历史数据 | 17 篇已发布新闻已迁移，三语正文逐篇哈希对账通过 |
-| 图片存储 | Vercel Blob `haocai-cms-media` 已建立 |
-| 管理员 | Neon 当前尚未创建管理员；由生产环境首次启动时用临时初始凭据创建 |
+| 图片存储 | Vercel Blob `haocai-cms-media` 已建立，但尚未切为当前官网生产图片源 |
+| 管理员 | 当前生产账号由服务器环境变量和持久化数据管理，密钥值不进入仓库 |
 | 翻译 | 接口已预留，生产地址、密钥和模型尚未配置 |
-| 生产切换 | 尚未执行，避免在部署平台未确定时误切生产 |
+| 生产切换 | 已完成，域名 `http://zhangdashi.ai`；TLS 证书与 HTTPS 切换仍待单独安排 |
 
 交接时使用 `git rev-parse HEAD` 记录最终交付提交，不以工作目录或截图代替版本号。
 
 ## 三、技术总需要拍板的五项内容
 
-1. 计算平台：Vercel 或公司 Linux 服务器。
-2. 生产域名、TLS 证书负责人和 DNS 切换窗口。
-3. 第一阶段是否接受继续使用 Vercel Blob；如不接受，需要排期开发 S3/MinIO 适配器。
-4. 自有翻译 API 的生产 URL、模型名、限流与费用责任人。
-5. Neon、Blob、服务器、域名和密钥的账号归属、备份责任人与故障联系人。
+1. TLS 证书负责人和 HTTPS 切换窗口。
+2. 是否把当前生产持久化数据迁移到 Neon 与 Vercel Blob；如不接受 Blob，需要排期开发 S3/MinIO 适配器。
+3. 自有翻译 API 的生产 URL、模型名、限流与费用责任人。
+4. 服务器、域名、CNB KeyStore 与数据备份的账号归属、责任人与故障联系人。
+5. 发布失败、数据恢复和证书到期的告警接收人。
 
 ## 四、交接材料
 

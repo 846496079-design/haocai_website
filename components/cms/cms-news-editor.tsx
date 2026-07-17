@@ -2,8 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, ImagePlus, Sparkles, X } from "lucide-react";
+import { Copy, ImagePlus, Settings2, Sparkles, X } from "lucide-react";
 import type { SiteCode } from "@/lib/site-content";
+import {
+  AI_PROVIDER_CONFIGS,
+  DEFAULT_AI_SETTINGS,
+  normalizeAiSettings,
+  type AiSettings,
+} from "@/lib/cms/ai-providers";
 import {
   CMS_LOCALES,
   isContentComplete,
@@ -16,6 +22,7 @@ import {
   type CmsRichTextDocument,
 } from "@/lib/cms/types";
 import { renderPublicationDocument } from "@/lib/cms/publication-renderer";
+import CmsAiSettingsModal from "@/components/cms/cms-ai-settings-modal";
 import CmsAuditLog from "@/components/cms/cms-audit-log";
 import CmsRichTextEditor from "@/components/cms/cms-rich-text-editor";
 
@@ -23,20 +30,6 @@ const localeNames: Record<SiteCode, string> = {
   cn: "简体中文",
   jp: "日本语",
   hk: "繁體中文",
-};
-
-type AiSettings = {
-  providerType: "openrouter" | "openai" | "anthropic";
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-};
-
-const defaultAiSettings: AiSettings = {
-  providerType: "openrouter",
-  baseUrl: "https://openrouter.ai/api/v1",
-  apiKey: "",
-  model: "",
 };
 
 function clone<T>(value: T): T {
@@ -130,7 +123,7 @@ export default function CmsNewsEditor({
   const [translationMode, setTranslationMode] = useState<"overwrite" | "fill-missing">("fill-missing");
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const [showAiSettings, setShowAiSettings] = useState(false);
-  const [aiSettings, setAiSettings] = useState<AiSettings>(defaultAiSettings);
+  const [aiSettings, setAiSettings] = useState<AiSettings>(DEFAULT_AI_SETTINGS);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiProposal, setAiProposal] = useState<CmsRichTextDocument | null>(null);
   const article = content[locale];
@@ -158,15 +151,11 @@ export default function CmsNewsEditor({
     const stored = window.localStorage.getItem(aiSettingsKey);
     if (!stored) return;
     try {
-      setAiSettings({ ...defaultAiSettings, ...JSON.parse(stored) as Partial<AiSettings> });
+      setAiSettings(normalizeAiSettings(JSON.parse(stored)));
     } catch {
       window.localStorage.removeItem(aiSettingsKey);
     }
   }, [aiSettingsKey]);
-
-  useEffect(() => {
-    window.localStorage.setItem(aiSettingsKey, JSON.stringify(aiSettings));
-  }, [aiSettings, aiSettingsKey]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(recoveryKey);
@@ -379,6 +368,20 @@ export default function CmsNewsEditor({
     });
   }
 
+  function saveAiSettings(settings: AiSettings) {
+    const normalized = normalizeAiSettings(settings);
+    setAiSettings(normalized);
+    window.localStorage.setItem(aiSettingsKey, JSON.stringify(normalized));
+    setShowAiSettings(false);
+    setNotice(`AI 配置已保存：${AI_PROVIDER_CONFIGS[normalized.providerType].name} · ${normalized.model}`);
+  }
+
+  function clearAiSettings() {
+    setAiSettings(DEFAULT_AI_SETTINGS);
+    window.localStorage.removeItem(aiSettingsKey);
+    setNotice("AI 配置已从当前浏览器清空。");
+  }
+
   async function publish() {
     if (!reviewed) return setNotice("请先勾选人工审核确认。");
     if (dirty || !hasCurrentPreview) return setNotice("当前内容尚未完成预览，请先预览当前保存版本。");
@@ -475,31 +478,19 @@ export default function CmsNewsEditor({
             </ul>
 
             <div className="mt-5 border-t border-slate-200 pt-5">
-              <button type="button" onClick={() => setShowAiSettings((current) => !current)} className="flex w-full items-center justify-center gap-2 rounded-lg border border-violet-300 px-4 py-3 text-sm font-semibold text-violet-800 hover:bg-violet-50">
-                <Sparkles className="size-4" />AI 智能排版
-              </button>
-              {showAiSettings && (
-                <div className="mt-3 space-y-3 rounded-lg bg-violet-50 p-3 text-sm">
-                  <label className="block font-medium text-slate-700">服务商
-                    <select value={aiSettings.providerType} onChange={(event) => setAiSettings((current) => ({ ...current, providerType: event.target.value as AiSettings["providerType"] }))} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2">
-                      <option value="openrouter">OpenRouter</option>
-                      <option value="openai">OpenAI 兼容</option>
-                      <option value="anthropic">Anthropic</option>
-                    </select>
-                  </label>
-                  <label className="block font-medium text-slate-700">API 地址
-                    <input value={aiSettings.baseUrl} onChange={(event) => setAiSettings((current) => ({ ...current, baseUrl: event.target.value }))} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2" placeholder="https://openrouter.ai/api/v1" />
-                  </label>
-                  <label className="block font-medium text-slate-700">模型
-                    <input value={aiSettings.model} onChange={(event) => setAiSettings((current) => ({ ...current, model: event.target.value }))} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2" placeholder="模型名称" />
-                  </label>
-                  <label className="block font-medium text-slate-700">API Key
-                    <input type="password" value={aiSettings.apiKey} onChange={(event) => setAiSettings((current) => ({ ...current, apiKey: event.target.value }))} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2" autoComplete="off" />
-                  </label>
-                  <p className="text-xs leading-5 text-slate-600">配置仅保存在当前浏览器；请求时临时发送给 CMS 服务端转发，不写入数据库。</p>
-                  <button type="button" onClick={() => void requestAiFormat()} disabled={aiBusy || saving || uploading} className="w-full rounded-md bg-violet-700 px-3 py-2 font-semibold text-white hover:bg-violet-800 disabled:opacity-50">{aiBusy ? "正在排版" : "生成排版建议"}</button>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><Sparkles className="size-4 text-violet-700" />AI 智能排版</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">只调整结构和样式，不允许改写原文。</p>
                 </div>
-              )}
+                <button type="button" onClick={() => setShowAiSettings(true)} className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><Settings2 className="size-3.5" />配置 AI 服务</button>
+              </div>
+              <p className="mt-3 rounded-md bg-slate-100 px-3 py-2 text-xs leading-5 text-slate-700">
+                {aiSettings.apiKey && aiSettings.model
+                  ? `${AI_PROVIDER_CONFIGS[aiSettings.providerType].name} · ${aiSettings.model}`
+                  : "尚未配置服务商、API Key 和模型"}
+              </p>
+              <button type="button" onClick={() => void requestAiFormat()} disabled={aiBusy || saving || uploading} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-violet-700 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-800 disabled:opacity-50"><Sparkles className="size-4" />{aiBusy ? "正在生成排版建议" : "生成排版建议"}</button>
             </div>
 
             <fieldset className="mt-5 space-y-2">
@@ -517,6 +508,13 @@ export default function CmsNewsEditor({
           </aside>
         </div>
       </div>
+      <CmsAiSettingsModal
+        open={showAiSettings}
+        value={aiSettings}
+        onClose={() => setShowAiSettings(false)}
+        onSave={saveAiSettings}
+        onClear={clearAiSettings}
+      />
       {aiProposal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-label="AI 排版建议对照">
           <div className="mx-auto max-w-6xl rounded-xl bg-white p-5 shadow-2xl">

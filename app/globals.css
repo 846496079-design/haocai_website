@@ -452,7 +452,7 @@
 
 /* CMS 富文本编辑器：只服务后台任务界面，不影响公开页面。 */
 .cms-rich-editor-content {
-  min-height: 38rem;
+  min-height: 44rem;
   padding: 1.25rem;
   color: #18243d;
   font-size: 1rem;
@@ -560,7 +560,7 @@
 
 @media (max-width: 767px) {
   .cms-rich-editor-content {
-    min-height: 30rem;
+    min-height: 34rem;
     padding: 1rem;
   }
 }

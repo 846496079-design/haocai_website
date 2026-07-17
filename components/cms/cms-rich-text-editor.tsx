@@ -497,8 +497,8 @@ export default function CmsRichTextEditor({
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
         <div className="min-w-0">
-          <div className="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:ring-2 focus-within:ring-indigo-500">
-            <EditorContent editor={editor} />
+          <div className="min-h-[34rem] overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:ring-2 focus-within:ring-indigo-500 md:min-h-[44rem]">
+            <EditorContent editor={editor} className="min-h-[34rem] md:min-h-[44rem]" />
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 p-3">
             <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) void insertUploadedImage(file); event.target.value = ""; }} />

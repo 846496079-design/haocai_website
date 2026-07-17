@@ -122,7 +122,7 @@ Nginx 缓存边界：
 - 扩容：多个实例共用 Neon 和 Blob；所有实例必须使用完全一致的服务端变量。
 - 下线旧实例前先停止新流量，再等待进行中的上传和发布请求结束。
 
-CNB 密钥位于密钥仓库 `jason.cnb/hc/ai/github-sync-secrets` 的 `official-deploy.yml`。轮换时先把新公钥加入 `/home/deploy/.ssh/authorized_keys` 并验证，再替换密钥文件中的 `DEPLOY_SSH_KEY`，触发一次真实发布成功后撤销旧公钥。官网仓库和运维文档不得保存私钥。
+CNB 密钥位于密钥仓库 `jason.cnb/hc/ai/github-sync-secrets` 的 `official-deploy.yml`，并通过插件参数引用 `settingsFrom` 直接传给固定版本 rsync 插件。轮换时先把新公钥加入 `/home/deploy/.ssh/authorized_keys` 并验证，再替换密钥文件中的 `key`，触发一次真实发布成功后撤销旧公钥。官网仓库和运维文档不得保存私钥。
 
 ## 9. 监控
 

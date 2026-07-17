@@ -63,7 +63,7 @@ DEPLOY_ROOT/
 
 ## CNB 密钥仓库
 
-在现有密钥仓库中新建独立文件 `official-deploy.yml`，与 `github-sync.yml` 分离。文件包含部署主机、端口、用户、部署根目录和 CI 私钥，并声明以下最小使用范围：
+在现有密钥仓库中新建独立文件 `official-deploy.yml`，与 `github-sync.yml` 分离。文件使用 rsync 插件原生参数 `hosts`、`port`、`user`、`key` 保存部署连接信息，并由流水线通过 `settingsFrom` 直接加载，避免多行私钥经过普通环境变量再次转换。部署根目录保留在公开流水线配置中，并声明以下最小使用范围：
 
 - `allow_slugs`: 只允许 `jason.cnb/hc/ai/website_promotion_zds`。
 - `allow_events`: 只允许 `push`。

@@ -54,7 +54,7 @@
 
 ### 6. 配置 CNB 密钥与流水线
 
-- 在密钥仓库新增 `official-deploy.yml`，写入 host、port、deploy user、deploy root 和私钥。
+- 在密钥仓库新增 `official-deploy.yml`，按 rsync 插件原生参数写入 host、port、deploy user 和私钥，并通过 `settingsFrom` 直接加载；非敏感的 deploy root 留在官网流水线配置中。
 - 限制 `allow_slugs`、`allow_events`、`allow_branches`、`allow_images`。
 - 调整 `.cnb.yml`：目标分支执行 GitHub 同步、构建、打包、rsync 上传、SSH 发布和外部检查；其他分支只同步 GitHub。
 - 固定 rsync 与 SSH 插件版本；敏感任务关闭命令回显。

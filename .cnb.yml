@@ -39,22 +39,17 @@
             chmod 600 .deploy/known_hosts
 
         - name: 上传并原子发布
-          imports:
+          settingsFrom:
             - https://cnb.cool/jason.cnb/hc/ai/github-sync-secrets/-/blob/main/official-deploy.yml
           image: tencentcom/rsync:v1.0.0
           settings:
-            user: $DEPLOY_USER
-            key: $DEPLOY_SSH_KEY
-            hosts:
-              - $DEPLOY_HOST
-            port: $DEPLOY_PORT
             source: ./.deploy/release/
-            target: $DEPLOY_ROOT/incoming/$CNB_COMMIT/
+            target: /www/zhangdashi-deploy/incoming/$CNB_COMMIT/
             recursive: true
             delete: true
             ssh_args: -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$CNB_BUILD_WORKSPACE/.deploy/known_hosts
             prescript:
-              - mkdir -p "$DEPLOY_ROOT/incoming/$CNB_COMMIT"
+              - mkdir -p "/www/zhangdashi-deploy/incoming/$CNB_COMMIT"
             script:
               - sudo /usr/local/sbin/zhangdashi-release "$CNB_COMMIT"
 

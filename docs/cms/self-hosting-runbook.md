@@ -101,8 +101,10 @@ standalone release 由发布脚本使用 `HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=
 Nginx 缓存边界：
 
 - `/_next/static/` 指向 `/www/zhangdashi-deploy/shared/next-static/`，使用一年 immutable 缓存；旧哈希文件跨 release 保留。
-- `/cn/`、`/jp/`、`/hk/` 及其子页面覆盖为 `no-cache, must-revalidate`，不能继续透传一年 `s-maxage`。
+- `/cn/`、`/jp/`、`/hk/` 及其子页面覆盖为 `no-store, no-cache, max-age=0, must-revalidate`，既不能继续透传一年 `s-maxage`，也不能再次保存公开 HTML。
 - `/cms/` 和 `/api/` 保留应用返回的 `private, no-store` 等缓存头，不能被公开页面规则覆盖。
+
+旧缓存规则已经写入用户设备的 HTML 无法由服务器主动删除；受影响设备需要执行一次强制刷新，或先访问带一次性查询参数的页面。设备取得新响应后，`no-store` 会阻止后续公开页面再次被长期保存。
 
 ## 7. 首次启动与验收
 

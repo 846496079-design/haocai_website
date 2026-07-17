@@ -91,8 +91,10 @@ verify_site() {
     return 1
   fi
   if [[ "$require_public_cache" == true ]]; then
-    if grep -Eqi '^Cache-Control:.*s-maxage=31536000' "$work_dir/page.headers" \
-      || ! grep -Eqi '^Cache-Control:.*(no-cache|must-revalidate|max-age=0)' "$work_dir/page.headers"; then
+    if ! grep -Eqi '^Cache-Control:.*(^|[[:space:],])no-store([[:space:],]|$)' "$work_dir/page.headers" \
+      || ! grep -Eqi '^Cache-Control:.*(^|[[:space:],])max-age[[:space:]]*=[[:space:]]*0([[:space:],]|$)' "$work_dir/page.headers" \
+      || grep -Eqi '^Cache-Control:.*(^|[[:space:],])s-maxage[[:space:]]*=[[:space:]]*[1-9][0-9]*' "$work_dir/page.headers" \
+      || grep -Eqi '^Cache-Control:.*(^|[[:space:],])max-age[[:space:]]*=[[:space:]]*[1-9][0-9]*' "$work_dir/page.headers"; then
       rm -rf "$work_dir"
       return 1
     fi

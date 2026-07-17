@@ -26,7 +26,7 @@
 
         - name: 构建 standalone 发布包
           script: |
-            set -euo pipefail
+            set -eu
             test "$(uname -m)" = "x86_64"
             npm ci --registry=https://registry.npmmirror.com
             npm run typecheck:cms

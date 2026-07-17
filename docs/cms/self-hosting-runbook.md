@@ -124,6 +124,8 @@ Nginx 缓存边界：
 
 CNB 密钥位于密钥仓库 `jason.cnb/hc/ai/github-sync-secrets` 的 `official-deploy.yml`，并通过插件参数引用 `settingsFrom` 直接传给固定版本 rsync 插件。轮换时先把新公钥加入 `/home/deploy/.ssh/authorized_keys` 并验证，再替换密钥文件中的 `key`，触发一次真实发布成功后撤销旧公钥。官网仓库和运维文档不得保存私钥。
 
+当前生产部署公钥指纹（2026-07-17）：`SHA256:khplC+qGc5MrWoPIcAAo3hcEFPVD/ewMLtvs97eugGQ`（ED25519）。
+
 ## 9. 监控
 
 - 公开可用性：监控 `/cn/`、`/jp/`、`/hk/` 的状态码与响应时间。

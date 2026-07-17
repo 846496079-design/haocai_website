@@ -13,6 +13,7 @@
     "cms:migrate-richtext": "tsx scripts/cms/migrate-richtext.ts",
     "cms:verify-richtext": "tsx scripts/cms/migrate-richtext.ts --verify",
     "cms:verify-ai-config": "tsx scripts/cms/verify-ai-config.ts",
+    "cms:verify-receiver": "tsx scripts/cms/verify-receiver-workbench.ts",
     "cms:verify-wechat-compat": "tsx scripts/cms/verify-wechat-compat.ts",
     "cms:seed-legacy": "node scripts/cms/seed-legacy-neon.mjs",
     "cms:verify": "node scripts/cms/verify-neon.mjs",

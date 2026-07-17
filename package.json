@@ -12,6 +12,7 @@
     "cms:migrate": "node scripts/cms/migrate-neon.mjs",
     "cms:migrate-richtext": "tsx scripts/cms/migrate-richtext.ts",
     "cms:verify-richtext": "tsx scripts/cms/migrate-richtext.ts --verify",
+    "cms:verify-wechat-compat": "tsx scripts/cms/verify-wechat-compat.ts",
     "cms:seed-legacy": "node scripts/cms/seed-legacy-neon.mjs",
     "cms:verify": "node scripts/cms/verify-neon.mjs",
     "typecheck:cms": "tsc -p tsconfig.cms.json"
@@ -30,6 +31,7 @@
     "@tiptap/pm": "3.28.0",
     "@tiptap/react": "3.28.0",
     "@tiptap/starter-kit": "3.28.0",
+    "@types/sanitize-html": "^2.16.0",
     "@vercel/analytics": "1.6.1",
     "@vercel/blob": "^2.6.1",
     "bcryptjs": "^3.0.3",
@@ -48,6 +50,7 @@
     "react-dom": "^19",
     "react-resizable-panels": "^4.11.2",
     "recharts": "3.8.0",
+    "sanitize-html": "^2.17.0",
     "shadcn": "^4.8.0",
     "sharp": "^0.35.3",
     "sonner": "^2.0.7",

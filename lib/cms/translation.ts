@@ -1,5 +1,5 @@
 import { collectDocumentTextSegments, replaceDocumentTextSegments } from './rich-text'
-import type { CmsArticleContent, CmsLocaleArticle } from './types'
+import type { CmsArticleContent, CmsLocaleArticle, CmsRichTextNode } from './types'
 
 type TranslationTarget = 'Japanese' | 'Traditional Chinese'
 export type TranslationMode = 'fill-missing' | 'overwrite'
@@ -11,6 +11,11 @@ type TranslationPayload = {
   tags: string[]
   author: string
   segments: string[]
+}
+
+function containsImportedHtml(node: CmsRichTextNode): boolean {
+  if (node.type === 'wechatHtmlBlock') return true
+  return Boolean(node.content?.some(containsImportedHtml))
 }
 
 function translationPrompt(source: CmsLocaleArticle, target: TranslationTarget) {
@@ -110,6 +115,9 @@ export async function translateCmsContent(
   content: CmsArticleContent,
   mode: TranslationMode = 'overwrite',
 ): Promise<CmsArticleContent> {
+  if (containsImportedHtml(content.cn.body.editorDocument)) {
+    throw new Error('TypeZen 原样导入块不能自动翻译；请分别在日文和繁体稿导入对应排版，或改用 CMS 原生正文后再翻译。')
+  }
   const [japanese, traditional] = await Promise.all([
     requestTranslation(content.cn, 'Japanese'),
     requestTranslation(content.cn, 'Traditional Chinese'),

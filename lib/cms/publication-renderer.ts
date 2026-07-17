@@ -119,7 +119,7 @@ function renderTextMarks(value: string, marks: CmsRichTextMark[] | undefined, te
 
 function headingStyle(level: number, template: PublicationTemplate, style: CmsPublicationStyle) {
   const fontSize = level === 2 ? 24 : level === 3 ? 20 : 18
-  const common = `font-size:${fontSize}px;line-height:1.45;font-weight:700;color:${template.text};margin:${level === 2 ? 30 : 24}px 0 14px`
+  const common = `font-size:${fontSize}px;line-height:1.45;font-weight:700;color:${template.text};margin:0`
   if (template.headingStyle === 'bar') return `${common};padding:7px 12px;border-radius:6px;background-color:${style.themeColor};color:#ffffff`
   if (template.headingStyle === 'underline') return `${common};padding-bottom:7px;border-bottom:2px solid ${style.themeColor}`
   if (template.headingStyle === 'label') return `${common};padding:5px 10px;border:1px solid ${style.themeColor};color:${style.themeColor};display:inline-block`
@@ -128,12 +128,65 @@ function headingStyle(level: number, template: PublicationTemplate, style: CmsPu
   return `${common};color:${style.themeColor}`
 }
 
+function renderImage(node: CmsRichTextNode, template: PublicationTemplate, style: CmsPublicationStyle) {
+  const src = safeImageUrl(node.attrs?.src)
+  if (!src) return ''
+  const alt = escapeHtml(node.attrs?.alt)
+  const caption = String(node.attrs?.title ?? '').trim()
+  return `<section style="margin:22px 0;text-align:center"><img src="${escapeHtml(src)}" alt="${alt}" style="display:block;width:100%;max-width:100%;height:auto;margin:0 auto;border-radius:${style.imageRadius}px">${caption ? `<p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:${template.muted}">${escapeHtml(caption)}</p>` : ''}</section>`
+}
+
+function renderImageRow(nodes: CmsRichTextNode[], template: PublicationTemplate, style: CmsPublicationStyle) {
+  const width = Math.max(20, (100 / nodes.length) - 1.5)
+  const images = nodes.map((node) => {
+    const src = safeImageUrl(node.attrs?.src)
+    if (!src) return ''
+    return `<section style="display:inline-block;width:${width}%;padding:0 4px;box-sizing:border-box;vertical-align:top"><img src="${escapeHtml(src)}" alt="${escapeHtml(node.attrs?.alt)}" style="display:block;width:100%;max-width:100%;height:auto;margin:0;border-radius:${style.imageRadius}px;vertical-align:middle;object-fit:cover"></section>`
+  }).join('')
+  return `<section style="text-align:center;margin:0 0 ${style.paragraphSpacing}px;line-height:0">${images}</section>`
+}
+
+function renderChildren(nodes: CmsRichTextNode[], template: PublicationTemplate, style: CmsPublicationStyle, baseFont: string) {
+  let output = ''
+  for (let index = 0; index < nodes.length;) {
+    if (nodes[index].type === 'image') {
+      const images: CmsRichTextNode[] = []
+      while (index < nodes.length && nodes[index].type === 'image') {
+        images.push(nodes[index])
+        index += 1
+      }
+      output += images.length > 1
+        ? renderImageRow(images, template, style)
+        : renderImage(images[0], template, style)
+      continue
+    }
+    output += renderNode(nodes[index], template, style, baseFont)
+    index += 1
+  }
+  return output
+}
+
+function renderList(node: CmsRichTextNode, ordered: boolean, template: PublicationTemplate, style: CmsPublicationStyle, baseFont: string) {
+  const start = Math.max(1, Number(node.attrs?.start) || 1)
+  const items = (node.content ?? []).map((item, index) => {
+    const icon = ordered ? `${start + index}.` : '•'
+    const content = renderChildren(item.content ?? [], template, style, baseFont)
+    return `<section style="display:block;clear:both;margin-bottom:10px"><section style="float:left;width:24px;box-sizing:border-box;color:${style.themeColor};font-weight:700;text-align:left">${icon}</section><section style="margin-left:24px;box-sizing:border-box;overflow:hidden"><section style="display:block;overflow:hidden">${content}</section></section><section style="display:block;clear:both;height:0;line-height:0;font-size:0;overflow:hidden"><br></section></section>`
+  }).join('')
+  return `<section style="margin:18px 0 ${style.paragraphSpacing}px;padding:0;color:${template.text}">${items}</section>`
+}
+
 function renderNode(node: CmsRichTextNode, template: PublicationTemplate, style: CmsPublicationStyle, baseFont: string): string {
   if (node.type === 'text') return renderTextMarks(node.text ?? '', node.marks, template, baseFont)
+  if (node.type === 'wechatHtmlBlock') return String(node.attrs?.html ?? '')
   if (node.type === 'hardBreak') return '<br>'
   if (node.type === 'horizontalRule') return `<hr style="border:0;border-top:1px solid ${style.themeColor};margin:28px 0;opacity:0.45">`
 
-  const children = (node.content ?? []).map((item) => renderNode(item, template, style, baseFont)).join('')
+  if (node.type === 'bulletList') return renderList(node, false, template, style, baseFont)
+  if (node.type === 'orderedList') return renderList(node, true, template, style, baseFont)
+  if (node.type === 'image') return renderImage(node, template, style)
+
+  const children = renderChildren(node.content ?? [], template, style, baseFont)
   if (node.type === 'doc') return children
   if (node.type === 'paragraph') {
     const align = safeTextAlign(node.attrs?.textAlign)
@@ -143,28 +196,19 @@ function renderNode(node: CmsRichTextNode, template: PublicationTemplate, style:
     const sourceLevel = Number(node.attrs?.level)
     const level = sourceLevel === 3 || sourceLevel === 4 ? sourceLevel : 2
     const align = safeTextAlign(node.attrs?.textAlign)
-    return `<section style="text-align:${align};margin:0"><h${level} style="${headingStyle(level, template, style)}">${children}</h${level}></section>`
+    return `<section style="margin:${level === 2 ? 30 : 24}px 0 14px;text-align:${align}"><section style="${headingStyle(level, template, style)};display:${template.headingStyle === 'label' ? 'inline-block' : 'block'};text-align:${align}"><section style="margin:0;padding:0;font-size:1em;font-weight:inherit;line-height:1.45;background:none;border:0;color:inherit">${children}</section></section></section>`
   }
   if (node.type === 'blockquote') {
     return `<blockquote style="margin:22px 0;padding:14px 16px;border:1px solid ${style.themeColor};background-color:${template.background};color:${template.muted};border-radius:8px">${children}</blockquote>`
   }
-  if (node.type === 'bulletList') return `<ul style="margin:12px 0 ${style.paragraphSpacing}px;padding-left:1.5em;color:${template.text}">${children}</ul>`
-  if (node.type === 'orderedList') return `<ol style="margin:12px 0 ${style.paragraphSpacing}px;padding-left:1.65em;color:${template.text}">${children}</ol>`
-  if (node.type === 'listItem') return `<li style="margin:6px 0;line-height:${style.lineHeight}">${children}</li>`
+  if (node.type === 'listItem') return children
   if (node.type === 'codeBlock') {
     return `<pre style="margin:20px 0;padding:14px 16px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;background-color:#172033;color:#f8fafc;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px;line-height:1.65"><code>${children}</code></pre>`
   }
-  if (node.type === 'image') {
-    const src = safeImageUrl(node.attrs?.src)
-    if (!src) return ''
-    const alt = escapeHtml(node.attrs?.alt)
-    const caption = String(node.attrs?.title ?? '').trim()
-    return `<section style="margin:22px 0;text-align:center"><img src="${escapeHtml(src)}" alt="${alt}" style="display:block;width:100%;max-width:100%;height:auto;margin:0 auto;border-radius:${style.imageRadius}px">${caption ? `<p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:${template.muted}">${escapeHtml(caption)}</p>` : ''}</section>`
-  }
   if (node.type === 'table') return `<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;line-height:1.6;color:${template.text}"><tbody>${children}</tbody></table>`
   if (node.type === 'tableRow') return `<tr>${children}</tr>`
-  if (node.type === 'tableHeader') return `<th style="border:1px solid #d8dee9;padding:9px 10px;background-color:${style.themeColor};color:#ffffff;text-align:left;font-weight:700">${children}</th>`
-  if (node.type === 'tableCell') return `<td style="border:1px solid #d8dee9;padding:9px 10px;background-color:#ffffff;vertical-align:top">${children}</td>`
+  if (node.type === 'tableHeader') return `<th bgcolor="${style.themeColor}" style="border:1px solid #d8dee9;padding:9px 10px;background-color:${style.themeColor};color:#ffffff;text-align:left;font-weight:700">${children}</th>`
+  if (node.type === 'tableCell') return `<td bgcolor="#ffffff" style="border:1px solid #d8dee9;padding:9px 10px;background-color:#ffffff;vertical-align:top">${children}</td>`
   return children
 }
 

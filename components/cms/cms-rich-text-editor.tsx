@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import type { JSONContent } from "@tiptap/core";
+import {
+  EditorContent,
+  NodeViewWrapper,
+  ReactNodeViewRenderer,
+  useEditor,
+  type Editor,
+  type NodeViewProps,
+} from "@tiptap/react";
+import { Node as TiptapNode, type JSONContent } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyleKit } from "@tiptap/extension-text-style";
@@ -48,6 +55,124 @@ type Props = {
 };
 
 const fontSizes = ["14px", "15px", "16px", "17px", "18px", "20px", "22px", "24px", "28px", "32px"];
+
+const wechatHtmlTags = new Set([
+  "section", "p", "span", "strong", "em", "u", "s", "del", "a", "img", "blockquote",
+  "ul", "ol", "li", "hr", "br", "code", "pre", "table", "thead", "tbody", "tr", "th",
+  "td", "mark", "sup", "sub", "svg", "circle",
+]);
+
+const wechatStyleNames = new Set([
+  "width", "min-width", "max-width", "height", "min-height", "max-height", "box-sizing",
+  "background", "background-color", "color", "font-family", "font-size", "font-style", "font-weight",
+  "line-height", "letter-spacing", "text-align", "text-decoration", "text-decoration-color",
+  "text-decoration-thickness", "text-indent", "text-transform", "word-wrap", "word-break", "overflow",
+  "overflow-x", "overflow-y", "white-space", "display", "vertical-align", "float", "clear", "object-fit",
+  "opacity", "padding", "padding-top", "padding-right", "padding-bottom", "padding-left", "margin",
+  "margin-top", "margin-right", "margin-bottom", "margin-left", "border", "border-top", "border-right",
+  "border-bottom", "border-left", "border-radius", "border-collapse", "box-shadow", "table-layout",
+  "list-style-type", "transform",
+]);
+
+const attributesByTag: Record<string, Set<string>> = {
+  a: new Set(["href", "title"]),
+  img: new Set(["src", "alt", "title", "width", "height"]),
+  table: new Set(["cellpadding", "cellspacing", "border"]),
+  th: new Set(["colspan", "rowspan", "bgcolor"]),
+  td: new Set(["colspan", "rowspan", "bgcolor"]),
+  svg: new Set(["width", "height", "viewbox", "xmlns"]),
+  circle: new Set(["cx", "cy", "r", "fill"]),
+};
+
+function looksLikeTypeZenHtml(value: string) {
+  if (!value || value.length > 1_000_000) return false;
+  const documentValue = new DOMParser().parseFromString(value, "text/html");
+  const root = documentValue.body.firstElementChild;
+  if (!root || root.tagName.toLowerCase() !== "section") return false;
+  const style = root.getAttribute("style")?.toLowerCase() ?? "";
+  return root.querySelectorAll("section[style]").length >= 2
+    && root.querySelectorAll("[style]").length >= 3
+    && style.includes("width")
+    && style.includes("box-sizing");
+}
+
+function safeStyleValue(value: string) {
+  return !/(?:url\s*\(|expression\s*\(|javascript:|@import|var\s*\()/i.test(value);
+}
+
+function sanitizeWechatClipboardHtml(value: string) {
+  const documentValue = new DOMParser().parseFromString(value.slice(0, 1_000_000), "text/html");
+  const elements = Array.from(documentValue.body.querySelectorAll<HTMLElement>("*"));
+  for (const element of elements) {
+    const tag = element.tagName.toLowerCase();
+    if (!wechatHtmlTags.has(tag)) {
+      if (["script", "style", "iframe", "object", "embed", "form"].includes(tag)) element.remove();
+      else element.replaceWith(...Array.from(element.childNodes));
+      continue;
+    }
+
+    const allowedAttributes = attributesByTag[tag] ?? new Set<string>();
+    for (const attribute of Array.from(element.attributes)) {
+      const name = attribute.name.toLowerCase();
+      if (name !== "style" && !allowedAttributes.has(name)) element.removeAttribute(attribute.name);
+    }
+
+    const styles = Array.from(element.style).map((name) => [name, element.style.getPropertyValue(name)] as const);
+    element.removeAttribute("style");
+    for (const [name, styleValue] of styles) {
+      if (wechatStyleNames.has(name) && safeStyleValue(styleValue)) element.style.setProperty(name, styleValue);
+    }
+
+    if (tag === "a") {
+      const href = element.getAttribute("href") ?? "";
+      if (!/^(?:https?:\/\/|mailto:|tel:|#|\/(?!\/))/i.test(href)) element.removeAttribute("href");
+    }
+    if (tag === "img") {
+      const source = element.getAttribute("src") ?? "";
+      if (!/^(?:data:image\/(?:png|jpe?g|gif|webp);base64,|https?:\/\/|\/(?!\/))/i.test(source)) element.remove();
+    }
+  }
+  return documentValue.body.innerHTML;
+}
+
+function dataUrlToFile(value: string, index: number) {
+  const match = /^data:(image\/(?:png|jpe?g|gif|webp));base64,([a-z0-9+/=]+)$/i.exec(value);
+  if (!match) throw new Error("剪贴板图片数据无效。");
+  const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
+  const extension = match[1].replace("image/", "").replace("jpeg", "jpg");
+  return new File([bytes], `typezen-${index + 1}.${extension}`, { type: match[1] });
+}
+
+function WechatHtmlBlockView({ node, deleteNode }: NodeViewProps) {
+  return (
+    <NodeViewWrapper className="my-4 rounded-lg border border-indigo-200 bg-white p-3" data-drag-handle>
+      <div className="mb-3 flex items-center justify-between gap-3 border-b border-indigo-100 pb-2">
+        <span className="text-xs font-semibold text-indigo-700">TypeZen 排版导入块</span>
+        <button type="button" onClick={deleteNode} className="text-xs font-semibold text-red-700 hover:text-red-900">删除导入块</button>
+      </div>
+      <div contentEditable={false} dangerouslySetInnerHTML={{ __html: String(node.attrs.html ?? "") }} />
+    </NodeViewWrapper>
+  );
+}
+
+const WechatHtmlBlock = TiptapNode.create({
+  name: "wechatHtmlBlock",
+  group: "block",
+  atom: true,
+  isolating: true,
+  addAttributes() {
+    return { html: { default: "" } };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-wechat-html-block]" }];
+  },
+  renderHTML() {
+    return ["div", { "data-wechat-html-block": "true" }];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(WechatHtmlBlockView);
+  },
+});
 
 function ToolbarButton({
   label,
@@ -132,6 +257,55 @@ export default function CmsRichTextEditor({
     }
   }
 
+  async function importTypeZenHtml(sourceHtml: string, position: number) {
+    const editor = editorRef.current;
+    if (!editor || uploading) return;
+    setUploading(true);
+    onUploadStateChange?.(true);
+    try {
+      const safeInput = sanitizeWechatClipboardHtml(sourceHtml);
+      const documentValue = new DOMParser().parseFromString(safeInput, "text/html");
+      const importedAssets: CmsPublicationAsset[] = [];
+      let externalImages = 0;
+      const images = Array.from(documentValue.querySelectorAll<HTMLImageElement>("img[src]"));
+      for (const [index, image] of images.entries()) {
+        const source = image.getAttribute("src") ?? "";
+        if (!source.startsWith("data:image/")) {
+          externalImages += 1;
+          continue;
+        }
+        const altText = image.getAttribute("alt")?.trim() || `正文图片 ${index + 1}`;
+        const asset = await onUpload(dataUrlToFile(source, index), altText);
+        if (!asset) throw new Error(`第 ${index + 1} 张图片上传失败。`);
+        image.setAttribute("src", asset.cmsPublicUrl);
+        importedAssets.push(asset);
+      }
+
+      const html = sanitizeWechatClipboardHtml(documentValue.body.innerHTML);
+      if (!html.trim()) throw new Error("TypeZen 剪贴板中没有可导入内容。");
+      const insertAt = Math.min(position, editor.state.doc.content.size);
+      editor.chain().focus().insertContentAt(insertAt, { type: "wechatHtmlBlock", attrs: { html } }).run();
+      const current = bodyRef.current;
+      const next = invalidate({
+        ...current,
+        assets: [
+          ...current.assets.filter((item) => !importedAssets.some((asset) => asset.assetId === item.assetId)),
+          ...importedAssets,
+        ],
+      });
+      bodyRef.current = next;
+      onChange(next);
+      onNotice(externalImages
+        ? `TypeZen 图文已原样导入；${externalImages} 张在线图片保留原地址，发布前请确认地址长期有效。`
+        : "TypeZen 图文已原样导入，剪贴板图片已归档到 CMS。");
+    } catch (error) {
+      onNotice(error instanceof Error ? error.message : "TypeZen 图文导入失败。");
+    } finally {
+      setUploading(false);
+      onUploadStateChange?.(false);
+    }
+  }
+
   const editor = useEditor({
     immediatelyRender: false,
     editable: !disabled,
@@ -144,6 +318,7 @@ export default function CmsRichTextEditor({
       TextStyleKit,
       Image.configure({ inline: false, allowBase64: false }),
       TableKit.configure({ table: { resizable: false } }),
+      WechatHtmlBlock,
       Placeholder.configure({ placeholder: "在这里开始撰写正文，可直接粘贴文字或图片。" }),
     ],
     content: value.editorDocument as JSONContent,
@@ -164,6 +339,12 @@ export default function CmsRichTextEditor({
         "aria-label": "新闻正文富文本编辑器",
       },
       handlePaste: (view, event) => {
+        const html = event.clipboardData?.getData("text/html") ?? "";
+        if (looksLikeTypeZenHtml(html)) {
+          event.preventDefault();
+          void importTypeZenHtml(html, view.state.selection.from);
+          return true;
+        }
         const items = event.clipboardData?.items;
         if (!items) return false;
         for (const item of Array.from(items)) {

@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 import type { SiteCode } from '@/lib/site-content'
 import { normalizeCmsContent, normalizeLocaleArticle } from './rich-text'
 import { renderPublicationBody } from './publication-renderer'
+import { sanitizeWechatDocument } from './wechat-html-server'
 import {
   CMS_LOCALES,
   CMS_RENDER_VERSION,
@@ -17,12 +18,14 @@ function hash(value: string) {
 
 export function prepareLocaleArticle(value: unknown, slug = ''): CmsLocaleArticle {
   const article = normalizeLocaleArticle(value, slug)
-  const publicationHtml = renderPublicationBody(article.body)
+  const editorDocument = sanitizeWechatDocument(article.body.editorDocument)
+  const body = { ...article.body, editorDocument }
+  const publicationHtml = renderPublicationBody(body)
   return {
     ...article,
     slug: article.slug || slug,
     body: {
-      ...article.body,
+      ...body,
       publicationHtml,
       contentHash: hash(publicationHtml),
       renderVersion: CMS_RENDER_VERSION,

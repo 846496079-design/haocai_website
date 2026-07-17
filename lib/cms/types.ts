@@ -134,7 +134,7 @@ export type CmsArticleRecord = CmsArticleSummary & {
 export const CMS_LOCALES: SiteCode[] = ['cn', 'jp', 'hk']
 
 export const CMS_RICH_TEXT_SCHEMA_VERSION = 'cms-richtext.v1' as const
-export const CMS_RENDER_VERSION = 'wechat-inline.v1'
+export const CMS_RENDER_VERSION = 'wechat-inline.v2'
 
 export const DEFAULT_PUBLICATION_STYLE: CmsPublicationStyle = {
   templateId: 'brand-tech',
@@ -187,6 +187,7 @@ export function createEmptyContent(slug = ''): CmsArticleContent {
 
 function documentHasContent(node: CmsRichTextNode): boolean {
   if (node.type === 'image' && typeof node.attrs?.src === 'string' && node.attrs.src) return true
+  if (node.type === 'wechatHtmlBlock' && typeof node.attrs?.html === 'string' && node.attrs.html.trim()) return true
   if (typeof node.text === 'string' && node.text.trim()) return true
   return Boolean(node.content?.some(documentHasContent))
 }

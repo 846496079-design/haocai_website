@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, ImagePlus } from "lucide-react";
+import { Copy, ImagePlus, Sparkles, X } from "lucide-react";
 import type { SiteCode } from "@/lib/site-content";
 import {
   CMS_LOCALES,
@@ -13,7 +13,9 @@ import {
   type CmsLocaleArticle,
   type CmsPublicationAsset,
   type CmsPublicationBody,
+  type CmsRichTextDocument,
 } from "@/lib/cms/types";
+import { renderPublicationDocument } from "@/lib/cms/publication-renderer";
 import CmsAuditLog from "@/components/cms/cms-audit-log";
 import CmsRichTextEditor from "@/components/cms/cms-rich-text-editor";
 
@@ -21,6 +23,20 @@ const localeNames: Record<SiteCode, string> = {
   cn: "简体中文",
   jp: "日本语",
   hk: "繁體中文",
+};
+
+type AiSettings = {
+  providerType: "openrouter" | "openai" | "anthropic";
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+};
+
+const defaultAiSettings: AiSettings = {
+  providerType: "openrouter",
+  baseUrl: "https://openrouter.ai/api/v1",
+  apiKey: "",
+  model: "",
 };
 
 function clone<T>(value: T): T {
@@ -113,9 +129,22 @@ export default function CmsNewsEditor({
   const [translationStatus, setTranslationStatus] = useState(initial.translationStatus);
   const [translationMode, setTranslationMode] = useState<"overwrite" | "fill-missing">("fill-missing");
   const [categories, setCategories] = useState<string[]>(initialCategories);
+  const [showAiSettings, setShowAiSettings] = useState(false);
+  const [aiSettings, setAiSettings] = useState<AiSettings>(defaultAiSettings);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiProposal, setAiProposal] = useState<CmsRichTextDocument | null>(null);
   const article = content[locale];
   const complete = useMemo(() => isContentComplete(content), [content]);
   const recoveryKey = `cms-richtext-draft-${initial.id}`;
+  const aiSettingsKey = "cms-ai-format-settings-v1";
+  const currentAiPreview = useMemo(
+    () => renderPublicationDocument(article.body.editorDocument, article.body.styleConfig),
+    [article.body.editorDocument, article.body.styleConfig],
+  );
+  const proposalAiPreview = useMemo(
+    () => aiProposal ? renderPublicationDocument(aiProposal, article.body.styleConfig) : "",
+    [aiProposal, article.body.styleConfig],
+  );
 
   useEffect(() => {
     void fetch("/api/cms/categories").then(async (response) => {
@@ -124,6 +153,20 @@ export default function CmsNewsEditor({
       setCategories((data.items ?? []).filter((item) => item.status === "ACTIVE").map((item) => item.name));
     });
   }, []);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(aiSettingsKey);
+    if (!stored) return;
+    try {
+      setAiSettings({ ...defaultAiSettings, ...JSON.parse(stored) as Partial<AiSettings> });
+    } catch {
+      window.localStorage.removeItem(aiSettingsKey);
+    }
+  }, [aiSettingsKey]);
+
+  useEffect(() => {
+    window.localStorage.setItem(aiSettingsKey, JSON.stringify(aiSettings));
+  }, [aiSettings, aiSettingsKey]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(recoveryKey);
@@ -299,6 +342,43 @@ export default function CmsNewsEditor({
     }
   }
 
+  async function requestAiFormat() {
+    if (!aiSettings.baseUrl.trim() || !aiSettings.apiKey.trim() || !aiSettings.model.trim()) {
+      setShowAiSettings(true);
+      setNotice("请先填写 AI 服务地址、API Key 和模型名称。");
+      return;
+    }
+    setAiBusy(true);
+    setNotice("正在生成 AI 排版建议，原稿不会自动被覆盖。");
+    try {
+      const response = await fetch(`/api/cms/news/${initial.id}/ai-format`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...aiSettings, editorDocument: article.body.editorDocument }),
+      });
+      const data = (await response.json()) as { proposal?: CmsRichTextDocument; message?: string };
+      if (!response.ok || !data.proposal) throw new Error(data.message ?? "AI 智能排版失败。");
+      setAiProposal(data.proposal);
+      setNotice("AI 排版建议已生成，请对照预览后决定是否采用。");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "AI 智能排版失败。");
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
+  function acceptAiProposal() {
+    if (!aiProposal) return;
+    updateBody({ ...article.body, editorDocument: aiProposal, publicationHtml: "", contentHash: "" });
+    setAiProposal(null);
+    setNotice("已采用 AI 排版建议，请继续人工复核并保存草稿。");
+    void fetch(`/api/cms/news/${initial.id}/audit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "AI_FORMAT_ACCEPT", locale, providerType: aiSettings.providerType }),
+    });
+  }
+
   async function publish() {
     if (!reviewed) return setNotice("请先勾选人工审核确认。");
     if (dirty || !hasCurrentPreview) return setNotice("当前内容尚未完成预览，请先预览当前保存版本。");
@@ -394,6 +474,34 @@ export default function CmsNewsEditor({
               <li>图片上传：<b className={uploading ? "text-amber-700" : "text-emerald-700"}>{uploading ? "进行中" : "已完成"}</b></li>
             </ul>
 
+            <div className="mt-5 border-t border-slate-200 pt-5">
+              <button type="button" onClick={() => setShowAiSettings((current) => !current)} className="flex w-full items-center justify-center gap-2 rounded-lg border border-violet-300 px-4 py-3 text-sm font-semibold text-violet-800 hover:bg-violet-50">
+                <Sparkles className="size-4" />AI 智能排版
+              </button>
+              {showAiSettings && (
+                <div className="mt-3 space-y-3 rounded-lg bg-violet-50 p-3 text-sm">
+                  <label className="block font-medium text-slate-700">服务商
+                    <select value={aiSettings.providerType} onChange={(event) => setAiSettings((current) => ({ ...current, providerType: event.target.value as AiSettings["providerType"] }))} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2">
+                      <option value="openrouter">OpenRouter</option>
+                      <option value="openai">OpenAI 兼容</option>
+                      <option value="anthropic">Anthropic</option>
+                    </select>
+                  </label>
+                  <label className="block font-medium text-slate-700">API 地址
+                    <input value={aiSettings.baseUrl} onChange={(event) => setAiSettings((current) => ({ ...current, baseUrl: event.target.value }))} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2" placeholder="https://openrouter.ai/api/v1" />
+                  </label>
+                  <label className="block font-medium text-slate-700">模型
+                    <input value={aiSettings.model} onChange={(event) => setAiSettings((current) => ({ ...current, model: event.target.value }))} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2" placeholder="模型名称" />
+                  </label>
+                  <label className="block font-medium text-slate-700">API Key
+                    <input type="password" value={aiSettings.apiKey} onChange={(event) => setAiSettings((current) => ({ ...current, apiKey: event.target.value }))} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2" autoComplete="off" />
+                  </label>
+                  <p className="text-xs leading-5 text-slate-600">配置仅保存在当前浏览器；请求时临时发送给 CMS 服务端转发，不写入数据库。</p>
+                  <button type="button" onClick={() => void requestAiFormat()} disabled={aiBusy || saving || uploading} className="w-full rounded-md bg-violet-700 px-3 py-2 font-semibold text-white hover:bg-violet-800 disabled:opacity-50">{aiBusy ? "正在排版" : "生成排版建议"}</button>
+                </div>
+              )}
+            </div>
+
             <fieldset className="mt-5 space-y-2">
               <legend className="text-sm font-semibold text-slate-800">重新翻译方式</legend>
               <label className="flex items-start gap-2 text-sm text-slate-700"><input type="radio" name="translation-mode" value="fill-missing" checked={translationMode === "fill-missing"} onChange={() => setTranslationMode("fill-missing")} className="mt-1" />保留已有人工内容，仅补全变化文字</label>
@@ -409,6 +517,33 @@ export default function CmsNewsEditor({
           </aside>
         </div>
       </div>
+      {aiProposal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-label="AI 排版建议对照">
+          <div className="mx-auto max-w-6xl rounded-xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
+              <div>
+                <h2 className="text-xl font-bold">AI 排版建议对照</h2>
+                <p className="mt-1 text-sm text-slate-600">服务端已校验文字、链接和图片未发生变化；采用前仍需人工检查结构。</p>
+              </div>
+              <button type="button" onClick={() => setAiProposal(null)} aria-label="关闭 AI 排版建议" className="rounded-md p-2 text-slate-600 hover:bg-slate-100"><X className="size-5" /></button>
+            </div>
+            <div className="mt-5 grid gap-5 lg:grid-cols-2">
+              <section>
+                <h3 className="mb-3 font-semibold">当前排版</h3>
+                <div className="mx-auto max-w-[420px] overflow-hidden rounded-lg border border-slate-200 bg-white p-3" dangerouslySetInnerHTML={{ __html: currentAiPreview }} />
+              </section>
+              <section>
+                <h3 className="mb-3 font-semibold">AI 建议</h3>
+                <div className="mx-auto max-w-[420px] overflow-hidden rounded-lg border border-violet-200 bg-white p-3" dangerouslySetInnerHTML={{ __html: proposalAiPreview }} />
+              </section>
+            </div>
+            <div className="mt-5 flex justify-end gap-3 border-t border-slate-200 pt-4">
+              <button type="button" onClick={() => setAiProposal(null)} className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">不采用</button>
+              <button type="button" onClick={acceptAiProposal} className="rounded-lg bg-violet-700 px-4 py-2 font-semibold text-white hover:bg-violet-800">采用建议并继续编辑</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

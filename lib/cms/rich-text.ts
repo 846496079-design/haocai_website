@@ -34,6 +34,7 @@ const allowedNodeTypes = new Set([
   'tableRow',
   'tableHeader',
   'tableCell',
+  'wechatHtmlBlock',
 ])
 
 const allowedMarkTypes = new Set(['bold', 'italic', 'underline', 'strike', 'code', 'link', 'textStyle'])
@@ -98,6 +99,10 @@ function normalizeNodeAttrs(type: string, value: unknown): Record<string, unknow
     if (!src) return undefined
     return { src, alt: text(source.alt).slice(0, 300), title: text(source.title).slice(0, 300) }
   }
+  if (type === 'wechatHtmlBlock') {
+    const html = text(source.html).slice(0, 1_000_000)
+    return html ? { html } : undefined
+  }
   if (type === 'orderedList') return { start: number(source.start, 1, 1, 9999) }
   if (type === 'codeBlock') return text(source.language) ? { language: text(source.language).slice(0, 40) } : undefined
   if (type === 'tableHeader' || type === 'tableCell') {
@@ -126,7 +131,7 @@ function normalizeNode(value: unknown, depth = 0): CmsRichTextNode | undefined {
     return marks?.length ? { type: 'text', text: valueText, marks } : { type: 'text', text: valueText }
   }
   const attrs = normalizeNodeAttrs(source.type, source.attrs)
-  if (source.type === 'image' && !attrs) return undefined
+  if ((source.type === 'image' || source.type === 'wechatHtmlBlock') && !attrs) return undefined
   const content = Array.isArray(source.content)
     ? source.content
       .map((item) => normalizeNode(item, depth + 1))
@@ -290,6 +295,7 @@ export function normalizeCmsContent(value: unknown, fallbackSlug = ''): CmsArtic
 
 export function extractDocumentText(node: CmsRichTextNode): string {
   if (node.type === 'text') return node.text ?? ''
+  if (node.type === 'wechatHtmlBlock') return String(node.attrs?.html ?? '').replace(/<[^>]*>/g, '')
   if (node.type === 'hardBreak') return '\n'
   const content = node.content?.map(extractDocumentText).join('') ?? ''
   if (['paragraph', 'heading', 'blockquote', 'listItem', 'codeBlock', 'tableRow'].includes(node.type)) return `${content}\n`

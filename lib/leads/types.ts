@@ -28,6 +28,8 @@ export type LeadSubmissionResult = {
 
 export type LeadStats = {
   total: number
+  trial: number
+  partner: number
   today: number
   pending: number
   delivered: number

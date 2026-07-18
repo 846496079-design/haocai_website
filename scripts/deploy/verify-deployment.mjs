@@ -3,7 +3,7 @@ const target = process.argv[2] || 'http://zhangdashi.ai/cn/'
 async function fetchRequired(url, headers = {}) {
   const response = await fetch(url, {
     redirect: 'follow',
-    headers: { 'cache-control': 'no-cache', ...headers },
+    headers: { 'cache-control': 'no-store', ...headers },
   })
   if (!response.ok) throw new Error(`${url} 返回 HTTP ${response.status}`)
   return response
@@ -13,12 +13,12 @@ const pageResponse = await fetchRequired(target)
 const html = await pageResponse.text()
 const pageCacheControl = pageResponse.headers.get('cache-control') || ''
 
-function assertPublicRevalidation(cacheControl, resourceName) {
-  if (!/(?:^|,)\s*no-cache(?:\s*(?:,|$))/i.test(cacheControl)) {
-    throw new Error(`${resourceName} 未声明每次重新验证：${cacheControl || '缺少 Cache-Control'}`)
+function assertPublicNoStore(cacheControl, resourceName) {
+  if (!/(?:^|,)\s*no-store(?:\s*(?:,|$))/i.test(cacheControl)) {
+    throw new Error(`${resourceName} 未声明禁止缓存：${cacheControl || '缺少 Cache-Control'}`)
   }
-  if (/(?:^|,)\s*no-store(?:\s*(?:,|$))/i.test(cacheControl)) {
-    throw new Error(`${resourceName} 仍使用事故期 no-store 策略：${cacheControl}`)
+  if (!/(?:^|,)\s*max-age\s*=\s*0(?:\s*(?:,|$))/i.test(cacheControl)) {
+    throw new Error(`${resourceName} 未声明立即过期：${cacheControl}`)
   }
   if (/(?:^|,)\s*s-maxage\s*=\s*[1-9][0-9]*/i.test(cacheControl)) {
     throw new Error(`${resourceName} 仍带有正数共享缓存：${cacheControl}`)
@@ -28,7 +28,7 @@ function assertPublicRevalidation(cacheControl, resourceName) {
   }
 }
 
-assertPublicRevalidation(pageCacheControl, 'HTML')
+assertPublicNoStore(pageCacheControl, 'HTML')
 
 if (!pageResponse.headers.get('etag')) throw new Error('HTML 缺少 ETag 内容版本标识。')
 
@@ -40,7 +40,7 @@ if (!rscContentType.toLowerCase().includes('text/x-component')) {
   throw new Error(`RSC Content-Type 异常：${rscContentType || '缺失'}`)
 }
 if (rsc.length === 0) throw new Error('RSC 返回了空响应。')
-assertPublicRevalidation(rscCacheControl, 'RSC')
+assertPublicNoStore(rscCacheControl, 'RSC')
 
 const cssPaths = [...html.matchAll(/href=["']([^"']+\.css(?:\?[^"']*)?)["']/gi)]
   .map((match) => match[1].replaceAll('&amp;', '&'))

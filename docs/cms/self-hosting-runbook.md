@@ -125,12 +125,12 @@ standalone release 由发布脚本使用 `HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=
 Nginx 缓存边界：
 
 - `/_next/static/` 指向 `/www/zhangdashi-deploy/shared/next-static/`，使用一年 immutable 缓存；旧哈希文件跨 release 保留。
-- `/cn/`、`/jp/`、`/hk/` 及其子页面长期使用 `no-cache`，允许浏览器保存公开响应，但每次复用前必须回源；不得透传正数 `max-age` 或 `s-maxage`。
+- `/cn/`、`/jp/`、`/hk/` 及其子页面使用 `no-store, max-age=0`，公开 HTML 与 RSC 不在浏览器或共享缓存中保存；不得透传正数 `max-age` 或 `s-maxage`。
 - `/cms/` 和 `/api/` 保留应用返回的 `private, no-store` 等缓存头，不能被公开页面规则覆盖。
 
-公开 HTML 必须具备 ETag；Next.js standalone 当前对条件请求仍返回完整 `200`，验收只要求每次回源，不把 `304` 作为发布前提。RSC 响应同样使用 `no-cache`；HTML 实际引用的 CSS 与 JavaScript 必须同时具备一年 `max-age=31536000` 与 `immutable`。
+公开 HTML 保留 ETag 作为内容版本标识，但 `no-store` 不以缓存复用或 `304` 为发布前提。RSC 响应同样使用 `no-store, max-age=0`；HTML 实际引用的 CSS 与 JavaScript 必须同时具备一年 `max-age=31536000` 与 `immutable`。
 
-旧缓存规则已经写入用户设备的 HTML 无法由服务器主动删除；受影响设备需要执行一次强制刷新，或先访问带一次性查询参数的页面。设备取得新响应后，`no-cache` 会确保后续复用前回源。
+旧缓存规则已经写入用户设备的 HTML 无法由服务器主动删除；受影响设备需要执行一次强制刷新，或先访问带一次性查询参数的页面。设备取得新响应后，`no-store` 会阻止公开 HTML 与 RSC 再次写入缓存。
 
 ## 7. 首次启动与验收
 

@@ -374,6 +374,8 @@ export function getLeadStats(): LeadStats {
   const row = db.prepare(`
     SELECT
       COUNT(*) AS total,
+      SUM(CASE WHEN kind = 'TRIAL' THEN 1 ELSE 0 END) AS trial,
+      SUM(CASE WHEN kind = 'PARTNER' THEN 1 ELSE 0 END) AS partner,
       SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS today,
       SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END) AS pending,
       SUM(CASE WHEN status = 'DELIVERED' THEN 1 ELSE 0 END) AS delivered,
@@ -388,6 +390,8 @@ export function getLeadStats(): LeadStats {
   `).get() as { error_message: string | null } | undefined
   return {
     total: Number(row.total ?? 0),
+    trial: Number(row.trial ?? 0),
+    partner: Number(row.partner ?? 0),
     today: Number(row.today ?? 0),
     pending: Number(row.pending ?? 0),
     delivered: Number(row.delivered ?? 0),

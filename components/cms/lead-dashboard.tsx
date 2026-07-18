@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { AlertTriangle, ArrowLeft, ArrowRight, BellOff, CheckCircle2, Clock3, Inbox, PauseCircle } from 'lucide-react'
-import type { LeadFilters, LeadListItem, LeadStats } from '@/lib/leads/types'
+import type { LeadFilters, LeadKind, LeadListItem, LeadStats } from '@/lib/leads/types'
 import LeadActions from './lead-actions'
 
 const statusCopy = {
@@ -21,7 +21,27 @@ function waiting(value: string) {
   return `${Math.floor(minutes / 1440)} 天 ${Math.floor((minutes % 1440) / 60)} 小时`
 }
 
+function leadKindLabel(kind: LeadKind) {
+  return kind === 'TRIAL' ? '用户线索' : '代理商线索'
+}
+
+function leadListHref(filters: LeadFilters, kind: LeadKind | undefined, preserveFilters = true) {
+  const params = new URLSearchParams()
+  if (kind) params.set('kind', kind)
+  if (preserveFilters && filters.status) params.set('status', filters.status)
+  if (preserveFilters && filters.overdueOnly) params.set('overdue', '1')
+  const query = params.toString()
+  return `/cms/leads/${query ? `?${query}` : ''}`
+}
+
 export default function LeadDashboard({ items, stats, filters, username }: { items: LeadListItem[]; stats: LeadStats; filters: LeadFilters; username: string }) {
+  const tabs: Array<{ kind: LeadKind | undefined; label: string; count: number }> = [
+    { kind: undefined, label: '全部线索', count: stats.total },
+    { kind: 'TRIAL', label: '用户线索', count: stats.trial },
+    { kind: 'PARTNER', label: '代理商线索', count: stats.partner },
+  ]
+  const emptyLabel = filters.kind ? leadKindLabel(filters.kind) : '线索'
+
   return <main className="min-h-screen bg-slate-50 text-slate-950">
     <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6 md:px-8"><div><p className="text-sm font-semibold text-indigo-600">账大师官网后台</p><h1 className="mt-1 text-2xl font-bold tracking-tight">线索管理</h1></div><div className="text-sm text-slate-500">管理员：{username}</div></div></header>
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-8">
@@ -34,17 +54,24 @@ export default function LeadDashboard({ items, stats, filters, username }: { ite
         <StatCard label="今日接收" value={stats.today} icon={<Inbox className="size-4"/>}/><StatCard label="待发送" value={stats.pending} icon={<Clock3 className="size-4"/>} tone="amber"/><StatCard label="超过 6 小时" value={stats.overdue} icon={<AlertTriangle className="size-4"/>} tone={stats.overdue ? 'red' : 'default'}/><StatCard label="已发送" value={stats.delivered} icon={<CheckCircle2 className="size-4"/>} tone="green"/><StatCard label="已暂停" value={stats.paused} icon={<PauseCircle className="size-4"/>}/>
       </section>
 
-      <form method="get" className="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[180px_180px_180px_auto]">
+      <nav aria-label="线索类型" className="mt-5 grid grid-cols-3 gap-2 rounded-xl border border-slate-200 bg-white p-2">
+        {tabs.map((tab) => {
+          const active = filters.kind === tab.kind
+          return <Link key={tab.label} href={leadListHref(filters, tab.kind)} aria-current={active ? 'page' : undefined} className={`flex min-h-12 items-center justify-center gap-2 rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors ${active ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}><span>{tab.label}</span><span className={`inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-xs ${active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>{tab.count}</span></Link>
+        })}
+      </nav>
+
+      <form method="get" className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[180px_180px_auto]">
+        {filters.kind && <input type="hidden" name="kind" value={filters.kind}/>}
         <label className="grid gap-1 text-xs font-semibold text-slate-500">状态<select name="status" defaultValue={filters.status || ''} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal text-slate-800"><option value="">全部状态</option><option value="PENDING">待发送</option><option value="DELIVERED">已发送</option><option value="PAUSED">已暂停</option></select></label>
-        <label className="grid gap-1 text-xs font-semibold text-slate-500">类型<select name="kind" defaultValue={filters.kind || ''} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal text-slate-800"><option value="">全部类型</option><option value="TRIAL">体验套餐</option><option value="PARTNER">代理合作</option></select></label>
         <label className="grid gap-1 text-xs font-semibold text-slate-500">预警<select name="overdue" defaultValue={filters.overdueOnly ? '1' : ''} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal text-slate-800"><option value="">全部</option><option value="1">仅看超过 6 小时</option></select></label>
-        <div className="flex items-end gap-2"><button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">筛选</button><Link href="/cms/leads/" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">清除</Link></div>
+        <div className="flex items-end gap-2"><button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">筛选</button><Link href={leadListHref(filters, filters.kind, false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">清除</Link></div>
       </form>
 
       <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="hidden overflow-x-auto md:block"><table className="min-w-full text-left text-sm"><thead className="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th className="px-4 py-3">线索</th><th className="px-4 py-3">状态</th><th className="px-4 py-3">接收时间</th><th className="px-4 py-3">等待 / 尝试</th><th className="px-4 py-3">最近结果</th><th className="px-4 py-3">操作</th></tr></thead><tbody className="divide-y divide-slate-100">{items.map((item) => <LeadRow key={item.id} item={item}/>)}</tbody></table></div>
         <div className="divide-y divide-slate-100 md:hidden">{items.map((item) => <LeadCard key={item.id} item={item}/>)}</div>
-        {!items.length && <div className="p-10 text-center"><Inbox className="mx-auto size-8 text-slate-300"/><p className="mt-3 font-semibold">没有符合条件的线索</p><p className="mt-1 text-sm text-slate-500">新的官网表单提交会出现在这里。</p></div>}
+        {!items.length && <div className="p-10 text-center"><Inbox className="mx-auto size-8 text-slate-300"/><p className="mt-3 font-semibold">没有符合条件的{emptyLabel}</p><p className="mt-1 text-sm text-slate-500">新的官网表单提交会出现在这里。</p></div>}
       </div>
     </div>
   </main>
@@ -57,10 +84,10 @@ function StatCard({ label, value, icon, tone = 'default' }: { label: string; val
 
 function LeadRow({ item }: { item: LeadListItem }) {
   const status = statusCopy[item.status]
-  return <tr className={item.overdue ? 'bg-red-50/40' : ''}><td className="px-4 py-4"><Link href={`/cms/leads/${item.id}/`} className="font-semibold text-slate-900 hover:text-indigo-700">{item.contactName}</Link><p className="mt-1 text-xs text-slate-500">{item.kind === 'TRIAL' ? '体验套餐' : '代理合作'} · {item.maskedPhone}</p><p className="mt-1 font-mono text-[11px] text-slate-400">{item.receiptId}</p></td><td className="px-4 py-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${status.className}`}>{status.label}</span>{item.overdue && <span className="ml-2 inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">已超时</span>}</td><td className="whitespace-nowrap px-4 py-4 text-slate-600">{formatDate(item.createdAt)}</td><td className="px-4 py-4 text-slate-600">{item.status === 'DELIVERED' ? '已完成' : waiting(item.createdAt)}<p className="mt-1 text-xs text-slate-400">已尝试 {item.attemptCount} 次</p></td><td className="max-w-[240px] px-4 py-4 text-xs leading-5 text-slate-500">{item.lastErrorMessage || (item.deliveredAt ? `成功于 ${formatDate(item.deliveredAt)}` : '等待首次发送')}</td><td className="px-4 py-4"><div className="space-y-2"><Link href={`/cms/leads/${item.id}/`} className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-700 hover:text-indigo-900">详情<ArrowRight className="size-4"/></Link><LeadActions id={item.id} status={item.status}/></div></td></tr>
+  return <tr className={item.overdue ? 'bg-red-50/40' : ''}><td className="px-4 py-4"><Link href={`/cms/leads/${item.id}/`} className="font-semibold text-slate-900 hover:text-indigo-700">{item.contactName}</Link><p className="mt-1 text-xs text-slate-500">{leadKindLabel(item.kind)} · {item.maskedPhone}</p><p className="mt-1 font-mono text-[11px] text-slate-400">{item.receiptId}</p></td><td className="px-4 py-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${status.className}`}>{status.label}</span>{item.overdue && <span className="ml-2 inline-flex rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">已超时</span>}</td><td className="whitespace-nowrap px-4 py-4 text-slate-600">{formatDate(item.createdAt)}</td><td className="px-4 py-4 text-slate-600">{item.status === 'DELIVERED' ? '已完成' : waiting(item.createdAt)}<p className="mt-1 text-xs text-slate-400">已尝试 {item.attemptCount} 次</p></td><td className="max-w-[240px] px-4 py-4 text-xs leading-5 text-slate-500">{item.lastErrorMessage || (item.deliveredAt ? `成功于 ${formatDate(item.deliveredAt)}` : '等待首次发送')}</td><td className="px-4 py-4"><div className="space-y-2"><Link href={`/cms/leads/${item.id}/`} className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-700 hover:text-indigo-900">详情<ArrowRight className="size-4"/></Link><LeadActions id={item.id} status={item.status}/></div></td></tr>
 }
 
 function LeadCard({ item }: { item: LeadListItem }) {
   const status = statusCopy[item.status]
-  return <article className={`p-4 ${item.overdue ? 'bg-red-50/40' : ''}`}><div className="flex items-start justify-between gap-3"><div><Link href={`/cms/leads/${item.id}/`} className="font-bold text-slate-900">{item.contactName}</Link><p className="mt-1 text-xs text-slate-500">{item.kind === 'TRIAL' ? '体验套餐' : '代理合作'} · {item.maskedPhone}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${status.className}`}>{status.label}</span></div><dl className="mt-4 grid grid-cols-2 gap-3 text-xs"><div><dt className="text-slate-400">接收时间</dt><dd className="mt-1 text-slate-700">{formatDate(item.createdAt)}</dd></div><div><dt className="text-slate-400">尝试次数</dt><dd className="mt-1 text-slate-700">{item.attemptCount} 次</dd></div></dl>{item.lastErrorMessage && <p className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">{item.lastErrorMessage}</p>}<div className="mt-4"><LeadActions id={item.id} status={item.status}/></div></article>
+  return <article className={`p-4 ${item.overdue ? 'bg-red-50/40' : ''}`}><div className="flex items-start justify-between gap-3"><div><Link href={`/cms/leads/${item.id}/`} className="font-bold text-slate-900">{item.contactName}</Link><p className="mt-1 text-xs text-slate-500">{leadKindLabel(item.kind)} · {item.maskedPhone}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${status.className}`}>{status.label}</span></div><dl className="mt-4 grid grid-cols-2 gap-3 text-xs"><div><dt className="text-slate-400">接收时间</dt><dd className="mt-1 text-slate-700">{formatDate(item.createdAt)}</dd></div><div><dt className="text-slate-400">尝试次数</dt><dd className="mt-1 text-slate-700">{item.attemptCount} 次</dd></div></dl>{item.lastErrorMessage && <p className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">{item.lastErrorMessage}</p>}<div className="mt-4"><LeadActions id={item.id} status={item.status}/></div></article>
 }

@@ -1,5 +1,7 @@
 # 公开 HTML 重新验证缓存实施计划
 
+> 状态：已被 `2026-07-18-lead-tabs-and-no-store-cache-implementation.md` 取代；本文保留为历史实施记录。
+
 ## 实施步骤
 
 1. 把 `configure-nginx.sh` 的公开三站缓存值调整为 `no-cache`，保留 CMS/API 上游缓存头与静态资源 alias。

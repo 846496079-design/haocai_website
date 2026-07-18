@@ -42,10 +42,10 @@ elif ! grep -Fq "$shared_alias" "$site_config"; then
 fi
 
 cat > "$map_config" <<'EOF'
-# 公开站点页面每次重新验证；CMS 与 API 保留应用原有缓存头。
+# 公开站点 HTML 与 RSC 不落客户端缓存；CMS 与 API 保留应用原有缓存头。
 map $request_uri $zhangdashi_response_cache_control {
     default $upstream_http_cache_control;
-    ~^/(cn|jp|hk)(?:/|$) "no-cache";
+    ~^/(cn|jp|hk)(?:/|$) "no-store, max-age=0";
 }
 EOF
 chmod 0644 "$map_config"
@@ -58,4 +58,4 @@ fi
 /www/server/nginx/sbin/nginx -s reload
 trap - ERR
 
-echo "Nginx 静态资源与公开页面重新验证策略配置完成。"
+echo "Nginx 静态资源与公开页面无缓存策略配置完成。"

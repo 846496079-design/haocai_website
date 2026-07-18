@@ -23,6 +23,37 @@
 
 三项必须同时配置；缺任一项时“一键翻译”会返回配置错误，不会生成伪译文。
 
+## 官网线索中转变量
+
+| 变量 | 说明 |
+| --- | --- |
+| `LEAD_DATA_ENCRYPTION_KEY` | 32 字节随机密钥，支持 Base64 或 64 位十六进制。用于 AES-256-GCM 加密线索正文；密钥丢失后历史线索无法恢复。当前自有服务器发布脚本会在首次缺失时生成并保存在共享 `.env.local`。 |
+| `LEAD_WORKER_TOKEN` | 至少 32 字符的随机令牌，仅用于本机 PM2 worker 调用内部处理接口。当前自有服务器发布脚本会在首次缺失时生成。 |
+| `LEAD_ALERT_FEISHU_WEBHOOK_URL` | 飞书群机器人完整 Webhook。未配置时线索接收、自动转发和站内预警仍正常，站外预警停用。 |
+| `LEAD_OUTBOX_DATABASE_PATH` | 可选；默认 `.data/lead-outbox.sqlite`。生产必须位于 release 外的共享持久化目录。 |
+| `LEAD_WORKER_ENDPOINT` | 可选；默认 `http://127.0.0.1:3000/api/internal/leads/process/`。禁止设置为公网第三方地址。 |
+| `LEAD_WORKER_INTERVAL_MS` | 可选；默认 15000，最小 5000。 |
+| `PUBLIC_SITE_ORIGIN` | 可选；飞书预警中的官网后台链接，默认 `http://zhangdashi.ai`。 |
+
+飞书通知只发送数量、等待时长和后台链接，不发送姓名、电话、公司或备注。Webhook 与加密密钥不得使用 `NEXT_PUBLIC_` 前缀。
+
+## 飞书智能问数变量
+
+| 变量 | 说明 |
+| --- | --- |
+| `FEISHU_BOT_APP_ID` | 飞书企业自建应用的 App ID。只在机器人进程中读取。 |
+| `FEISHU_BOT_APP_SECRET` | 飞书企业自建应用的 App Secret。不得写入构建产物或日志。 |
+| `FEISHU_BOT_ALLOWED_CHAT_IDS` | 允许问数的群聊 ID，多个值使用英文逗号分隔。 |
+| `FEISHU_BOT_ALLOWED_USER_IDS` | 允许问数的用户 Open ID，多个值使用英文逗号分隔。 |
+| `FEISHU_BOT_ALERT_CHAT_ID` | 接收线索超时预警的群聊 ID；必须同时包含在允许群聊中。 |
+| `LEAD_QUERY_AI_PROVIDER` | 当前固定为 `deepseek`。 |
+| `LEAD_QUERY_AI_API_URL` | DeepSeek HTTPS 基础地址或完整 Chat Completions 地址；官方地址为 `https://api.deepseek.com`。 |
+| `LEAD_QUERY_AI_API_KEY` | DeepSeek 服务端 API Key。 |
+| `LEAD_QUERY_AI_MODEL` | DeepSeek 模型标识；示例配置使用 `deepseek-v4-flash`。 |
+| `LEAD_QUERY_AI_TIMEOUT_MS` | 可选；DeepSeek 请求超时，默认 15000，范围 3000 至 60000。 |
+
+当前仓库已具备变量校验、DeepSeek 兼容适配器、受控查询计划和线索汇总统计基础。飞书长连接 worker 尚未接入生产启动项；在用户提供或确认 SDK 前，不得把该功能标记为生产可用。
+
 ## 本地变量
 
 | 变量 | 说明 |
@@ -38,6 +69,8 @@
 - Preview 必须指向隔离的 Neon branch/database 与 Blob Store，避免测试发布修改生产新闻。
 - 完成首次管理员创建后，可从运行环境移除 `CMS_ADMIN_PASSWORD` 并重新部署或重启；已有管理员登录不依赖该明文变量。
 - 轮换导入或翻译密钥时，先在提供方生成新值，再更新运行环境并重新部署或重启，验证后撤销旧值。
+- 轮换 `LEAD_DATA_ENCRYPTION_KEY` 前必须完成数据库重加密迁移；禁止直接替换，否则历史线索将无法解密。`LEAD_WORKER_TOKEN` 可在停止 worker 后直接轮换并重启两个 PM2 进程。
+- 轮换 `FEISHU_BOT_APP_SECRET` 或 `LEAD_QUERY_AI_API_KEY` 时，先停止未来的 `zds-feishu-bot`，更新共享环境文件并重启；网站和线索转发 worker 不需要停机。
 - 禁止把 Neon 连接串暴露给浏览器；任何数据库变量都不得使用 `NEXT_PUBLIC_` 前缀。
 
 ## 生成随机密钥

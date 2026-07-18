@@ -85,8 +85,8 @@ const icons: Record<IconKey, typeof Building2> = {
   globe: Globe2,
 }
 
-const partnerLeadApiUrl = 'https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit'
-const trialLeadApiUrl = 'https://hcagent.ai-hc.cn/api/v1/customer-lead-pool-leads/submit'
+const partnerLeadApiUrl = '/api/public/leads/partner/'
+const trialLeadApiUrl = '/api/public/leads/trial/'
 const partnerLeadMaxLength = 50
 const trialContactNameMaxLength = 50
 const trialContactPhoneMaxLength = 20

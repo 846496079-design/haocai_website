@@ -5,6 +5,7 @@ const projectRoot = process.cwd()
 const standaloneRoot = path.join(projectRoot, '.next', 'standalone')
 const staticRoot = path.join(projectRoot, '.next', 'static')
 const publicRoot = path.join(projectRoot, 'public')
+const leadWorkerSource = path.join(projectRoot, 'scripts', 'leads', 'worker.mjs')
 const outputRoot = path.join(projectRoot, '.deploy', 'release')
 
 async function requirePath(target, description) {
@@ -18,6 +19,7 @@ async function requirePath(target, description) {
 await requirePath(path.join(standaloneRoot, 'server.js'), 'standalone server.js')
 await requirePath(staticRoot, 'Next.js 静态资源目录')
 await requirePath(publicRoot, 'public 目录')
+await requirePath(leadWorkerSource, '线索工作进程')
 
 await rm(outputRoot, { recursive: true, force: true })
 await mkdir(outputRoot, { recursive: true })
@@ -39,6 +41,8 @@ await cp(publicRoot, path.join(outputRoot, 'public'), {
       && !relativePath.startsWith(`${path.join('uploads', 'cms')}${path.sep}`)
   },
 })
+await mkdir(path.join(outputRoot, 'scripts', 'leads'), { recursive: true })
+await cp(leadWorkerSource, path.join(outputRoot, 'scripts', 'leads', 'worker.mjs'))
 
 for (const forbiddenPath of ['.data', '.env', '.env.local', path.join('public', 'uploads', 'cms')]) {
   try {

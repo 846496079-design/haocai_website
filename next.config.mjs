@@ -16,6 +16,8 @@ const nextConfig = {
     return [
       { source: '/cms/:path*', headers: cmsHeaders },
       { source: '/api/cms/:path*', headers: cmsHeaders },
+      { source: '/api/public/leads/:path*', headers: cmsHeaders },
+      { source: '/api/internal/leads/:path*', headers: cmsHeaders },
     ]
   },
 }

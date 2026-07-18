@@ -132,7 +132,7 @@ export default function CmsCategoryManager({ initial }: { initial: CmsCategory[]
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-7 text-slate-950 sm:px-6 md:px-8">
       <div className="mx-auto max-w-5xl">
-        <Link href="/cms/" className={`inline-flex items-center gap-2 rounded-md text-sm font-semibold text-indigo-600 hover:text-indigo-700 ${focusRing}`}><ArrowLeft className="size-4" aria-hidden="true" />返回新闻管理</Link>
+        <Link href="/cms/news/" className={`inline-flex items-center gap-2 rounded-md text-sm font-semibold text-indigo-600 hover:text-indigo-700 ${focusRing}`}><ArrowLeft className="size-4" aria-hidden="true" />返回新闻管理</Link>
         <div className="mt-4"><p className="text-sm font-semibold text-indigo-600">内容基础设置</p><h1 className="mt-1 text-2xl font-bold tracking-tight">分类管理</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">分类用于稿件编辑和筛选。被稿件引用的分类请停用或合并到其他分类；只有未被引用的分类可以永久删除。</p></div>
 
         <div aria-live="polite" className="mt-5 space-y-2">

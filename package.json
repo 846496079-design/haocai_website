@@ -19,6 +19,9 @@
     "cms:verify-wechat-compat": "tsx scripts/cms/verify-wechat-compat.ts",
     "cms:seed-legacy": "node scripts/cms/seed-legacy-neon.mjs",
     "cms:verify": "node scripts/cms/verify-neon.mjs",
+    "leads:verify": "tsx scripts/leads/verify-outbox.ts",
+    "leads:verify-http": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/leads/verify-http-e2e.ps1",
+    "feishu:verify": "tsx scripts/feishu/verify-foundation.ts",
     "typecheck:cms": "tsc -p tsconfig.cms.json"
   },
   "dependencies": {

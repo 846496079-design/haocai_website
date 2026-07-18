@@ -12,6 +12,7 @@
 | [admin-bootstrap.md](./admin-bootstrap.md) | 唯一管理员首次初始化、凭据保管和应急重置 |
 | [integration-api.md](./integration-api.md) | 新媒体工作台导入字段和接口清单 |
 | [wechat-richtext-workflow.md](./wechat-richtext-workflow.md) | CMS 统一富文本、官网快照和微信公众号复制边界 |
+| [lead-outbox.md](./lead-outbox.md) | 官网线索本地接收、自动重试、预警和运维边界 |
 | [translation-api.md](./translation-api.md) | 自有翻译 API 的请求、响应和字段约定 |
 
 ## 可执行命令

@@ -93,6 +93,21 @@ PowerShell 使用 `$env:CMS_DATABASE_URL`。备份完成不等于可恢复；至
 
 Blob 资源不包含在 Postgres dump 中。应按 Vercel Blob 的保留策略维护对象清单；数据库恢复到旧时间点后，不要立即删除“未引用”对象，先完成内容校验。
 
+### 官网线索中转数据库
+
+线索队列独立保存在 `.data/lead-outbox.sqlite`。工作进程每天使用 SQLite 在线备份接口生成 `.data/backups/lead-outbox/lead-outbox-YYYY-MM-DD.sqlite`，不得用普通文件复制替代在线备份。当前产品决策为永久保留线索和历史备份，不执行自动删除。
+
+服务器本地备份不能抵御整块云盘损坏或实例删除。生产必须为 `/www/zhangdashi-deploy/shared/data` 所在阿里云云盘开启自动快照，并定期完成恢复演练。
+
+恢复线索数据库时：
+
+1. 暂停公网表单写入，停止 PM2 `zds-lead-worker` 和 `zds-website`。
+2. 保留故障数据库及 `-wal`、`-shm` 文件，不原地删除。
+3. 把选定备份恢复为新的 `lead-outbox.sqlite`，权限限制为运行账户可读写。
+4. 执行 `PRAGMA integrity_check;`，确认返回 `ok`。
+5. 确认 `LEAD_DATA_ENCRYPTION_KEY` 与备份创建时一致。
+6. 先启动 `zds-website` 并登录后台抽查，再启动 `zds-lead-worker`。
+
 ## 恢复
 
 推荐恢复到新的空 Neon branch/database，再切换 Vercel 连接变量：

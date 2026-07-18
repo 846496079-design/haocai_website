@@ -327,7 +327,7 @@ export default function CmsNewsEditor({
       <div className="mx-auto max-w-[1680px]">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
           <div>
-            <Link href="/cms/" className="text-sm font-semibold text-indigo-700 hover:text-indigo-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">返回新闻管理</Link>
+            <Link href="/cms/news/" className="text-sm font-semibold text-indigo-700 hover:text-indigo-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">返回新闻管理</Link>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold">编辑草稿：{initial.slug}</h1>
               <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${saving ? "bg-blue-100 text-blue-800" : dirty ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>

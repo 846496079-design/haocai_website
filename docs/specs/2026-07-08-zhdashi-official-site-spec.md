@@ -193,9 +193,9 @@
 
 1. 用户阅读 7 天体验套餐、360 元/年定价和适用场景。
 2. 用户填写电话、联系人、邀请人电话或邀请码。
-3. 前端调用客户线索池接口 `POST https://hcagent.ai-hc.cn/api/v1/customer-lead-pool-leads/submit`，仅提交 `contactName`、`contactPhone` 与可选 `referrerCode`；不传 IP、代理 ID、状态或后台权限字段。
+3. 前端调用官网同域接口 `POST /api/public/leads/trial/`，仅提交 `contactName`、`contactPhone` 与可选 `referrerCode`；官网先加密写入本地可靠队列，再由工作进程转发至客户线索池 `POST https://hcagent.ai-hc.cn/api/v1/customer-lead-pool-leads/submit`，不传 IP、代理 ID、状态或后台权限字段。
 4. 联系人按 1 至 50 位校验，电话按 1 至 20 位校验；推荐人电话或邀请码映射为可选 `referrerCode`，保留原始输入值。
-5. 提交成功后优先展示接口返回提示，不跳转登录页；第 4 次 IP 限流返回的“您的申请已收到, 我们会尽快联系您”按成功状态展示。
+5. 本地可靠队列写入成功后即视为官网已接收，并跳转产品登录页；外部线索池故障不阻塞用户。只有本地写入失败时才展示失败提示。
 
 试用弹窗内不展示“先电话咨询”按钮，不展示登录跳转按钮，避免分散留资路径。
 
@@ -205,7 +205,7 @@
 
 ### 代理合作意向
 
-代理合作意向表单采用代理线索池资料提交接口完成线索回传：`POST https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit`。前端校验必填项后，以 JSON 方式提交 `contactName`、`contactPhone`、`companyName`、`position`、`city`、`cooperationMode`、`customerScale`、可选 `inviteCode` 和 `remark`。必填项只包括姓名、电话、城市；公司/团队、角色身份、合作方式、客户资源规模、邀请码/邀请人电话和补充说明均为选填。字段映射为：姓名对应 `contactName`，电话对应 `contactPhone`，城市对应 `city`，公司/团队对应 `companyName`，角色身份对应 `position`，客户资源规模对应 `customerScale`，合作方式对应 `cooperationMode`，邀请码/邀请人电话对应 `inviteCode`，补充说明对应 `remark`。`companyName`、`position`、`city`、`cooperationMode`、`customerScale`、`inviteCode` 按接口要求限制在 50 个字符以内。若代理合作页 URL 中存在 `inviteCode`、`c` 或 `C` 参数，按该顺序取首个非空值自动预填，用户可修改。访问中国站首页 `/cn/?c=邀请码` 或 `/cn/?C=邀请码` 时，服务端跳转到 `/cn/partners/` 的 `partner-form` 表单锚点并保留参数；空参数不跳转。必填项未填写时，在对应字段下方展示红字“该项为必填项”，不触发浏览器默认“请填写此字段”提示。提交成功后页面弹出姚经理电话和企业微信二维码，弹窗使用“合作意向已收到”作为标题；接口返回 IP 超限或失败提示时，在表单底部展示接口提示。
+代理合作意向表单调用官网同域接口 `POST /api/public/leads/partner/`。官网加密写入本地可靠队列后返回已接收，再由工作进程转发到代理线索池 `POST https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit`。前端校验必填项后，以 JSON 方式提交 `contactName`、`contactPhone`、`companyName`、`position`、`city`、`cooperationMode`、`customerScale`、可选 `inviteCode` 和 `remark`。必填项只包括姓名、电话、城市；公司/团队、角色身份、合作方式、客户资源规模、邀请码/邀请人电话和补充说明均为选填。字段映射为：姓名对应 `contactName`，电话对应 `contactPhone`，城市对应 `city`，公司/团队对应 `companyName`，角色身份对应 `position`，客户资源规模对应 `customerScale`，合作方式对应 `cooperationMode`，邀请码/邀请人电话对应 `inviteCode`，补充说明对应 `remark`。`companyName`、`position`、`city`、`cooperationMode`、`customerScale`、`inviteCode` 按接口要求限制在 50 个字符以内。若代理合作页 URL 中存在 `inviteCode`、`c` 或 `C` 参数，按该顺序取首个非空值自动预填，用户可修改。访问中国站首页 `/cn/?c=邀请码` 或 `/cn/?C=邀请码` 时，服务端跳转到 `/cn/partners/` 的 `partner-form` 表单锚点并保留参数；空参数不跳转。必填项未填写时，在对应字段下方展示红字“该项为必填项”，不触发浏览器默认“请填写此字段”提示。本地写入成功后页面弹出姚经理电话和企业微信二维码，弹窗使用“合作意向已收到”作为标题；外部线索池故障不阻塞用户，只有官网本地写入失败时在表单底部展示失败提示。
 
 ## 6. 视觉与交互规范
 
@@ -246,6 +246,8 @@
 - 生产发布保留最近 5 个 release，切换后的 HTML、实际 CSS 和缓存头检查失败时自动恢复上一版本。公开 HTML 必须重新验证缓存；`/_next/static/` 使用跨版本持久化的内容哈希目录与 immutable 缓存，避免旧 HTML 引用已经删除的 CSS chunk。
 - 产品登录入口可作为产品端地址保留在配置中，但官网试用 CTA 当前不直接跳转登录页。
 - 必须保留代理线索池 API：`POST https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit`。
+- 两类公开线索必须先写入 `.data/lead-outbox.sqlite`，由 `zds-lead-worker` 自动重试；`/cms` 定位为官网后台，线索管理和新闻内容管理是两个独立板块。超过 6 小时未送达的线索必须站内预警，并在配置飞书 Webhook 后发送不含个人信息的群通知。
+- 飞书智能问数采用企业自建应用机器人、官方 SDK 长连接和 DeepSeek 自然语言理解。DeepSeek 只能生成受控 JSON 查询计划，后端只执行线索数量、类型、状态、趋势、对比和峰值的参数化汇总查询；不得把线索明文交给模型或开放任意 SQL。当前仅完成配置、适配器、查询契约和统计基础，飞书 SDK worker 完成真实验收前不视为生产上线。
 - 建议后续接入官网访问统计，记录页面浏览、CTA 点击、表单提交成功/失败。
 - 建议后续接入咨询线索 API 或 CRM，用于“联系我们/预约演示/电话咨询”表单。
 - 建议后续接入企业微信活码或客服系统，用于咨询、代理、售后分流。

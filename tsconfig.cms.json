@@ -12,6 +12,8 @@
     "app/api/integrations/news/import/route.ts",
     "components/cms/**/*.tsx",
     "lib/cms/**/*.ts",
+    "lib/feishu/**/*.ts",
+    "lib/leads/**/*.ts",
     "lib/news-content.ts",
     "lib/site-content.ts"
   ],

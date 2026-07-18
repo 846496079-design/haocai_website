@@ -12,6 +12,7 @@ shared_env="$deploy_root/shared/env/.env.local"
 logs_root="$deploy_root/shared/logs"
 legacy_root="/www/wwwroot/zhangdashi.ai/website_promotion_zds"
 pm2_name="zds-website"
+lead_worker_name="zds-lead-worker"
 release_id="${1:-}"
 
 if [[ ! "$release_id" =~ ^[0-9a-f]{40}$ ]]; then
@@ -26,6 +27,7 @@ new_release=false
 require_release_files() {
   local dir="$1"
   [[ -f "$dir/server.js" ]] || { echo "缺少 server.js。" >&2; return 1; }
+  [[ -f "$dir/scripts/leads/worker.mjs" ]] || { echo "缺少线索工作进程。" >&2; return 1; }
   [[ -d "$dir/public" ]] || { echo "缺少 public 目录。" >&2; return 1; }
   [[ -d "$dir/.next/static" ]] || { echo "缺少 .next/static 目录。" >&2; return 1; }
   [[ -f "$dir/SHA256SUMS" ]] || { echo "缺少 SHA256SUMS。" >&2; return 1; }
@@ -194,16 +196,36 @@ switch_current() {
 
 start_current() {
   pm2 delete "$pm2_name" >/dev/null 2>&1 || true
+  pm2 delete "$lead_worker_name" >/dev/null 2>&1 || true
   HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=production \
     pm2 start "$current_link/server.js" --name "$pm2_name" --cwd "$current_link" --time
+  if [[ -f "$current_link/scripts/leads/worker.mjs" ]]; then
+    NODE_ENV=production \
+      pm2 start "$current_link/scripts/leads/worker.mjs" --name "$lead_worker_name" --cwd "$current_link" --time
+  fi
   pm2 save --force >/dev/null
 }
 
 start_legacy() {
   pm2 delete "$pm2_name" >/dev/null 2>&1 || true
+  pm2 delete "$lead_worker_name" >/dev/null 2>&1 || true
   pm2 start /usr/bin/bash --name "$pm2_name" --cwd "$legacy_root" -- \
     -c 'node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000'
   pm2 save --force >/dev/null
+}
+
+ensure_shared_environment() {
+  install -d -m 0700 "$(dirname "$shared_env")"
+  if [[ ! -f "$shared_env" ]]; then
+    install -m 0600 /dev/null "$shared_env"
+  fi
+  chmod 0600 "$shared_env"
+  if ! grep -Eq '^LEAD_DATA_ENCRYPTION_KEY=' "$shared_env"; then
+    printf '\nLEAD_DATA_ENCRYPTION_KEY=%s\n' "$(openssl rand -base64 32)" >> "$shared_env"
+  fi
+  if ! grep -Eq '^LEAD_WORKER_TOKEN=' "$shared_env"; then
+    printf 'LEAD_WORKER_TOKEN=%s\n' "$(openssl rand -hex 32)" >> "$shared_env"
+  fi
 }
 
 ensure_shared_link() {
@@ -222,11 +244,24 @@ ensure_shared_link() {
   fi
 }
 
+verify_lead_worker() {
+  if [[ ! -f "$current_link/scripts/leads/worker.mjs" ]]; then
+    return 0
+  fi
+  local worker_pid
+  local heartbeat="$current_link/.data/lead-worker-heartbeat.json"
+  worker_pid="$(pm2 pid "$lead_worker_name" | tail -n 1 | tr -d '[:space:]')"
+  [[ "$worker_pid" =~ ^[1-9][0-9]*$ ]] \
+    && [[ -f "$heartbeat" ]] \
+    && find "$heartbeat" -mmin -2 -print -quit | grep -q .
+}
+
 wait_for_production() {
   local attempt
   for attempt in $(seq 1 45); do
     if verify_site 'http://127.0.0.1:3000' \
-      && verify_site 'http://127.0.0.1' 'zhangdashi.ai' true; then
+      && verify_site 'http://127.0.0.1' 'zhangdashi.ai' true \
+      && verify_lead_worker; then
       return 0
     fi
     sleep 1
@@ -262,6 +297,7 @@ else
   chown -R root:root "$release_dir"
 fi
 
+ensure_shared_environment
 ensure_shared_link "$shared_data" "$release_dir/.data"
 ensure_shared_link "$shared_env" "$release_dir/.env.local"
 rsync -a --ignore-existing "$release_dir/.next/static/" "$shared_static/"

@@ -55,7 +55,7 @@ export default function CmsAccountSettings({ username }: { username: string }) {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-7 text-slate-950 sm:px-6 md:px-8">
       <div className="mx-auto max-w-3xl">
-        <Link href="/cms/" className={`inline-flex items-center gap-2 rounded-md text-sm font-semibold text-indigo-600 hover:text-indigo-700 ${focusRing}`}><ArrowLeft className="size-4" aria-hidden="true" />返回新闻管理</Link>
+        <Link href="/cms/" className={`inline-flex items-center gap-2 rounded-md text-sm font-semibold text-indigo-600 hover:text-indigo-700 ${focusRing}`}><ArrowLeft className="size-4" aria-hidden="true" />返回官网后台</Link>
         <header className="mt-5"><p className="text-sm font-semibold text-indigo-600">账号与安全</p><h1 className="mt-1 text-2xl font-bold tracking-tight">管理员账号设置</h1><p className="mt-2 text-sm leading-6 text-slate-600">当前账号：<strong className="font-semibold text-slate-900">{username}</strong></p></header>
 
         <section aria-labelledby="password-title" className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

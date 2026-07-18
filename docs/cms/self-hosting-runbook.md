@@ -19,7 +19,7 @@
 - 域名：`http://zhangdashi.ai/`，宝塔 Nginx 反向代理到 `127.0.0.1:3000`。
 - CNB 源仓库：`jason.cnb/hc/ai/website_promotion_zds`。
 - 唯一生产触发分支：`codex/official-home-trust-redesign` 的 `push`。
-- 服务名：PM2 `zds-website`；首次自动发布后运行 `/www/zhangdashi-deploy/current/server.js`。
+- 服务名：PM2 `zds-website` 与 `zds-lead-worker`；自动发布后分别运行 standalone 网站服务和本地线索重试调度器。
 - 发布根目录：`/www/zhangdashi-deploy`，包含 `incoming`、`releases`、`current` 和 `shared`。
 - 当前生产仍使用原站点目录中的 `.data` 与 `.env.local` 作为持久化源，通过 `shared/data` 和 `shared/env/.env.local` 只读接入 release；自动发布不得移动、复制或删除它们。
 - CNB 使用专用 `deploy` 用户。该用户只能写上传暂存区，不能读取生产环境文件，sudo 仅放行 `/usr/local/sbin/zhangdashi-release`。
@@ -54,7 +54,31 @@ BLOB_READ_WRITE_TOKEN=<server-side Blob token>
 CMS_ADMIN_USERNAME=<initial administrator username>
 CMS_ADMIN_PASSWORD=<temporary initial password, at least 12 characters>
 CMS_IMPORT_SIGNING_SECRET=<at least 32 random bytes>
+LEAD_DATA_ENCRYPTION_KEY=<32 random bytes in Base64>
+LEAD_WORKER_TOKEN=<at least 32 random characters>
 ```
+
+当前原子发布脚本会在共享 `.env.local` 中缺失时自动生成最后两项，且不会覆盖已有值。需要飞书站外预警时另行配置：
+
+```text
+LEAD_ALERT_FEISHU_WEBHOOK_URL=<Feishu group bot webhook>
+```
+
+飞书应用机器人与 DeepSeek 智能问数的配置基础已经进入仓库，但长连接 worker 尚未加入生产 PM2。用户提供或确认飞书 SDK 后，再在共享 `.env.local` 中配置：
+
+```text
+FEISHU_BOT_APP_ID=<Feishu custom app id>
+FEISHU_BOT_APP_SECRET=<Feishu custom app secret>
+FEISHU_BOT_ALLOWED_CHAT_IDS=<comma-separated allowed chat ids>
+FEISHU_BOT_ALLOWED_USER_IDS=<comma-separated allowed user open ids>
+FEISHU_BOT_ALERT_CHAT_ID=<alert chat id included in allowed chats>
+LEAD_QUERY_AI_PROVIDER=deepseek
+LEAD_QUERY_AI_API_URL=https://api.deepseek.com
+LEAD_QUERY_AI_API_KEY=<server-side DeepSeek key>
+LEAD_QUERY_AI_MODEL=deepseek-v4-flash
+```
+
+这些变量不得提前写入仓库或 CNB 构建参数。当前发布脚本不会启动不完整的机器人进程，现有 Webhook 预警继续工作。
 
 需要一键翻译时再配置：
 
@@ -96,7 +120,7 @@ npm run start -- -H 127.0.0.1 -p 3000
 - 不缓存 `/cms/` 和 `/api/cms/`。
 - 对外只开放 80/443，应用端口不直接暴露公网。
 
-standalone release 由发布脚本使用 `HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=production node server.js` 托管到 PM2。不要把数据库迁移、seed 或生产数据写入加入 PM2 启动命令。
+standalone release 由发布脚本使用 `HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=production node server.js` 托管到 PM2；线索调度器使用同一 release 中的 `scripts/leads/worker.mjs`，只调用回环地址上的受保护内部接口。不要把数据库迁移、seed 或生产数据写入加入 PM2 启动命令。
 
 Nginx 缓存边界：
 
@@ -115,12 +139,14 @@ Nginx 缓存边界：
 3. 登录后访问 `/api/cms/health/`，应返回 `ready: true`、`postgresql-active` 和 `vercel-blob-configured`。
 4. 按 [deployment-runbook.md](./deployment-runbook.md) 的 Preview 验收清单完成全流程测试。
 5. 将初始凭据保存到批准的密码管理器，从运行环境移除 `CMS_ADMIN_PASSWORD`，重启服务并再次验证登录。
+6. 在官网后台打开“线索管理”，确认数据库可初始化、飞书配置状态正确，并检查 PM2 的 `zds-lead-worker` 为 `online`。
+7. 智能问数生产接入完成后再增加 `zds-feishu-bot` 验收；当前阶段不得把仅有配置基础视为机器人已经上线。
 
 ## 8. 发布、回滚与扩容
 
 - 发布：只需向 `codex/official-home-trust-redesign` 推送 commit。CNB 构建后 rsync 到 `incoming/<commit>`，服务器预启动检查通过才原子切换 `current`。
 - 自动回滚：切换后的首页、实际 CSS 或缓存头检查失败时，发布脚本恢复上一 `current` 并重启；新版本仍以失败结束。
-- 手工回滚：root 在宝塔终端把 `current` 原子改回 `/www/zhangdashi-deploy/releases/<上一提交>`，按 standalone 参数重建 PM2 `zds-website`，再验证三站首页和实际 CSS；不执行数据库恢复。
+- 手工回滚：root 在宝塔终端把 `current` 原子改回 `/www/zhangdashi-deploy/releases/<上一提交>`，按发布脚本逻辑重建 PM2 `zds-website` 和该版本存在的 `zds-lead-worker`，再验证三站首页和实际 CSS；不执行数据库恢复。
 - release 保留：最近 5 个完整版本；`shared/next-static` 中仍被保留 release 使用的哈希文件不得删除。
 - 数据恢复：仅确认数据库被错误写入时按 [data-operations.md](./data-operations.md) 执行。
 - 扩容：多个实例共用 Neon 和 Blob；所有实例必须使用完全一致的服务端变量。
@@ -135,4 +161,5 @@ CNB 密钥位于密钥仓库 `jason.cnb/hc/ai/github-sync-secrets` 的 `official
 - 公开可用性：监控 `/cn/`、`/jp/`、`/hk/` 的状态码与响应时间。
 - CMS 就绪：使用受控测试账号登录后检查 `/api/cms/health/`；该接口不是匿名探针。
 - 应用日志：关注登录失败、数据库连接、Blob 上传、翻译和发布错误，日志不得记录密钥或完整连接串。
+- 线索中转：监控 `zds-lead-worker` 在线状态、后台待发送数量、最老等待时长和飞书预警通道；日志不得记录线索明文。
 - 外部资源：监控 Neon 连接数、存储、慢查询和恢复点，监控 Blob 写入失败及容量。

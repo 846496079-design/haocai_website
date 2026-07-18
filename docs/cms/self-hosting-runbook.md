@@ -101,10 +101,12 @@ standalone release 由发布脚本使用 `HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=
 Nginx 缓存边界：
 
 - `/_next/static/` 指向 `/www/zhangdashi-deploy/shared/next-static/`，使用一年 immutable 缓存；旧哈希文件跨 release 保留。
-- `/cn/`、`/jp/`、`/hk/` 及其子页面覆盖为 `no-store, no-cache, max-age=0, must-revalidate`，既不能继续透传一年 `s-maxage`，也不能再次保存公开 HTML。
+- `/cn/`、`/jp/`、`/hk/` 及其子页面长期使用 `no-cache`，允许浏览器保存公开响应，但每次复用前必须回源；不得透传正数 `max-age` 或 `s-maxage`。
 - `/cms/` 和 `/api/` 保留应用返回的 `private, no-store` 等缓存头，不能被公开页面规则覆盖。
 
-旧缓存规则已经写入用户设备的 HTML 无法由服务器主动删除；受影响设备需要执行一次强制刷新，或先访问带一次性查询参数的页面。设备取得新响应后，`no-store` 会阻止后续公开页面再次被长期保存。
+公开 HTML 必须具备 ETag；Next.js standalone 当前对条件请求仍返回完整 `200`，验收只要求每次回源，不把 `304` 作为发布前提。RSC 响应同样使用 `no-cache`；HTML 实际引用的 CSS 与 JavaScript 必须同时具备一年 `max-age=31536000` 与 `immutable`。
+
+旧缓存规则已经写入用户设备的 HTML 无法由服务器主动删除；受影响设备需要执行一次强制刷新，或先访问带一次性查询参数的页面。设备取得新响应后，`no-cache` 会确保后续复用前回源。
 
 ## 7. 首次启动与验收
 

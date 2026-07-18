@@ -75,6 +75,14 @@ extract_css_paths() {
     | sort -u
 }
 
+verify_public_revalidation_headers() {
+  local headers_file="$1"
+  grep -Eqi '^Cache-Control:.*(^|[[:space:],])no-cache([[:space:],]|$)' "$headers_file" \
+    && ! grep -Eqi '^Cache-Control:.*(^|[[:space:],])no-store([[:space:],]|$)' "$headers_file" \
+    && ! grep -Eqi '^Cache-Control:.*(^|[[:space:],])s-maxage[[:space:]]*=[[:space:]]*[1-9][0-9]*' "$headers_file" \
+    && ! grep -Eqi '^Cache-Control:.*(^|[[:space:],])max-age[[:space:]]*=[[:space:]]*[1-9][0-9]*' "$headers_file"
+}
+
 verify_site() {
   local base_url="$1"
   local host_header="${2:-}"
@@ -91,10 +99,15 @@ verify_site() {
     return 1
   fi
   if [[ "$require_public_cache" == true ]]; then
-    if ! grep -Eqi '^Cache-Control:.*(^|[[:space:],])no-store([[:space:],]|$)' "$work_dir/page.headers" \
-      || ! grep -Eqi '^Cache-Control:.*(^|[[:space:],])max-age[[:space:]]*=[[:space:]]*0([[:space:],]|$)' "$work_dir/page.headers" \
-      || grep -Eqi '^Cache-Control:.*(^|[[:space:],])s-maxage[[:space:]]*=[[:space:]]*[1-9][0-9]*' "$work_dir/page.headers" \
-      || grep -Eqi '^Cache-Control:.*(^|[[:space:],])max-age[[:space:]]*=[[:space:]]*[1-9][0-9]*' "$work_dir/page.headers"; then
+    if ! verify_public_revalidation_headers "$work_dir/page.headers" \
+      || ! grep -Eqi '^ETag:[[:space:]]*[^[:space:]]+' "$work_dir/page.headers"; then
+      rm -rf "$work_dir"
+      return 1
+    fi
+    if ! curl -fsS "${curl_host[@]}" -H 'RSC: 1' -D "$work_dir/rsc.headers" -o "$work_dir/rsc.body" "$base_url/cn/" \
+      || ! grep -Eqi '^Content-Type:.*text/x-component' "$work_dir/rsc.headers" \
+      || ! verify_public_revalidation_headers "$work_dir/rsc.headers" \
+      || [[ ! -s "$work_dir/rsc.body" ]]; then
       rm -rf "$work_dir"
       return 1
     fi

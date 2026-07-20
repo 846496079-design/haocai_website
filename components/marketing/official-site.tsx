@@ -86,7 +86,7 @@ const icons: Record<IconKey, typeof Building2> = {
 
 const partnerLeadApiUrl = '/api/public/leads/partner/'
 const partnerLeadMaxLength = 50
-const productAppUrl = 'https://finance-h5.haocai360.cn/'
+const productAppUrl = '/go/product/'
 
 // Mac 桌面端下载地址
 const macDownloadUrl =

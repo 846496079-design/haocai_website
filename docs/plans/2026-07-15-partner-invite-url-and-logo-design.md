@@ -1,6 +1,6 @@
 # 代理邀请码 URL 与官网 Logo 更新设计
 
-> 2026-07-20 更新：本文中的 `/cn/?c=邀请码` 首页跳转规则已由 `docs/superpowers/specs/2026-07-20-direct-product-entry-pricing-cycle-invite-design.md` 替代。当前仅 `/cn/partners/` 页面识别并预填邀请码；本文的 Logo 设计部分继续有效。
+> 2026-07-20 更新：本文中的 `/cn/?c=邀请码` 首页跳转规则已由 `docs/superpowers/specs/2026-07-20-direct-product-entry-pricing-cycle-invite-design.md` 替代。当前仅 `/cn/partners/` 页面识别并预填邀请码；Logo 更新改由 `docs/superpowers/specs/2026-07-20-current-folder-logo-refresh-design.md` 维护。
 
 ## 1. 背景与目标
 

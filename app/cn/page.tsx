@@ -3,6 +3,8 @@ import { getPublishedArticles } from '@/lib/cms/store'
 import { getSiteContent } from '@/lib/site-content'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 type CNPageProps = {
   searchParams: Promise<{ c?: string | string[]; C?: string | string[] }>
 }

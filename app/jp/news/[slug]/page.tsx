@@ -3,6 +3,8 @@ import { getPublishedArticle, getPublishedArticles } from '@/lib/cms/store'
 import { getSiteContent } from '@/lib/site-content'
 import { notFound } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 export default async function JPNewsArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const article = await getPublishedArticle('jp', slug)

@@ -24,9 +24,10 @@
 ### 步骤三：公开 HTML/RSC 改为 no-store
 
 1. Nginx 公开站点 map 改为 `no-store, max-age=0`。
-2. 发布脚本和外部验收器要求 HTML/RSC 存在 `no-store`，拒绝正数缓存时间。
-3. 保留 HTML ETag 和 Next.js 哈希静态资源一年 immutable 校验。
-4. 更新自有服务器 Runbook，明确历史缓存只能一次性迁移。
+2. 对公开三站路径同时设置 `proxy_cache_bypass` 与 `proxy_no_cache`，避免宝塔全局代理缓存继续复用旧 HTML/RSC。
+3. 发布脚本将 Nginx 的 `identity`、`gzip`、`br` 响应与当前 Next.js 进程逐一比对；外部验收器将规范地址与版本探针的静态资源签名比对。
+4. 保留 HTML ETag 和 Next.js 哈希静态资源一年 immutable 校验。
+5. 更新自有服务器 Runbook，区分浏览器历史缓存和必须由服务器立即绕过的代理缓存。
 
 ### 步骤四：验证与交付
 
@@ -42,6 +43,7 @@
 - 三页签在桌面端和移动端均明显可见。
 - 状态、超时筛选与当前页签组合不丢失。
 - 公开 HTML/RSC 为 `no-store, max-age=0`。
+- 公开 HTML/RSC 不命中宝塔全局 `proxy_cache`，三种内容编码均对应当前 release。
 - CSS/JavaScript 仍为一年 immutable。
 - CMS/API 仍为私有 no-store。
 - 只提交本次文件，不包含 `lib/news-content.ts`、Logo 和 `tmp/` 等既有工作区改动。

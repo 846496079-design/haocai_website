@@ -39,6 +39,11 @@ async function main() {
   const present = new Set(tables.map((row) => row.table_name))
   const missingTables = requiredTables.filter((table) => !present.has(table))
   if (missingTables.length) throw new Error(`Neon 缺少表：${missingTables.join(', ')}。请先运行 cms:migrate。`)
+  const requiredArticleColumns = ['translation_status', 'published_locales_complete']
+  const articleColumns = await sql.query(`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'news_article' AND column_name = ANY($1::text[])`, [requiredArticleColumns])
+  const presentArticleColumns = new Set(articleColumns.map((row) => row.column_name))
+  const missingArticleColumns = requiredArticleColumns.filter((column) => !presentArticleColumns.has(column))
+  if (missingArticleColumns.length) throw new Error(`news_article 缺少字段：${missingArticleColumns.join(', ')}。请先运行 cms:migrate。`)
 
   const [counts, broken, invalidContent, targetRows] = await Promise.all([
     sql.query(`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status = 'PUBLISHED')::int AS published FROM news_article`),

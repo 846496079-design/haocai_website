@@ -1,6 +1,7 @@
 import type { SiteCode } from '@/lib/site-content'
 
 export type CmsArticleStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE' | 'TRASH'
+export type CmsTranslationStatus = 'CURRENT' | 'STALE' | 'NOT_TRANSLATED'
 
 export type CmsRichTextMark = {
   type: string
@@ -119,7 +120,7 @@ export type CmsArticleSummary = {
   updatedAt: string
   publishedAt: string | null
   localesComplete: boolean
-  translationStatus: 'CURRENT' | 'STALE' | 'NOT_TRANSLATED'
+  translationStatus: CmsTranslationStatus
   isPinned: boolean
   deletedAt: string | null
 }
@@ -192,17 +193,22 @@ function documentHasContent(node: CmsRichTextNode): boolean {
   return Boolean(node.content?.some(documentHasContent))
 }
 
+export function isLocaleContentComplete(article: CmsLocaleArticle) {
+  return Boolean(
+    article.title.trim()
+    && article.summary.trim()
+    && article.category.trim()
+    && article.cover
+    && documentHasContent(article.body.editorDocument)
+    && article.body.publicationHtml.trim()
+    && article.body.contentHash,
+  )
+}
+
 export function isContentComplete(content: CmsArticleContent) {
-  return CMS_LOCALES.every((locale) => {
-    const article = content[locale]
-    return Boolean(
-      article.title.trim()
-      && article.summary.trim()
-      && article.category.trim()
-      && article.cover
-      && documentHasContent(article.body.editorDocument)
-      && article.body.publicationHtml.trim()
-      && article.body.contentHash,
-    )
-  })
+  return CMS_LOCALES.every((locale) => isLocaleContentComplete(content[locale]))
+}
+
+export function areAllLocalesReadyForPublication(content: CmsArticleContent, translationStatus: CmsTranslationStatus) {
+  return isContentComplete(content) && translationStatus !== 'STALE'
 }

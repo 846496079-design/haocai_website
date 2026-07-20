@@ -6,7 +6,9 @@ import { Copy, ImagePlus } from "lucide-react";
 import type { SiteCode } from "@/lib/site-content";
 import {
   CMS_LOCALES,
+  areAllLocalesReadyForPublication,
   isContentComplete,
+  isLocaleContentComplete,
   type CmsArticleContent,
   type CmsArticleRecord,
   type CmsAuditLog as CmsAuditLogRecord,
@@ -115,6 +117,7 @@ export default function CmsNewsEditor({
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const article = content[locale];
   const complete = useMemo(() => isContentComplete(content), [content]);
+  const chineseComplete = useMemo(() => isLocaleContentComplete(content.cn), [content]);
   const recoveryKey = `cms-richtext-draft-${initial.id}`;
 
   useEffect(() => {
@@ -388,7 +391,8 @@ export default function CmsNewsEditor({
           <aside className="h-fit rounded-xl border border-slate-200 bg-white p-5 2xl:sticky 2xl:top-6">
             <h2 className="font-semibold">发布检查</h2>
             <ul className="mt-4 space-y-3 text-sm text-slate-700">
-              <li>三语内容：<b className={complete ? "text-emerald-700" : "text-amber-700"}>{complete ? "完整" : "待补全或保存"}</b></li>
+              <li>中文发布内容：<b className={chineseComplete ? "text-emerald-700" : "text-amber-700"}>{chineseComplete ? "完整" : "待补全或保存"}</b></li>
+              <li>外语公开状态：<b className={areAllLocalesReadyForPublication(content, translationStatus) ? "text-emerald-700" : "text-amber-700"}>{areAllLocalesReadyForPublication(content, translationStatus) ? "日文、港文可随本次发布上线" : "未翻译，本次仅发布中文站"}</b></li>
               <li>译稿状态：<b className={translationStatus === "CURRENT" ? "text-emerald-700" : "text-amber-700"}>{translationStatus === "CURRENT" ? "已基于当前中文生成" : translationStatus === "STALE" ? "中文已修改，请重新翻译" : "尚未生成译稿"}</b></li>
               <li>当前版本预览：<b className={hasCurrentPreview && !dirty ? "text-emerald-700" : "text-amber-700"}>{hasCurrentPreview && !dirty ? "已完成" : "需要重新预览"}</b></li>
               <li>图片上传：<b className={uploading ? "text-amber-700" : "text-emerald-700"}>{uploading ? "进行中" : "已完成"}</b></li>
@@ -401,8 +405,8 @@ export default function CmsNewsEditor({
             </fieldset>
             <button type="button" onClick={() => void translate()} disabled={saving || uploading} className="mt-4 w-full rounded-lg border border-indigo-300 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">保存并翻译日文、繁体</button>
 
-            <label className="mt-5 flex cursor-pointer gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} className="mt-1" />我已人工审核三语内容、封面和当前发布快照。</label>
-            <button type="button" onClick={() => void publish()} disabled={saving || uploading || !complete || dirty || !hasCurrentPreview} className="mt-3 w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">确认发布</button>
+            <label className="mt-5 flex cursor-pointer gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} className="mt-1" />我已人工审核中文必填内容、封面、当前发布快照和已填写的外语内容。</label>
+            <button type="button" onClick={() => void publish()} disabled={saving || uploading || !chineseComplete || dirty || !hasCurrentPreview} className="mt-3 w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">确认发布</button>
             {initial.status === "PUBLISHED" && <button type="button" onClick={() => void offline()} className="mt-3 w-full rounded-lg border border-red-300 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50">下线新闻</button>}
             {notice && <p role="status" aria-live="polite" className="mt-4 rounded-lg bg-slate-100 p-3 text-sm leading-6 text-slate-700">{notice}</p>}
             <CmsAuditLog articleId={initial.id} initialItems={initialAuditItems} />

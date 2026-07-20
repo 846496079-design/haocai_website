@@ -4,7 +4,7 @@ import { neon } from '@neondatabase/serverless'
 import { createHash } from 'node:crypto'
 import type { SiteCode } from '@/lib/site-content'
 import { prepareCmsContent } from './publication-server'
-import { createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult, type CmsLocaleArticle } from './types'
+import { areAllLocalesReadyForPublication, createEmptyContent, isContentComplete, isLocaleContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult, type CmsLocaleArticle } from './types'
 import { requireCmsDatabaseUrl } from './config'
 
 type ArticleRow = Record<string, unknown>
@@ -44,14 +44,24 @@ async function ready() {
           WHERE table_schema = 'public'
             AND table_name = 'news_article'
             AND column_name = 'translation_status'
-        ) AS has_translation_status
+        ) AS has_translation_status,
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'news_article'
+            AND column_name = 'published_locales_complete'
+        ) AS has_published_locales_complete
     `)
-    if (existing[0]?.cms_admin && existing[0]?.cms_asset && existing[0]?.has_translation_status) return
+    if (existing[0]?.cms_admin && existing[0]?.cms_asset && existing[0]?.has_translation_status && existing[0]?.has_published_locales_complete) return
     await sql(`CREATE TABLE IF NOT EXISTS cms_admin (id BIGSERIAL PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, failed_login_count INTEGER NOT NULL DEFAULT 0, locked_until TIMESTAMPTZ, last_login_at TIMESTAMPTZ, is_active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`)
     await sql(`CREATE TABLE IF NOT EXISTS cms_session (id BIGSERIAL PRIMARY KEY, admin_id BIGINT NOT NULL REFERENCES cms_admin(id), token_hash TEXT NOT NULL UNIQUE, expires_at TIMESTAMPTZ NOT NULL, revoked_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`)
     await sql(`CREATE TABLE IF NOT EXISTS news_category (id BIGSERIAL PRIMARY KEY, name TEXT NOT NULL UNIQUE, slug TEXT NOT NULL UNIQUE, status TEXT NOT NULL DEFAULT 'ACTIVE', source TEXT NOT NULL DEFAULT 'MANUAL', sort_order INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`)
-    await sql(`CREATE TABLE IF NOT EXISTS news_article (id BIGSERIAL PRIMARY KEY, slug TEXT NOT NULL UNIQUE, status TEXT NOT NULL, published_version_id BIGINT, draft_version_id BIGINT, category_id BIGINT REFERENCES news_category(id), published_at TIMESTAMPTZ, offline_at TIMESTAMPTZ, deleted_at TIMESTAMPTZ, deleted_from_status TEXT, is_pinned BOOLEAN NOT NULL DEFAULT FALSE, pinned_position DOUBLE PRECISION, manual_position DOUBLE PRECISION, translation_status TEXT NOT NULL DEFAULT 'NOT_TRANSLATED', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`)
+    await sql(`CREATE TABLE IF NOT EXISTS news_article (id BIGSERIAL PRIMARY KEY, slug TEXT NOT NULL UNIQUE, status TEXT NOT NULL, published_version_id BIGINT, draft_version_id BIGINT, category_id BIGINT REFERENCES news_category(id), published_at TIMESTAMPTZ, offline_at TIMESTAMPTZ, deleted_at TIMESTAMPTZ, deleted_from_status TEXT, is_pinned BOOLEAN NOT NULL DEFAULT FALSE, pinned_position DOUBLE PRECISION, manual_position DOUBLE PRECISION, translation_status TEXT NOT NULL DEFAULT 'NOT_TRANSLATED', published_locales_complete BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`)
     await sql(`ALTER TABLE news_article ADD COLUMN IF NOT EXISTS translation_status TEXT NOT NULL DEFAULT 'NOT_TRANSLATED';`)
+    await sql(`ALTER TABLE news_article ADD COLUMN IF NOT EXISTS published_locales_complete BOOLEAN;`)
+    await sql(`UPDATE news_article SET published_locales_complete = (status = 'PUBLISHED' AND published_version_id IS NOT NULL) WHERE published_locales_complete IS NULL;`)
+    await sql(`ALTER TABLE news_article ALTER COLUMN published_locales_complete SET DEFAULT FALSE;`)
+    await sql(`ALTER TABLE news_article ALTER COLUMN published_locales_complete SET NOT NULL;`)
     await sql(`CREATE TABLE IF NOT EXISTS news_version (id BIGSERIAL PRIMARY KEY, article_id BIGINT NOT NULL REFERENCES news_article(id) ON DELETE CASCADE, version_no INTEGER NOT NULL, state TEXT NOT NULL, content_json JSONB NOT NULL, previewed_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE(article_id, version_no));`)
     await sql(`CREATE TABLE IF NOT EXISTS cms_audit_log (id BIGSERIAL PRIMARY KEY, admin_id BIGINT, action TEXT NOT NULL, target_type TEXT NOT NULL, target_id TEXT NOT NULL, detail_json JSONB, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());`)
     await sql(`CREATE TABLE IF NOT EXISTS integration_delivery (id BIGSERIAL PRIMARY KEY, source TEXT NOT NULL, external_id TEXT NOT NULL, idempotency_key TEXT NOT NULL, payload_hash TEXT NOT NULL, result JSONB, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE(source, idempotency_key));`)
@@ -104,7 +114,7 @@ export async function getCmsPreviewArticle(id: number, locale: SiteCode) { retur
 
 export async function getPublishedArticles(locale: SiteCode): Promise<CmsLocaleArticle[]> {
   await ready()
-  const rows = await db()(`SELECT v.content_json FROM news_article a JOIN news_version v ON v.id = a.published_version_id WHERE a.status = 'PUBLISHED' ORDER BY a.is_pinned DESC, a.pinned_position, a.manual_position, a.published_at DESC, a.id DESC`)
+  const rows = await db()(`SELECT v.content_json FROM news_article a JOIN news_version v ON v.id = a.published_version_id WHERE a.status = 'PUBLISHED' AND ($1::text = 'cn' OR a.published_locales_complete = TRUE) ORDER BY a.is_pinned DESC, a.pinned_position, a.manual_position, a.published_at DESC, a.id DESC`, [locale])
   return (rows as ArticleRow[]).map((row) => content(row.content_json)[locale])
 }
 export async function getPublishedArticle(locale: SiteCode, slug: string) { return (await getPublishedArticles(locale)).find((item) => item.slug === slug) }
@@ -149,7 +159,9 @@ export async function updateCmsDraft(id: number, draft: CmsArticleContent, admin
   const row = await articleRow(id); if (!row) throw new Error('新闻不存在。')
   if (text(row.status) === 'TRASH') throw new Error('回收站稿件必须先恢复后才能编辑。')
   const normalized = prepareCmsContent(draft, text(row.slug))
-  const chineseChanged = JSON.stringify(content(row.content_json).cn) !== JSON.stringify(normalized.cn)
+  const previous = content(row.content_json)
+  const chineseChanged = JSON.stringify(previous.cn) !== JSON.stringify(normalized.cn)
+  const translationNeedsRefresh = chineseChanged && (text(row.translation_status) === 'CURRENT' || isContentComplete(previous))
   const categoryName = normalized.cn.category.trim()
   const selectedCategories = categoryName ? await db()("SELECT id FROM news_category WHERE name = $1 AND status = 'ACTIVE'", [categoryName]) : []
   if (categoryName && !selectedCategories[0]) throw new Error('请选择一个已启用的正式分类。')
@@ -189,7 +201,7 @@ export async function updateCmsDraft(id: number, draft: CmsArticleContent, admin
       RETURNING id
     )
     SELECT id, version_id FROM updated
-  `, [id, JSON.stringify(normalized), categoryId, chineseChanged, adminId, expectedVersionId ?? null, expectedUpdatedAt ?? null])
+  `, [id, JSON.stringify(normalized), categoryId, translationNeedsRefresh, adminId, expectedVersionId ?? null, expectedUpdatedAt ?? null])
   if (!rows[0]) throw new Error('稿件已在其他窗口发生变化，请复制当前内容后刷新再处理。')
   return getCmsArticle(id)
 }
@@ -203,7 +215,9 @@ export async function publishCmsArticle(id: number, adminId: number, reviewed: b
   if (text(row.status) === 'TRASH') throw new Error('回收站稿件不能发布，请先恢复为草稿。')
   if (!row.draft_version_id || numeric(row.selected_version_id) !== numeric(row.draft_version_id)) throw new Error('没有可发布的草稿版本，请先保存草稿。')
   if (!row.previewed_at) throw new Error('请先预览当前草稿。')
-  if (!isContentComplete(content(row.content_json))) throw new Error('CN、JP、HK 内容、封面和正文必须完整后才能发布。')
+  const draft = content(row.content_json)
+  if (!isLocaleContentComplete(draft.cn)) throw new Error('中文内容、封面和正文必须完整后才能发布。')
+  const publishedLocalesComplete = areAllLocalesReadyForPublication(draft, text(row.translation_status) as CmsArticleRecord['translationStatus'])
   const rows = await atomic(`
     WITH target AS (
       SELECT id, published_version_id, draft_version_id
@@ -221,17 +235,17 @@ export async function publishCmsArticle(id: number, adminId: number, reviewed: b
     ), updated AS (
       UPDATE news_article a
       SET status = 'PUBLISHED', published_version_id = p.id, draft_version_id = NULL,
-        published_at = NOW(), offline_at = NULL, updated_at = NOW()
+        published_locales_complete = $4, published_at = NOW(), offline_at = NULL, updated_at = NOW()
       FROM target t, promoted p WHERE a.id = t.id
       RETURNING a.id, p.id AS version_id
     ), audit AS (
       INSERT INTO cms_audit_log (admin_id, action, target_type, target_id, detail_json)
-      SELECT $3, 'PUBLISH', 'news_article', u.id::text, jsonb_build_object('versionId', u.version_id)
+      SELECT $3, 'PUBLISH', 'news_article', u.id::text, jsonb_build_object('versionId', u.version_id, 'publishedLocalesComplete', $4)
       FROM updated u
       RETURNING id
     )
     SELECT id FROM updated
-  `, [id, numeric(row.draft_version_id), adminId])
+  `, [id, numeric(row.draft_version_id), adminId, publishedLocalesComplete])
   if (!rows[0]) throw new Error('稿件状态已变化，请刷新后重试。')
 }
 export async function offlineCmsArticle(id: number, adminId: number) { const sql = db(); const rows = await sql(`UPDATE news_article SET status = 'OFFLINE', offline_at = NOW(), is_pinned = FALSE, pinned_position = NULL, manual_position = NULL, updated_at = NOW() WHERE id = $1 AND status = 'PUBLISHED' RETURNING id`, [id]); if (!rows[0]) throw new Error('只有已发布新闻可以下线。'); await writeAudit(adminId, 'OFFLINE', 'news_article', String(id), {}) }

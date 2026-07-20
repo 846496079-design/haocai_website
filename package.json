@@ -15,6 +15,8 @@
     "cms:migrate-richtext": "tsx scripts/cms/migrate-richtext.ts",
     "cms:verify-richtext": "tsx scripts/cms/migrate-richtext.ts --verify",
     "cms:verify-ai-config": "tsx scripts/cms/verify-ai-config.ts",
+    "cms:verify-optional-translation": "tsx scripts/cms/verify-optional-translation-publish.ts",
+    "cms:verify-optional-translation-runtime": "node scripts/cms/verify-optional-translation-runtime.mjs",
     "cms:verify-receiver": "tsx scripts/cms/verify-receiver-workbench.ts",
     "cms:verify-runtime-news": "tsx scripts/cms/verify-runtime-news.ts",
     "cms:verify-wechat-compat": "tsx scripts/cms/verify-wechat-compat.ts",

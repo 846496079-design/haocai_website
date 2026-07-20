@@ -6,7 +6,7 @@ import { basename, dirname, extname, join } from 'node:path'
 import { newsArticles } from '@/lib/news-content'
 import type { SiteCode } from '@/lib/site-content'
 import { prepareCmsContent } from './publication-server'
-import { CMS_LOCALES, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult, type CmsLocaleArticle } from './types'
+import { CMS_LOCALES, areAllLocalesReadyForPublication, createEmptyContent, isContentComplete, isLocaleContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult, type CmsLocaleArticle } from './types'
 import * as postgresStore from './store-postgres'
 import { usesPostgres } from './config'
 
@@ -24,6 +24,7 @@ type ArticleRow = {
   pinned_position: number | null
   manual_position: number | null
   translation_status: 'CURRENT' | 'STALE' | 'NOT_TRANSLATED'
+  published_locales_complete: number
 }
 
 type VersionRow = {
@@ -95,6 +96,7 @@ function initialize() {
       draft_version_id INTEGER,
       published_at TEXT,
       offline_at TEXT,
+      published_locales_complete INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -173,6 +175,10 @@ function initialize() {
     ['is_pinned', 'INTEGER NOT NULL DEFAULT 0'], ['pinned_position', 'REAL'], ['manual_position', 'REAL'], ['translation_status', "TEXT NOT NULL DEFAULT 'NOT_TRANSLATED'"],
   ] as const
   additions.forEach(([name, definition]) => { if (!columns.has(name)) database.exec(`ALTER TABLE news_article ADD COLUMN ${name} ${definition}`) })
+  if (!columns.has('published_locales_complete')) {
+    database.exec('ALTER TABLE news_article ADD COLUMN published_locales_complete INTEGER NOT NULL DEFAULT 0')
+    database.exec("UPDATE news_article SET published_locales_complete = 1 WHERE status = 'PUBLISHED' AND published_version_id IS NOT NULL")
+  }
 }
 
 function optimizedCoverPath(cover: string) {
@@ -184,7 +190,7 @@ function seedLegacyArticles() {
   const count = database.prepare('SELECT COUNT(*) AS total FROM news_article').get() as { total: number }
   if (count.total) return
   const insert = database.transaction(() => {
-    const articleStatement = database.prepare('INSERT INTO news_article (slug, status, published_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
+    const articleStatement = database.prepare('INSERT INTO news_article (slug, status, published_at, published_locales_complete, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)')
     const versionStatement = database.prepare('INSERT INTO news_version (article_id, version_no, state, content_json, created_at, updated_at) VALUES (?, 1, ?, ?, ?, ?)')
     const updateStatement = database.prepare('UPDATE news_article SET published_version_id = ?, updated_at = ? WHERE id = ?')
     newsArticles.cn.forEach((cnArticle) => {
@@ -294,6 +300,7 @@ export function getPublishedArticles(locale: SiteCode): CmsLocaleArticle[] {
   if (usesPostgres()) return postgresStore.getPublishedArticles(locale) as unknown as CmsLocaleArticle[]
   const rows = database.prepare("SELECT * FROM news_article WHERE status = 'PUBLISHED' AND published_version_id IS NOT NULL ORDER BY is_pinned DESC, pinned_position, manual_position, published_at DESC, id DESC").all() as ArticleRow[]
   return rows.flatMap((row) => {
+    if (locale !== 'cn' && !row.published_locales_complete) return []
     const version = versionFor(row, false)
     return version ? [parseContent(version.content_json)[locale]] : []
   })
@@ -372,6 +379,7 @@ export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: 
     const normalized = prepareCmsContent(content, row.slug)
     const previous = version ? parseContent(version.content_json) : createEmptyContent(row.slug)
     const chineseChanged = JSON.stringify(previous.cn) !== JSON.stringify(normalized.cn)
+    const translationNeedsRefresh = chineseChanged && (row.translation_status === 'CURRENT' || isContentComplete(previous))
     const categoryName = normalized.cn.category.trim()
     const selectedCategory = categoryName
       ? database.prepare("SELECT id FROM news_category WHERE name = ? AND status = 'ACTIVE'").get(categoryName) as { id: number } | undefined
@@ -379,7 +387,7 @@ export function updateCmsDraft(id: number, content: CmsArticleContent, adminId: 
     if (categoryName && !selectedCategory) throw new Error('请选择一个已启用的正式分类。')
     const categoryId = selectedCategory?.id ?? null
     database.prepare('UPDATE news_version SET content_json = ?, previewed_at = NULL, updated_at = ? WHERE id = ?').run(JSON.stringify(normalized), timestamp, version.id)
-    database.prepare("UPDATE news_article SET category_id = ?, translation_status = CASE WHEN ? THEN 'STALE' ELSE translation_status END, status = CASE WHEN published_version_id IS NULL THEN 'DRAFT' ELSE status END, updated_at = ? WHERE id = ?").run(categoryId, chineseChanged ? 1 : 0, timestamp, row.id)
+    database.prepare("UPDATE news_article SET category_id = ?, translation_status = CASE WHEN ? THEN 'STALE' ELSE translation_status END, status = CASE WHEN published_version_id IS NULL THEN 'DRAFT' ELSE status END, updated_at = ? WHERE id = ?").run(categoryId, translationNeedsRefresh ? 1 : 0, timestamp, row.id)
     writeAudit(adminId, 'SAVE_DRAFT', 'news_article', String(row.id), { versionId: version.id })
   })
   operation()
@@ -413,13 +421,14 @@ export function publishCmsArticle(id: number, adminId: number, reviewed: boolean
   if (!row.draft_version_id || version.id !== row.draft_version_id) throw new Error('没有可发布的草稿版本，请先保存草稿。')
   const content = parseContent(version.content_json)
   if (!version.previewed_at) throw new Error('请先预览当前草稿。')
-  if (!isContentComplete(content)) throw new Error('CN、JP、HK 内容、封面和正文必须完整后才能发布。')
+  if (!isLocaleContentComplete(content.cn)) throw new Error('中文内容、封面和正文必须完整后才能发布。')
+  const publishedLocalesComplete = areAllLocalesReadyForPublication(content, row.translation_status)
   const timestamp = now()
   const operation = database.transaction(() => {
     if (row.published_version_id && row.published_version_id !== version.id) database.prepare("UPDATE news_version SET state = 'ARCHIVED', updated_at = ? WHERE id = ?").run(timestamp, row.published_version_id)
     database.prepare("UPDATE news_version SET state = 'PUBLISHED', updated_at = ? WHERE id = ?").run(timestamp, version.id)
-    database.prepare("UPDATE news_article SET status = 'PUBLISHED', published_version_id = ?, draft_version_id = NULL, published_at = ?, offline_at = NULL, updated_at = ? WHERE id = ?").run(version.id, timestamp, timestamp, row.id)
-    writeAudit(adminId, 'PUBLISH', 'news_article', String(row.id), { versionId: version.id })
+    database.prepare("UPDATE news_article SET status = 'PUBLISHED', published_version_id = ?, draft_version_id = NULL, published_locales_complete = ?, published_at = ?, offline_at = NULL, updated_at = ? WHERE id = ?").run(version.id, publishedLocalesComplete ? 1 : 0, timestamp, timestamp, row.id)
+    writeAudit(adminId, 'PUBLISH', 'news_article', String(row.id), { versionId: version.id, publishedLocalesComplete })
   })
   operation()
 }

@@ -47,9 +47,10 @@ function formatUpdatedAt(value: string) {
 }
 
 function translationLabel(item: DashboardArticle) {
+  if (!item.localesComplete) return { text: '待翻译', tone: 'bg-slate-100 text-slate-600' }
   if (item.translationStatus === 'CURRENT') return { text: '译文已同步', tone: 'bg-emerald-50 text-emerald-700' }
   if (item.translationStatus === 'STALE') return { text: '源稿有更新', tone: 'bg-amber-50 text-amber-700' }
-  return { text: '待翻译', tone: 'bg-slate-100 text-slate-600' }
+  return { text: '外语内容已填写', tone: 'bg-sky-50 text-sky-700' }
 }
 
 async function responseMessage(response: Response, fallback: string) {

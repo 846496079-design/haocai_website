@@ -66,8 +66,8 @@ async function main() {
     const categoryId = categoryRows[0]?.id || null
 
     const articleRows = await sql.query(`
-      INSERT INTO news_article (slug, status, category_id, published_at, created_at, updated_at)
-      VALUES ($1, 'PUBLISHED', $2, $3, $4, $5)
+      INSERT INTO news_article (slug, status, category_id, published_at, published_locales_complete, created_at, updated_at)
+      VALUES ($1, 'PUBLISHED', $2, $3, TRUE, $4, $5)
       ON CONFLICT (slug) DO UPDATE SET slug = EXCLUDED.slug
       RETURNING id, published_version_id, (xmax = 0) AS created
     `, [article.slug, categoryId, article.published_at, article.created_at, article.updated_at])
@@ -100,7 +100,7 @@ async function main() {
     }
     await sql.query(`
       UPDATE news_article
-      SET status = 'PUBLISHED', published_version_id = $2, draft_version_id = NULL,
+      SET status = 'PUBLISHED', published_version_id = $2, draft_version_id = NULL, published_locales_complete = TRUE,
         published_at = COALESCE(published_at, $3), updated_at = NOW()
       WHERE id = $1
     `, [target.id, versionId, article.published_at])

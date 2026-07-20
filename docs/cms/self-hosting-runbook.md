@@ -88,6 +88,15 @@ CMS_TRANSLATION_API_KEY=<server-side key>
 CMS_TRANSLATION_MODEL=<model identifier>
 ```
 
+当前生产服务器的准确配置位置是 `/www/zhangdashi-deploy/shared/env/.env.local`。建议在宝塔文件管理器中由 root 编辑，避免密钥进入终端历史；保存后确认文件权限为 `0600`，再执行：
+
+```bash
+pm2 restart zds-website --update-env
+pm2 status zds-website
+```
+
+登录 CMS 后访问 `/api/cms/health/`，确认 `translation` 为 `configured`，再用测试稿执行一次翻译。新媒体同事不需要知道或填写 API Key，只需登录网页后台点击“一键翻译”；密钥始终由 Next.js 服务端读取。未配置翻译时中文稿仍可发布，JP/HK 暂不展示该稿。
+
 变量含义和轮换规则以 [environment-variables.md](./environment-variables.md) 为准。
 
 ## 5. 数据库发布

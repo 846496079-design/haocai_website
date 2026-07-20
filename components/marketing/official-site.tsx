@@ -1538,7 +1538,7 @@ export default function OfficialSite({
             {/* 定价（卡片；完整对比表在产品页） */}
             {renderPricing()}
             {site.comparison && (
-              <div className="-mt-8 px-6 pb-12 text-center">
+              <div className="relative z-10 -mt-8 px-6 pb-12 text-center">
                 <a href={`${site.path}product/#comparison`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{home.fullComparison}<ArrowRight className="ml-1 size-4" /></a>
               </div>
             )}

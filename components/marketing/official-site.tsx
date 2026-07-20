@@ -886,9 +886,24 @@ export default function OfficialSite({
   useEffect(() => {
     if (page !== 'partners') return
     const inviteCode = getInviteCodeFromSearch(window.location.search)
-    if (inviteCode) {
-      setPartnerForm((form) => ({ ...form, inviteCode }))
+    if (!inviteCode) return
+
+    setPartnerForm((form) => ({ ...form, inviteCode }))
+    const formSection = document.getElementById('partner-form')
+    if (!formSection) return
+
+    const formHash = '#partner-form'
+    if (window.location.hash !== formHash) {
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${window.location.pathname}${window.location.search}${formHash}`,
+      )
     }
+    const frameId = window.requestAnimationFrame(() => {
+      formSection.scrollIntoView({ behavior: 'auto', block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(frameId)
   }, [page])
 
   function updatePartnerField(field: PartnerField, value: string) {

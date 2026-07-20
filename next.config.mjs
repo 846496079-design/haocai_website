@@ -2,6 +2,15 @@
 const nextConfig = {
   allowedDevOrigins: ['127.0.0.1'],
   output: 'standalone',
+  outputFileTracingIncludes: {
+    '/api/cms/upload': [
+      './node_modules/sharp/**/*',
+      './node_modules/@img/**/*',
+      './node_modules/@emnapi/runtime/**/*',
+      './node_modules/detect-libc/**/*',
+      './node_modules/semver/**/*',
+    ],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -1,4 +1,4 @@
-import { access, cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const projectRoot = process.cwd()
@@ -13,6 +13,14 @@ async function requirePath(target, description) {
     await access(target)
   } catch {
     throw new Error(`缺少${description}：${target}`)
+  }
+}
+
+async function requireFileNamePart(target, namePart, description) {
+  await requirePath(target, description)
+  const entries = await readdir(target, { recursive: true, withFileTypes: true })
+  if (!entries.some((entry) => entry.isFile() && entry.name.includes(namePart))) {
+    throw new Error(`缺少${description}文件：${target}（文件名需要包含 ${namePart}）`)
   }
 }
 
@@ -41,6 +49,18 @@ await cp(publicRoot, path.join(outputRoot, 'public'), {
       && !relativePath.startsWith(`${path.join('uploads', 'cms')}${path.sep}`)
   },
 })
+
+await requirePath(path.join(outputRoot, 'node_modules', 'detect-libc', 'lib', 'detect-libc.js'), 'sharp 的 detect-libc 运行文件')
+await requirePath(path.join(outputRoot, 'node_modules', 'semver', 'semver.js'), 'sharp 的 semver 运行文件')
+await requirePath(path.join(outputRoot, 'node_modules', '@img', 'colour', 'index.cjs'), 'sharp 的 colour 运行文件')
+if (process.platform === 'linux' && process.arch === 'x64') {
+  await requireFileNamePart(path.join(outputRoot, 'node_modules', '@img', 'sharp-linux-x64'), '.node', 'Linux x64 sharp 原生模块')
+  await requireFileNamePart(path.join(outputRoot, 'node_modules', '@img', 'sharp-libvips-linux-x64'), '.so', 'Linux x64 libvips 运行库')
+}
+if (process.platform === 'win32' && process.arch === 'x64') {
+  await requireFileNamePart(path.join(outputRoot, 'node_modules', '@img', 'sharp-win32-x64'), '.node', 'Windows x64 sharp 原生模块')
+  await requireFileNamePart(path.join(outputRoot, 'node_modules', '@img', 'sharp-win32-x64'), '.dll', 'Windows x64 libvips 运行库')
+}
 await mkdir(path.join(outputRoot, 'scripts', 'leads'), { recursive: true })
 await cp(leadWorkerSource, path.join(outputRoot, 'scripts', 'leads', 'worker.mjs'))
 

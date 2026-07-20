@@ -30,6 +30,7 @@
             test "$(uname -m)" = "x86_64"
             npm ci --registry=https://registry.npmmirror.com
             npm run typecheck:cms
+            npm run cms:verify-image-upload
             npm run leads:verify
             npm run feishu:verify
             npm run build

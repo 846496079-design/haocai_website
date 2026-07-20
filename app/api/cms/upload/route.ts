@@ -3,8 +3,8 @@ import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
-import sharp from 'sharp'
 import { getCmsAdmin } from '@/lib/cms/auth'
+import { inspectCmsImageSource, processCmsImage } from '@/lib/cms/image-upload'
 import { recordCmsAsset } from '@/lib/cms/store'
 
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -39,26 +39,30 @@ export async function POST(request: Request) {
     if (!(file instanceof File)) throw new Error('请选择封面图片。')
     if (!allowedTypes.has(file.type) || file.size > maximumSize) throw new Error('仅支持不超过 10MB 的 JPEG、PNG 或 WebP 图片。')
     const source = Buffer.from(await file.arrayBuffer())
-    const metadata = await sharp(source).metadata()
-    if (!metadata.width || !metadata.height) throw new Error('图片文件无效。')
+    const sourceFormat = inspectCmsImageSource(source)
+    if (sourceFormat.mimeType !== file.type) throw new Error('图片文件格式与声明类型不一致，请重新选择图片。')
+    const processed = await processCmsImage(source, sourceFormat)
     const key = randomUUID()
-    const preserveTransparency = Boolean(metadata.hasAlpha)
-    const mimeType = preserveTransparency ? 'image/png' : 'image/jpeg'
-    const extension = preserveTransparency ? 'png' : 'jpg'
-    const mainName = `${key}.${extension}`
-    const thumbnailName = `${key}-thumb.${extension}`
-    const mainPipeline = sharp(source).rotate().resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
-    const thumbnailPipeline = sharp(source).rotate().resize({ width: 960, height: 540, fit: 'cover', position: 'attention' })
-    const [main, thumbnail] = await Promise.all([
-      preserveTransparency ? mainPipeline.png({ compressionLevel: 9 }).toBuffer() : mainPipeline.jpeg({ quality: 86, mozjpeg: true }).toBuffer(),
-      preserveTransparency ? thumbnailPipeline.png({ compressionLevel: 9 }).toBuffer() : thumbnailPipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer(),
-    ])
-    const [url, thumbnailUrl] = await Promise.all([
-      saveAsset(key, mainName, main, mimeType),
-      saveAsset(key, thumbnailName, thumbnail, mimeType),
-    ])
-    await recordCmsAsset({ id: key, articleId, blobUrl: url, thumbnailUrl, mimeType, width: metadata.width, height: metadata.height, altText, usage }, admin.id)
-    return NextResponse.json({ assetId: key, url, thumbnailUrl, mimeType, width: metadata.width, height: metadata.height, usage })
+    const mainName = `${key}.${processed.extension}`
+    const url = await saveAsset(key, mainName, processed.main, processed.mimeType)
+    let thumbnailUrl = url
+    if (processed.thumbnail) {
+      thumbnailUrl = await saveAsset(key, `${key}-thumb.${processed.extension}`, processed.thumbnail, processed.mimeType)
+    } else {
+      console.error('CMS 图片优化不可用，已降级保存原图。', processed.optimizationError)
+    }
+    await recordCmsAsset({ id: key, articleId, blobUrl: url, thumbnailUrl, mimeType: processed.mimeType, width: processed.width, height: processed.height, altText, usage }, admin.id)
+    return NextResponse.json({
+      assetId: key,
+      url,
+      thumbnailUrl,
+      mimeType: processed.mimeType,
+      width: processed.width,
+      height: processed.height,
+      usage,
+      processingMode: processed.processingMode,
+      message: processed.processingMode === 'original' ? '图片优化服务暂时不可用，已保存原图，可以继续编辑和发布。' : undefined,
+    })
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : '上传失败。' }, { status: 400 })
   }

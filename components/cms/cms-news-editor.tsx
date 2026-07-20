@@ -19,8 +19,11 @@ import {
   type CmsRequiredField,
 } from "@/lib/cms/types";
 import { getCmsEditorWorkflowGuide } from "@/lib/cms/editor-workflow";
+import { readCmsUploadResponse } from "@/lib/cms/upload-client";
 import CmsAuditLog from "@/components/cms/cms-audit-log";
 import CmsRichTextEditor from "@/components/cms/cms-rich-text-editor";
+
+type CmsUploadStatus = "idle" | "existing" | "uploading" | "optimized" | "original" | "failed";
 
 const localeNames: Record<SiteCode, string> = {
   cn: "简体中文",
@@ -129,6 +132,7 @@ export default function CmsNewsEditor({
   const [serverUpdatedAt, setServerUpdatedAt] = useState(initial.updatedAt);
   const [dirty, setDirty] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<CmsUploadStatus>(initial.content.cn.cover ? "existing" : "idle");
   const [hasCurrentPreview, setHasCurrentPreview] = useState(Boolean(initial.previewedAt));
   const [translationStatus, setTranslationStatus] = useState(initial.translationStatus);
   const [translationMode, setTranslationMode] = useState<"overwrite" | "fill-missing">("fill-missing");
@@ -315,43 +319,48 @@ export default function CmsNewsEditor({
   }
 
   async function uploadImage(file: File, usage: "COVER" | "CONTENT", altText = "") {
-    const formData = new FormData();
-    formData.set("file", file);
-    formData.set("articleId", String(initial.id));
-    formData.set("usage", usage);
-    formData.set("altText", altText);
-    const response = await fetch("/api/cms/upload", { method: "POST", body: formData });
-    const data = (await response.json()) as {
-      assetId?: string;
-      url?: string;
-      thumbnailUrl?: string;
-      width?: number;
-      height?: number;
-      mimeType?: string;
-      message?: string;
-    };
-    if (!response.ok || !data.url || !data.assetId) throw new Error(data.message ?? "图片上传失败。");
-    return {
-      assetId: data.assetId,
-      cmsPublicUrl: data.url,
-      thumbnailUrl: data.thumbnailUrl,
-      mimeType: data.mimeType ?? "image/jpeg",
-      width: data.width ?? 1,
-      height: data.height ?? 1,
-      altText,
-    } satisfies CmsPublicationAsset;
+    setUploadStatus("uploading");
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      formData.set("articleId", String(initial.id));
+      formData.set("usage", usage);
+      formData.set("altText", altText);
+      const response = await fetch("/api/cms/upload", { method: "POST", body: formData });
+      const data = await readCmsUploadResponse(response);
+      setUploadStatus(data.processingMode === "original" ? "original" : "optimized");
+      return {
+        asset: {
+          assetId: data.assetId,
+          cmsPublicUrl: data.url,
+          thumbnailUrl: data.thumbnailUrl,
+          mimeType: data.mimeType ?? "image/jpeg",
+          width: data.width ?? 1,
+          height: data.height ?? 1,
+          altText,
+        } satisfies CmsPublicationAsset,
+        processingMode: data.processingMode,
+        message: data.message,
+      };
+    } catch (error) {
+      setUploadStatus("failed");
+      throw error;
+    }
   }
 
   async function uploadCover(file: File) {
     setUploading(true);
+    setUploadStatus("uploading");
     try {
-      const asset = await uploadImage(file, "COVER", article.title || "新闻封面");
-      setContent((current) => Object.fromEntries(CMS_LOCALES.map((code) => [code, { ...current[code], cover: asset.cmsPublicUrl }])) as CmsArticleContent);
+      const result = await uploadImage(file, "COVER", article.title || "新闻封面");
+      setContent((current) => Object.fromEntries(CMS_LOCALES.map((code) => [code, { ...current[code], cover: result.asset.cmsPublicUrl }])) as CmsArticleContent);
       setDirty(true);
       setHasCurrentPreview(false);
       setReviewed(false);
       setJourneySignal(null);
-      setNotice("封面已优化上传，请保存草稿。");
+      setNotice(result.processingMode === "original"
+        ? `${result.message ?? "封面已保存为原图。"} 请保存草稿并重新预览。`
+        : "封面已优化上传，请保存草稿并重新预览。");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "封面上传失败。");
     } finally {
@@ -360,7 +369,13 @@ export default function CmsNewsEditor({
   }
 
   async function uploadContentImage(file: File, altText: string) {
-    return uploadImage(file, "CONTENT", altText);
+    const result = await uploadImage(file, "CONTENT", altText);
+    return result.asset;
+  }
+
+  function updateUploadState(nextUploading: boolean) {
+    setUploading(nextUploading);
+    if (nextUploading) setUploadStatus("uploading");
   }
 
   async function translate() {
@@ -562,7 +577,7 @@ export default function CmsNewsEditor({
                   onChange={updateBody}
                   onUpload={uploadContentImage}
                   onNotice={setNotice}
-                  onUploadStateChange={setUploading}
+                  onUploadStateChange={updateUploadState}
                 />
               </div>
             </div>
@@ -575,7 +590,7 @@ export default function CmsNewsEditor({
               <li>外语公开状态：<b className={allLocalesReady ? "text-emerald-700" : "text-amber-700"}>{allLocalesReady ? "日文、港文可随本次发布上线" : translationStatus === "CURRENT" ? "日文或繁体有缺项，本次仅发布中文站" : "译文未就绪，本次仅发布中文站"}</b></li>
               <li>译稿状态：<b className={translationStatus === "CURRENT" ? "text-emerald-700" : "text-amber-700"}>{translationStatus === "CURRENT" ? "已基于当前中文生成" : translationStatus === "STALE" ? "中文已修改，请重新翻译" : "尚未生成译稿"}</b></li>
               <li>当前版本预览：<b className={hasCurrentPreview && !dirty ? "text-emerald-700" : "text-amber-700"}>{hasCurrentPreview && !dirty ? "已完成" : "需要重新预览"}</b></li>
-              <li>图片上传：<b className={uploading ? "text-amber-700" : "text-emerald-700"}>{uploading ? "进行中" : "已完成"}</b></li>
+              <li>图片上传：<b className={uploadStatus === "failed" ? "text-red-700" : uploadStatus === "idle" || uploadStatus === "uploading" || uploadStatus === "original" ? "text-amber-700" : "text-emerald-700"}>{uploadStatus === "uploading" ? "进行中" : uploadStatus === "optimized" ? "上传成功" : uploadStatus === "original" ? "已保存原图" : uploadStatus === "failed" ? "上传失败，请重试" : uploadStatus === "existing" ? "已有图片" : "尚未上传"}</b></li>
             </ul>
 
             <fieldset disabled={operationPending} className="mt-5 space-y-2 disabled:opacity-60">

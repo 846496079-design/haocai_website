@@ -106,4 +106,13 @@ for (const scriptUrl of scriptUrls) {
   assertImmutableAsset(scriptResponse, scriptUrl)
 }
 
-console.log(`部署验收通过：${pageResponse.url}，RSC 正常，CSS ${cssUrls.length} 个，JavaScript ${scriptUrls.length} 个。`)
+const uploadProbeUrl = new URL('/api/cms/upload/', pageResponse.url)
+const uploadProbeResponse = await fetch(uploadProbeUrl, {
+  redirect: 'follow',
+  headers: { 'cache-control': 'no-store' },
+})
+if (uploadProbeResponse.status !== 405) {
+  throw new Error(`CMS 图片上传路由未正常加载：${uploadProbeUrl} 返回 HTTP ${uploadProbeResponse.status}`)
+}
+
+console.log(`部署验收通过：${pageResponse.url}，RSC 正常，CSS ${cssUrls.length} 个，JavaScript ${scriptUrls.length} 个，CMS 图片上传路由正常。`)

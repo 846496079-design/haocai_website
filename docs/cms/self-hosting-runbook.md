@@ -26,7 +26,7 @@
 
 ## 3. 构建
 
-正式生产发布由根目录 `.cnb.yml` 在 Linux amd64 的 Node.js 24 镜像中执行 `npm ci`、CMS 类型检查、`next build` 和 standalone 打包。构建后生成 `SHA256SUMS`，服务器核验全部文件后才允许切换。
+正式生产发布由根目录 `.cnb.yml` 在 Linux amd64 的 Node.js 24 镜像中执行 `npm ci`、CMS 类型检查、图片上传容错验证、`next build` 和 standalone 打包。打包阶段必须确认 `sharp`、`detect-libc`、Linux x64 原生模块和 libvips 运行库已进入 release；任一文件缺失都停止发布。构建后生成 `SHA256SUMS`，服务器核验全部文件后才允许切换。
 
 手工构建只用于排障或预演：
 
@@ -38,8 +38,12 @@ cd zhdashi-official
 git checkout <signed-off-commit>
 npm ci
 npm run typecheck:cms
+npm run cms:verify-image-upload
 npm run build
+npm run package:release
 ```
+
+发布目录启动后，未登录 `GET /api/cms/upload/` 应返回 `405`，不能返回模块初始化 `500`。`sharp` 可用时图片按既有规则优化；优化组件不可用时接口保存已校验原图并返回 `processingMode: original`，不阻断编辑和发布。
 
 不要把 `.env.local`、`.data`、`public/uploads/cms`、数据库连接串或 Blob 令牌打进镜像和构建产物。构建与运行使用同一 Node 主版本。
 

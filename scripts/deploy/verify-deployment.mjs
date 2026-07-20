@@ -38,8 +38,6 @@ function assertPublicNoStore(cacheControl, resourceName) {
 
 assertPublicNoStore(pageCacheControl, 'HTML')
 
-if (!pageResponse.headers.get('etag')) throw new Error('HTML 缺少 ETag 内容版本标识。')
-
 const probeUrl = new URL(target)
 probeUrl.searchParams.set('__zds_release_probe', `${Date.now()}`)
 const probeResponse = await fetchRequired(probeUrl.toString(), { 'accept-encoding': 'identity' })

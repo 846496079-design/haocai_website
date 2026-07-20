@@ -26,7 +26,7 @@
 1. Nginx 公开站点 map 改为 `no-store, max-age=0`。
 2. 对公开三站路径同时设置 `proxy_cache_bypass` 与 `proxy_no_cache`，避免宝塔全局代理缓存继续复用旧 HTML/RSC。
 3. 发布脚本将 Nginx 的 `identity`、`gzip`、`br` 响应与当前 Next.js 进程逐一比对；外部验收器将规范地址与版本探针的静态资源签名比对。
-4. 保留 HTML ETag 和 Next.js 哈希静态资源一年 immutable 校验。
+4. 保留 Next.js 哈希静态资源一年 immutable 校验；动态首页不依赖 ETag，静态产品页通过多编码内容比对确认 release 一致。
 5. 更新自有服务器 Runbook，区分浏览器历史缓存和必须由服务器立即绕过的代理缓存。
 
 ### 步骤四：验证与交付

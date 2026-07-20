@@ -101,8 +101,7 @@ verify_site() {
     return 1
   fi
   if [[ "$require_public_cache" == true ]]; then
-    if ! verify_public_no_store_headers "$work_dir/page.headers" \
-      || ! grep -Eqi '^ETag:[[:space:]]*[^[:space:]]+' "$work_dir/page.headers"; then
+    if ! verify_public_no_store_headers "$work_dir/page.headers"; then
       rm -rf "$work_dir"
       return 1
     fi

@@ -130,7 +130,7 @@ Nginx 缓存边界：
 
 三站首页、新闻列表和新闻详情必须保持 `force-dynamic`，每次请求都从运行时共享数据库读取 CMS 已发布内容。不能让这些路由进入永久静态预渲染；构建阶段使用的临时初始化数据库只用于完成构建，不能作为线上新闻数据源。
 
-公开 HTML 保留 ETag 作为内容版本标识，但 `no-store` 不以缓存复用或 `304` 为发布前提。RSC 响应同样使用 `no-store, max-age=0`；HTML 实际引用的 CSS 与 JavaScript 必须同时具备一年 `max-age=31536000` 与 `immutable`。发布脚本还会把 Nginx 在 `identity`、`gzip`、`br` 三种内容编码下返回的产品页 HTML/RSC 与当前 Next.js 进程逐一比较，任一编码仍返回旧 release 都会回滚。
+静态生成页面可以保留 ETag；运行时读取 CMS 数据的动态首页不强制生成 ETag，且 `no-store` 不以缓存复用或 `304` 为发布前提。RSC 响应同样使用 `no-store, max-age=0`；HTML 实际引用的 CSS 与 JavaScript 必须同时具备一年 `max-age=31536000` 与 `immutable`。发布脚本还会把 Nginx 在 `identity`、`gzip`、`br` 三种内容编码下返回的产品页 HTML/RSC 与当前 Next.js 进程逐一比较，任一编码仍返回旧 release 都会回滚。
 
 旧缓存规则已经写入用户设备的 HTML 无法由服务器主动删除；受影响设备需要执行一次强制刷新，或先访问带一次性查询参数的页面。设备取得新响应后，`no-store` 会阻止公开 HTML 与 RSC 再次写入缓存。服务器 `proxy_cache` 中的历史对象不能转嫁给访问者处理，路径级 bypass 必须让它们立即退出请求链路。
 

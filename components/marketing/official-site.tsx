@@ -1861,10 +1861,10 @@ export default function OfficialSite({
                     <p className="mt-6 text-lg leading-8 text-muted-foreground">{copy.companyHeroDesc}</p>
                     <div className="mt-8">
                       <Image
-                        src={site.code === 'jp' ? '/images/brand/official-logo-jp-20260715.png' : site.code === 'hk' ? '/images/brand/official-logo-hk-20260715.png' : '/images/brand/official-logo-cn-20260715.png'}
+                        src={site.code === 'jp' ? '/images/brand/official-logo-jp-20260720.webp' : site.code === 'hk' ? '/images/brand/official-logo-hk-20260720.webp' : '/images/brand/official-logo-cn-20260720.webp'}
                         alt="账大师 · 360 元 AI 记账"
                         width={720}
-                        height={238}
+                        height={263}
                         className="h-12 w-auto"
                       />
                     </div>

@@ -15,9 +15,9 @@ interface NavbarProps {
 const siteList = [sites.cn, sites.jp, sites.hk]
 const siteLabel = { cn: '站点', jp: 'サイト', hk: '站點' } as const
 const logoSrc = {
-  cn: '/images/brand/official-logo-cn-20260715.png',
-  jp: '/images/brand/official-logo-jp-20260715.png',
-  hk: '/images/brand/official-logo-hk-20260715.png',
+  cn: '/images/brand/official-logo-cn-20260720.webp',
+  jp: '/images/brand/official-logo-jp-20260720.webp',
+  hk: '/images/brand/official-logo-hk-20260720.webp',
 } as const
 const localizedSiteNames = {
   cn: { cn: '中国站', jp: '日本站', hk: '香港站' },
@@ -43,7 +43,7 @@ export default function Navbar({ site, trialHref }: NavbarProps) {
             src={logoSrc[site.code]}
             alt="账大师"
             width={720}
-            height={238}
+            height={263}
             className="h-8 w-auto md:h-9"
             priority
           />

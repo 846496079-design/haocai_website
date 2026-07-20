@@ -9,9 +9,9 @@ interface FooterProps {
 const siteList = [sites.cn, sites.jp, sites.hk]
 const footerActionCopy = { cn: '关于我们', jp: '会社紹介', hk: '關於我們' } as const
 const logoSrc = {
-  cn: '/images/brand/official-logo-cn-20260715.png',
-  jp: '/images/brand/official-logo-jp-20260715.png',
-  hk: '/images/brand/official-logo-hk-20260715.png',
+  cn: '/images/brand/official-logo-cn-20260720.webp',
+  jp: '/images/brand/official-logo-jp-20260720.webp',
+  hk: '/images/brand/official-logo-hk-20260720.webp',
 } as const
 
 const mobileFooterCopy = {
@@ -71,7 +71,7 @@ export default function Footer({ site }: FooterProps) {
             src={logoSrc[site.code]}
             alt="账大师"
             width={720}
-            height={238}
+            height={263}
             className="h-9 w-auto"
           />
           <p className="mt-3 text-sm text-muted-foreground">{mobileCopy.slogan}</p>
@@ -131,7 +131,7 @@ export default function Footer({ site }: FooterProps) {
                 src={logoSrc[site.code]}
                 alt="账大师"
                 width={720}
-                height={238}
+                height={263}
                 className="h-11 w-auto"
               />
             </div>

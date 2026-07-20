@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, ImagePlus } from "lucide-react";
+import { Copy, ImagePlus, LoaderCircle } from "lucide-react";
 import type { SiteCode } from "@/lib/site-content";
 import {
   CMS_LOCALES,
   areAllLocalesReadyForPublication,
-  isContentComplete,
   isLocaleContentComplete,
   type CmsArticleContent,
   type CmsArticleRecord,
@@ -16,6 +15,7 @@ import {
   type CmsPublicationAsset,
   type CmsPublicationBody,
 } from "@/lib/cms/types";
+import { getCmsEditorWorkflowGuide } from "@/lib/cms/editor-workflow";
 import CmsAuditLog from "@/components/cms/cms-audit-log";
 import CmsRichTextEditor from "@/components/cms/cms-rich-text-editor";
 
@@ -106,7 +106,14 @@ export default function CmsNewsEditor({
   const [reviewed, setReviewed] = useState(false);
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [journeySignal, setJourneySignal] = useState<"translated" | "preview-opened" | null>(null);
   const savingRef = useRef(false);
+  const allowTranslationReloadRef = useRef(false);
+  const translationOverlayRef = useRef<HTMLDivElement>(null);
+  const workflowGuideRef = useRef<HTMLDivElement>(null);
+  const reviewCheckboxRef = useRef<HTMLInputElement>(null);
+  const noticeRef = useRef<HTMLParagraphElement>(null);
   const [serverVersionId, setServerVersionId] = useState(initial.versionId);
   const [serverUpdatedAt, setServerUpdatedAt] = useState(initial.updatedAt);
   const [dirty, setDirty] = useState(false);
@@ -116,9 +123,22 @@ export default function CmsNewsEditor({
   const [translationMode, setTranslationMode] = useState<"overwrite" | "fill-missing">("fill-missing");
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const article = content[locale];
-  const complete = useMemo(() => isContentComplete(content), [content]);
   const chineseComplete = useMemo(() => isLocaleContentComplete(content.cn), [content]);
+  const allLocalesReady = useMemo(() => areAllLocalesReadyForPublication(content, translationStatus), [content, translationStatus]);
+  const operationPending = saving || uploading || translating;
   const recoveryKey = `cms-richtext-draft-${initial.id}`;
+  const translationJourneyKey = `cms-translation-journey-${initial.id}`;
+  const workflowGuide = useMemo(() => getCmsEditorWorkflowGuide({
+    translating,
+    uploading,
+    saving,
+    chineseComplete,
+    dirty,
+    hasCurrentPreview,
+    reviewed,
+    translationCompleted: journeySignal === "translated",
+    previewOpened: journeySignal === "preview-opened",
+  }), [chineseComplete, dirty, hasCurrentPreview, journeySignal, reviewed, saving, translating, uploading]);
 
   useEffect(() => {
     void fetch("/api/cms/categories").then(async (response) => {
@@ -127,6 +147,43 @@ export default function CmsNewsEditor({
       setCategories((data.items ?? []).filter((item) => item.status === "ACTIVE").map((item) => item.name));
     });
   }, []);
+
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem(translationJourneyKey) !== "translated") return;
+      window.sessionStorage.removeItem(translationJourneyKey);
+      setJourneySignal("translated");
+      setNotice("翻译已完成并保存。请预览当前版本后再确认发布。");
+    } catch {
+      // 会话存储不可用时不影响服务端已保存的翻译结果。
+    }
+  }, [translationJourneyKey]);
+
+  useEffect(() => {
+    if (!translating) return;
+    translationOverlayRef.current?.focus();
+  }, [translating]);
+
+  useEffect(() => {
+    if (!journeySignal) return;
+    workflowGuideRef.current?.focus();
+  }, [journeySignal]);
+
+  useEffect(() => {
+    if (!notice || translating || journeySignal) return;
+    noticeRef.current?.focus();
+  }, [journeySignal, notice, translating]);
+
+  useEffect(() => {
+    if (!translating) return;
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      if (allowTranslationReloadRef.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+    return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+  }, [translating]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(recoveryKey);
@@ -156,15 +213,17 @@ export default function CmsNewsEditor({
   }, [content, dirty, recoveryKey, serverVersionId]);
 
   useEffect(() => {
-    if (!dirty || saving || uploading) return;
+    if (!dirty || saving || uploading || translating) return;
     const timer = window.setTimeout(() => void saveDraft(true), 3500);
     return () => window.clearTimeout(timer);
-  }, [content, dirty, saving, uploading]);
+  }, [content, dirty, saving, translating, uploading]);
 
   function updateArticle(update: Partial<CmsLocaleArticle>) {
     setContent((current) => ({ ...current, [locale]: { ...current[locale], ...update } }));
     setDirty(true);
     setHasCurrentPreview(false);
+    setReviewed(false);
+    setJourneySignal(null);
     if (locale === "cn" && translationStatus === "CURRENT") setTranslationStatus("STALE");
   }
 
@@ -240,6 +299,8 @@ export default function CmsNewsEditor({
       setContent((current) => Object.fromEntries(CMS_LOCALES.map((code) => [code, { ...current[code], cover: asset.cmsPublicUrl }])) as CmsArticleContent);
       setDirty(true);
       setHasCurrentPreview(false);
+      setReviewed(false);
+      setJourneySignal(null);
       setNotice("封面已优化上传，请保存草稿。");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "封面上传失败。");
@@ -253,17 +314,34 @@ export default function CmsNewsEditor({
   }
 
   async function translate() {
-    if (!(await saveDraft())) return;
-    setSaving(true);
-    const response = await fetch(`/api/cms/news/${initial.id}/translate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: translationMode }),
-    });
-    const data = (await response.json()) as { message?: string };
-    setSaving(false);
-    if (!response.ok) return setNotice(data.message ?? "翻译失败。");
-    window.location.reload();
+    allowTranslationReloadRef.current = false;
+    setJourneySignal(null);
+    setNotice("");
+    setTranslating(true);
+    try {
+      if (!(await saveDraft())) return;
+      const response = await fetch(`/api/cms/news/${initial.id}/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: translationMode }),
+      });
+      const data = (await response.json()) as { message?: string };
+      if (!response.ok) {
+        setNotice(data.message ?? "翻译失败，请检查网络或翻译服务后重试。");
+        return;
+      }
+      try {
+        window.sessionStorage.setItem(translationJourneyKey, "translated");
+      } catch {
+        // 会话存储不可用时仍重新读取服务端草稿。
+      }
+      allowTranslationReloadRef.current = true;
+      window.location.reload();
+    } catch {
+      setNotice("翻译失败，请检查网络或翻译服务后重试。");
+    } finally {
+      if (!allowTranslationReloadRef.current) setTranslating(false);
+    }
   }
 
   async function preview() {
@@ -271,8 +349,9 @@ export default function CmsNewsEditor({
     const response = await fetch(`/api/cms/news/${initial.id}/preview`, { method: "POST" });
     if (!response.ok) return setNotice("无法记录预览状态，请稍后重试。");
     setHasCurrentPreview(true);
+    setJourneySignal("preview-opened");
     window.open(`/cms/preview/${initial.id}/?site=${locale}`, "_blank", "noopener,noreferrer");
-    setNotice("已打开官网发布快照预览。");
+    setNotice("预览已打开，请检查内容和封面；确认无误后返回本页勾选人工审核。");
   }
 
   async function copyForWechat() {
@@ -326,23 +405,40 @@ export default function CmsNewsEditor({
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 md:px-8">
-      <div className="mx-auto max-w-[1680px]">
+    <main aria-busy={translating} className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 md:px-8">
+      {translating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-5 backdrop-blur-sm">
+          <div
+            ref={translationOverlayRef}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="translation-progress-title"
+            aria-describedby="translation-progress-description"
+            tabIndex={-1}
+            className="w-full max-w-md rounded-2xl bg-white p-7 text-center shadow-2xl outline-none ring-4 ring-indigo-300/50"
+          >
+            <LoaderCircle aria-hidden="true" className="mx-auto size-10 animate-spin text-indigo-600" />
+            <h2 id="translation-progress-title" className="mt-5 text-xl font-bold text-slate-950">正在翻译并保存</h2>
+            <p id="translation-progress-description" className="mt-3 text-sm leading-6 text-slate-600">正在生成日文、繁体内容，请勿关闭页面或切换到其他稿件。完成后系统会自动载入已保存的译文。</p>
+          </div>
+        </div>
+      )}
+      <div inert={translating ? true : undefined} className="mx-auto max-w-[1680px]">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
           <div>
             <Link href="/cms/news/" className="text-sm font-semibold text-indigo-700 hover:text-indigo-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">返回新闻管理</Link>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-bold">编辑草稿：{initial.slug}</h1>
-              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${saving ? "bg-blue-100 text-blue-800" : dirty ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
-                {saving ? "正在保存" : dirty ? "有未保存修改" : "已保存"}
+              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${translating || saving ? "bg-blue-100 text-blue-800" : dirty ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+                {translating ? "正在翻译" : saving ? "正在保存" : dirty ? "有未保存修改" : "已保存"}
               </span>
             </div>
             <p className="mt-1 text-sm text-slate-600">正文采用统一富文本模型；官网与公众号复制使用同一发布快照。</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => void saveDraft()} disabled={saving || uploading || !dirty} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">{saving ? "处理中" : dirty ? "保存草稿" : "已保存"}</button>
-            <button type="button" onClick={() => void copyForWechat()} disabled={saving || uploading} className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-50"><Copy className="size-4" />一键复制到公众号</button>
-            <button type="button" onClick={() => void preview()} disabled={saving || uploading} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60">预览官网效果</button>
+            <button type="button" onClick={() => void saveDraft()} disabled={operationPending || !dirty} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">{saving ? "处理中" : dirty ? "保存草稿" : "已保存"}</button>
+            <button type="button" onClick={() => void copyForWechat()} disabled={operationPending} className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:opacity-50"><Copy className="size-4" />一键复制到公众号</button>
+            <button type="button" onClick={() => void preview()} disabled={operationPending} className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60">预览官网效果</button>
           </div>
         </header>
 
@@ -350,7 +446,7 @@ export default function CmsNewsEditor({
           <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-5">
             <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-4">
               {CMS_LOCALES.map((code) => (
-                <button key={code} type="button" onClick={() => setLocale(code)} className={`rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${locale === code ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>{localeNames[code]}</button>
+                <button key={code} type="button" onClick={() => setLocale(code)} disabled={translating} className={`rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 ${locale === code ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>{localeNames[code]}</button>
               ))}
             </div>
 
@@ -366,7 +462,7 @@ export default function CmsNewsEditor({
               <Field label="新闻封面">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   {article.cover && <img src={article.cover} alt="封面预览" className="h-24 w-40 rounded-lg border border-slate-200 object-cover" />}
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ImagePlus className="size-4" />{uploading ? "上传中" : "选择封面"}<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadCover(file); event.target.value = ""; }} /></label>
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ImagePlus className="size-4" />{uploading ? "上传中" : "选择封面"}<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={operationPending} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadCover(file); event.target.value = ""; }} /></label>
                 </div>
               </Field>
 
@@ -378,7 +474,7 @@ export default function CmsNewsEditor({
                 <CmsRichTextEditor
                   key={locale}
                   value={article.body}
-                  disabled={saving}
+                  disabled={operationPending}
                   onChange={updateBody}
                   onUpload={uploadContentImage}
                   onNotice={setNotice}
@@ -391,24 +487,33 @@ export default function CmsNewsEditor({
           <aside className="h-fit rounded-xl border border-slate-200 bg-white p-5 2xl:sticky 2xl:top-6">
             <h2 className="font-semibold">发布检查</h2>
             <ul className="mt-4 space-y-3 text-sm text-slate-700">
-              <li>中文发布内容：<b className={chineseComplete ? "text-emerald-700" : "text-amber-700"}>{chineseComplete ? "完整" : "待补全或保存"}</b></li>
-              <li>外语公开状态：<b className={areAllLocalesReadyForPublication(content, translationStatus) ? "text-emerald-700" : "text-amber-700"}>{areAllLocalesReadyForPublication(content, translationStatus) ? "日文、港文可随本次发布上线" : "未翻译，本次仅发布中文站"}</b></li>
+              <li>中文发布内容：<b className={chineseComplete ? "text-emerald-700" : "text-amber-700"}>{chineseComplete ? "必填内容完整" : "缺少必填内容"}</b></li>
+              <li>外语公开状态：<b className={allLocalesReady ? "text-emerald-700" : "text-amber-700"}>{allLocalesReady ? "日文、港文可随本次发布上线" : translationStatus === "CURRENT" ? "日文或繁体有缺项，本次仅发布中文站" : "译文未就绪，本次仅发布中文站"}</b></li>
               <li>译稿状态：<b className={translationStatus === "CURRENT" ? "text-emerald-700" : "text-amber-700"}>{translationStatus === "CURRENT" ? "已基于当前中文生成" : translationStatus === "STALE" ? "中文已修改，请重新翻译" : "尚未生成译稿"}</b></li>
               <li>当前版本预览：<b className={hasCurrentPreview && !dirty ? "text-emerald-700" : "text-amber-700"}>{hasCurrentPreview && !dirty ? "已完成" : "需要重新预览"}</b></li>
               <li>图片上传：<b className={uploading ? "text-amber-700" : "text-emerald-700"}>{uploading ? "进行中" : "已完成"}</b></li>
             </ul>
 
-            <fieldset className="mt-5 space-y-2">
+            <fieldset disabled={operationPending} className="mt-5 space-y-2 disabled:opacity-60">
               <legend className="text-sm font-semibold text-slate-800">重新翻译方式</legend>
               <label className="flex items-start gap-2 text-sm text-slate-700"><input type="radio" name="translation-mode" value="fill-missing" checked={translationMode === "fill-missing"} onChange={() => setTranslationMode("fill-missing")} className="mt-1" />保留已有人工内容，仅补全变化文字</label>
               <label className="flex items-start gap-2 text-sm text-slate-700"><input type="radio" name="translation-mode" value="overwrite" checked={translationMode === "overwrite"} onChange={() => setTranslationMode("overwrite")} className="mt-1" />重新生成并覆盖日文、繁体全文</label>
             </fieldset>
-            <button type="button" onClick={() => void translate()} disabled={saving || uploading} className="mt-4 w-full rounded-lg border border-indigo-300 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">保存并翻译日文、繁体</button>
+            <button type="button" onClick={() => void translate()} disabled={operationPending} className="mt-4 w-full rounded-lg border border-indigo-300 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">保存并翻译日文、繁体</button>
 
-            <label className="mt-5 flex cursor-pointer gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} className="mt-1" />我已人工审核中文必填内容、封面、当前发布快照和已填写的外语内容。</label>
-            <button type="button" onClick={() => void publish()} disabled={saving || uploading || !chineseComplete || dirty || !hasCurrentPreview} className="mt-3 w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">确认发布</button>
-            {initial.status === "PUBLISHED" && <button type="button" onClick={() => void offline()} className="mt-3 w-full rounded-lg border border-red-300 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50">下线新闻</button>}
-            {notice && <p role="status" aria-live="polite" className="mt-4 rounded-lg bg-slate-100 p-3 text-sm leading-6 text-slate-700">{notice}</p>}
+            <div ref={workflowGuideRef} tabIndex={-1} className="mt-5 rounded-xl border border-indigo-200 bg-indigo-50 p-4 outline-none focus-visible:ring-2 focus-visible:ring-indigo-600" aria-live="polite">
+              <p className="text-sm font-bold text-indigo-950">{workflowGuide.title}</p>
+              <p className="mt-2 text-sm leading-6 text-indigo-900">{workflowGuide.message}</p>
+              {workflowGuide.action === "complete-cn" && <button type="button" onClick={() => { setLocale("cn"); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="mt-3 rounded-lg bg-indigo-700 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-800">填写中文内容</button>}
+              {workflowGuide.action === "save" && <button type="button" onClick={() => void saveDraft()} className="mt-3 rounded-lg bg-indigo-700 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-800">保存当前草稿</button>}
+              {workflowGuide.action === "preview" && <button type="button" onClick={() => void preview()} className="mt-3 rounded-lg bg-indigo-700 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-800">预览官网效果</button>}
+              {workflowGuide.action === "review" && <button type="button" onClick={() => reviewCheckboxRef.current?.focus()} className="mt-3 rounded-lg bg-indigo-700 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-800">前往人工审核</button>}
+            </div>
+
+            <label className="mt-5 flex cursor-pointer gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950"><input ref={reviewCheckboxRef} type="checkbox" checked={reviewed} disabled={operationPending || dirty || !hasCurrentPreview} onChange={(event) => setReviewed(event.target.checked)} className="mt-1" />我已人工审核中文必填内容、封面、当前发布快照和已填写的外语内容。</label>
+            <button type="button" onClick={() => void publish()} disabled={operationPending || !chineseComplete || dirty || !hasCurrentPreview || !reviewed} className="mt-3 w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">确认发布</button>
+            {initial.status === "PUBLISHED" && <button type="button" onClick={() => void offline()} disabled={operationPending} className="mt-3 w-full rounded-lg border border-red-300 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">下线新闻</button>}
+            {notice && <p ref={noticeRef} role="status" aria-live="polite" tabIndex={-1} className="mt-4 rounded-lg bg-slate-100 p-3 text-sm leading-6 text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">{notice}</p>}
             <CmsAuditLog articleId={initial.id} initialItems={initialAuditItems} />
           </aside>
         </div>

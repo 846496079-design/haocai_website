@@ -203,7 +203,7 @@
 
 ### 代理合作意向
 
-代理合作意向表单调用官网同域接口 `POST /api/public/leads/partner/`。官网加密写入本地可靠队列后返回已接收，再由工作进程转发到代理线索池 `POST https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit`。前端校验必填项后，以 JSON 方式提交 `contactName`、`contactPhone`、`companyName`、`position`、`city`、`cooperationMode`、`customerScale`、可选 `inviteCode` 和 `remark`。必填项只包括姓名、电话、城市；公司/团队、角色身份、合作方式、客户资源规模、邀请码/邀请人电话和补充说明均为选填。字段映射为：姓名对应 `contactName`，电话对应 `contactPhone`，城市对应 `city`，公司/团队对应 `companyName`，角色身份对应 `position`，客户资源规模对应 `customerScale`，合作方式对应 `cooperationMode`，邀请码/邀请人电话对应 `inviteCode`，补充说明对应 `remark`。`companyName`、`position`、`city`、`cooperationMode`、`customerScale`、`inviteCode` 按接口要求限制在 50 个字符以内。只有代理合作页读取邀请码参数；若 `/cn/partners/` URL 中存在 `inviteCode`、`c` 或 `C`，按该顺序取首个非空值自动预填，用户可修改。中国站首页 `/cn/?c=邀请码` 不再跳转或读取邀请码。必填项未填写时，在对应字段下方展示红字“该项为必填项”，不触发浏览器默认“请填写此字段”提示。本地写入成功后页面弹出姚经理电话和企业微信二维码，弹窗使用“合作意向已收到”作为标题；外部线索池故障不阻塞用户，只有官网本地写入失败时在表单底部展示失败提示。
+代理合作意向表单调用官网同域接口 `POST /api/public/leads/partner/`。官网加密写入本地可靠队列后返回已接收，再由工作进程转发到代理线索池 `POST https://hcagent.ai-hc.cn/api/v1/agent-public-pool-leads/submit`。前端校验必填项后，以 JSON 方式提交 `contactName`、`contactPhone`、`companyName`、`position`、`city`、`cooperationMode`、`customerScale`、可选 `inviteCode` 和 `remark`。必填项只包括姓名、电话、城市；公司/团队、角色身份、合作方式、客户资源规模、邀请码/邀请人电话和补充说明均为选填。字段映射为：姓名对应 `contactName`，电话对应 `contactPhone`，城市对应 `city`，公司/团队对应 `companyName`，角色身份对应 `position`，客户资源规模对应 `customerScale`，合作方式对应 `cooperationMode`，邀请码/邀请人电话对应 `inviteCode`，补充说明对应 `remark`。`companyName`、`position`、`city`、`cooperationMode`、`customerScale`、`inviteCode` 按接口要求限制在 50 个字符以内。只有代理合作页读取邀请码参数；若 `/cn/partners/` URL 中存在 `inviteCode`、`c` 或 `C`，按该顺序取首个非空值自动预填，用户可修改。有效邀请码存在时，客户端使用 `history.replaceState` 在当前地址补充 `#partner-form`，不增加历史记录，并即时定位到表单区域；没有有效邀请码时仍停留代理合作首页。中国站首页 `/cn/?c=邀请码` 不再跳转或读取邀请码。必填项未填写时，在对应字段下方展示红字“该项为必填项”，不触发浏览器默认“请填写此字段”提示。本地写入成功后页面弹出姚经理电话和企业微信二维码，弹窗使用“合作意向已收到”作为标题；外部线索池故障不阻塞用户，只有官网本地写入失败时在表单底部展示失败提示。
 
 ## 6. 视觉与交互规范
 
@@ -282,7 +282,7 @@
 - 首页和产品中心报价区默认显示“年付”和两张年付卡；切换“永久”后显示两张永久买断卡。中国站年付卡分别显示“30 元/月”和“88 元/月”。
 - 首页报价区下方“查看完整功能对比表”保持至少 44px 点击高度；文字、箭头与完整点击区域处于同一层级，点击文字能够进入产品中心 `#comparison` 区域。
 - 代理合作意向表单只把姓名、电话、城市作为必填项，未填项在字段内显示“该项为必填项”，提交后调用代理线索池 API，并在成功后弹出姚经理联系方式和企业微信二维码。
-- 访问 `/cn/?c=LFFWTL` 时保持中国站首页，不跳转也不预填；访问 `/cn/partners/?c=LFFWTL` 时代理合作表单预填邀请码，`inviteCode` 和 `C` 参数继续兼容。
+- 访问 `/cn/?c=LFFWTL` 时保持中国站首页，不跳转也不预填；访问 `/cn/partners/?c=LFFWTL` 时代理合作表单预填邀请码并定位到 `#partner-form`，`inviteCode` 和 `C` 参数继续兼容；无邀请码的代理合作链接仍停留页首。
 - 加入我们页面展示两个岗位卡片和“期望薪资面议”，底部展示人事经理电话和简历投递邮箱。
 - 页脚展示上海尚加澄企业管理有限公司、统一社会信用代码、地址、总部、电话、邮箱。
 

@@ -23,6 +23,7 @@
     "leads:verify": "tsx scripts/leads/verify-outbox.ts",
     "leads:verify-http": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/leads/verify-http-e2e.ps1",
     "feishu:verify": "tsx scripts/feishu/verify-foundation.ts",
+    "site:verify-direct-entry": "tsx scripts/verify-direct-entry.ts",
     "typecheck:cms": "tsc -p tsconfig.cms.json"
   },
   "dependencies": {

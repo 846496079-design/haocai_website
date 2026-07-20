@@ -9,7 +9,7 @@ import { sites } from '@/lib/site-content'
 
 interface NavbarProps {
   site: SiteContent
-  onTrialClick?: () => void
+  trialHref: string
 }
 
 const siteList = [sites.cn, sites.jp, sites.hk]
@@ -25,7 +25,7 @@ const localizedSiteNames = {
   hk: { cn: '中國站', jp: '日本站', hk: '香港站' },
 } as const
 
-export default function Navbar({ site, onTrialClick }: NavbarProps) {
+export default function Navbar({ site, trialHref }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [globalOpen, setGlobalOpen] = useState(false)
   const pathname = usePathname()
@@ -95,23 +95,22 @@ export default function Navbar({ site, onTrialClick }: NavbarProps) {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <button
-            type="button"
-            onClick={onTrialClick}
+          <a
+            href={trialHref}
             className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_rgba(87,215,223,.22)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {site.actions.trial}
-          </button>
+          </a>
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
-          <button
-            type="button"
-            onClick={onTrialClick}
+          <a
+            href={trialHref}
+            onClick={() => setMobileOpen(false)}
             className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {site.actions.trial}
-          </button>
+          </a>
           <button
             type="button"
             className="inline-flex size-11 items-center justify-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"

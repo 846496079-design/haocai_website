@@ -39,7 +39,6 @@ import {
   UtensilsCrossed,
   Users,
   Wallet,
-  X,
 } from 'lucide-react'
 import Image from 'next/image'
 import type { FormEvent, ReactNode } from 'react'
@@ -86,10 +85,8 @@ const icons: Record<IconKey, typeof Building2> = {
 }
 
 const partnerLeadApiUrl = '/api/public/leads/partner/'
-const trialLeadApiUrl = '/api/public/leads/trial/'
 const partnerLeadMaxLength = 50
-const trialContactNameMaxLength = 50
-const trialContactPhoneMaxLength = 20
+const productAppUrl = 'https://finance-h5.haocai360.cn/'
 
 // Mac 桌面端下载地址
 const macDownloadUrl =
@@ -311,66 +308,6 @@ const homeCopy = {
       ['代理合作', '萬億級企業服務市場，與賬大師一起把 AI 記賬帶給更多企業。', '/partners/'],
       ['加入我們', '財務疑難處理與全棧開發兩個方向正在招募，歡迎直接投遞簡歷。', '/join/'],
     ],
-  },
-}
-
-const trialCopy = {
-  cn: {
-    eyebrow: '领取 7 天体验套餐',
-    title: '留下信息，获取试用政策和开通指引',
-    desc: '当前试用流程先介绍政策优惠并收集客户信息，后续由工作人员根据联系方式对接试用套餐、开通方式和使用范围。',
-    steps: [
-      ['1', '政策说明', '说明 7 天体验套餐、360 元/年定价和适用场景。'],
-      ['2', '资料登记', '留下联系人、电话和邀请码或邀请人电话，便于识别来源。'],
-      ['3', '人工对接', '工作人员确认需求后，再安排试用开通和使用指引。'],
-    ],
-    contactName: '联系人',
-    contactNamePlaceholder: '请填写联系人姓名',
-    contactPhone: '电话',
-    contactPhonePlaceholder: '手机号或座机',
-    inviteCode: '邀请人电话或邀请码',
-    inviteCodePlaceholder: '如邀请人手机号或邀请码 A12345',
-    submit: '立即使用',
-    successTitle: '试用申请已收到',
-    successDesc: '我们会根据你留下的信息安排人员对接试用政策、优惠和开通说明。',
-  },
-  jp: {
-    eyebrow: '7 日体験パッケージ',
-    title: '情報を残して、試用政策と開通案内を受け取る',
-    desc: '現在の試用フローは政策説明と顧客情報収集までです。担当者が試用内容、開通方法、利用範囲をご案内します。',
-    steps: [
-      ['1', '政策説明', '7 日体験、360 元/年料金、適用シーンを説明します。'],
-      ['2', '情報登録', '担当者名、電話、招待コードまたは紹介者電話番号を残します。'],
-      ['3', '担当者連絡', '確認後、試用開通と利用案内を行います。'],
-    ],
-    contactName: '担当者',
-    contactNamePlaceholder: '担当者名',
-    contactPhone: '電話',
-    contactPhonePlaceholder: '携帯または固定電話',
-    inviteCode: '紹介者電話番号または招待コード',
-    inviteCodePlaceholder: '例：紹介者電話番号、招待コード A12345',
-    submit: '試用申請を送信',
-    successTitle: '試用申請を受け付けました',
-    successDesc: '担当者より試用政策、優待、開通説明をご連絡します。',
-  },
-  hk: {
-    eyebrow: '領取 7 天體驗套餐',
-    title: '留下信息，獲取試用政策和開通指引',
-    desc: '目前試用流程先介紹政策優惠並收集客戶信息，後續由工作人員根據聯絡方式對接試用套餐、開通方式和使用範圍。',
-    steps: [
-      ['1', '政策說明', '說明 7 天體驗套餐、360 元/年定價和適用場景。'],
-      ['2', '資料登記', '留下聯絡人、電話和邀請碼或邀請人電話，便於識別來源。'],
-      ['3', '人工對接', '工作人員確認需求後，再安排試用開通和使用指引。'],
-    ],
-    contactName: '聯絡人',
-    contactNamePlaceholder: '請填寫聯絡人姓名',
-    contactPhone: '電話',
-    contactPhonePlaceholder: '手機號或座機',
-    inviteCode: '邀請人電話或邀請碼',
-    inviteCodePlaceholder: '如邀請人手機號或邀請碼 A12345',
-    submit: '提交試用申請',
-    successTitle: '試用申請已收到',
-    successDesc: '我們會根據你留下的信息安排人員對接試用政策、優惠和開通說明。',
   },
 }
 
@@ -608,13 +545,28 @@ const mobileContentCopy = {
   hk: { expand: '展開查看', faqExpand: '展開', features: '查看全部核心功能', roles: '按角色查看使用方式', workflow: '查看完整工作流程', focus: '查看我們的專業服務重點', output: '產出' },
 } as const
 
+const pricingCycleCopy = {
+  cn: {
+    label: '购买方式', yearly: '年付', lifetime: '永久', yearlyPlan: '按年订阅 · 灵活开通', lifetimePlan: '一次购买 · 长期使用',
+    lifetimeBadge: '永久买断', yearlyAlternative: '永久方案', lifetimeAlternative: '年付也可选',
+  },
+  jp: {
+    label: '購入方法', yearly: '年払い', lifetime: '永久利用', yearlyPlan: '年払い · 柔軟に開始', lifetimePlan: '一括購入 · 長期利用',
+    lifetimeBadge: '永久利用', yearlyAlternative: '永久利用', lifetimeAlternative: '年払いも選択可',
+  },
+  hk: {
+    label: '購買方式', yearly: '年付', lifetime: '永久', yearlyPlan: '按年訂閱 · 靈活開通', lifetimePlan: '一次購買 · 長期使用',
+    lifetimeBadge: '永久買斷', yearlyAlternative: '永久方案', lifetimeAlternative: '年付亦可選',
+  },
+} as const
+
 function TrialButton({
   children,
-  onClick,
+  href,
   variant = 'primary',
 }: {
   children: ReactNode
-  onClick: () => void
+  href: string
   variant?: 'primary' | 'dark'
 }) {
   const classes =
@@ -623,13 +575,12 @@ function TrialButton({
       : 'bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] text-white shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30'
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <a
+      href={href}
       className={`inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold transition-all ${classes}`}
     >
       {children}
-    </button>
+    </a>
   )
 }
 
@@ -748,7 +699,7 @@ const touchpointCopy = {
     wechatDesc: '微信扫描二维码，关注「账大师」公众号。',
     wechatNote: '微信扫一扫',
     webTitle: '网页版立即使用',
-    webDesc: '填写信息后跳转产品登录页，电脑浏览器随时随地记账报税。',
+    webDesc: '无需填写信息，直接进入账大师产品站，按页面指引登录或注册。',
     webCta: '立即使用',
     macTitle: 'Mac 桌面端下载',
     macDesc: '适用于 Apple 芯片 Mac，桌面端集中处理财税工作。',
@@ -762,7 +713,7 @@ const touchpointCopy = {
     wechatDesc: 'WeChat で「账大师」公式アカウントを追加し、料金と 7 日体験を確認してご利用ください。',
     wechatNote: 'WeChat でスキャン',
     webTitle: 'Web 版を使う',
-    webDesc: '情報入力後にログインページへ移動し、ブラウザでご利用いただけます。',
+    webDesc: '情報入力は不要です。賬大師の製品サイトへ直接移動し、画面の案内に沿ってログインまたは登録してください。',
     webCta: '今すぐ使う',
     macTitle: 'Mac 版ダウンロード',
     macDesc: 'Apple シリコン搭載 Mac でご利用いただけます。',
@@ -776,7 +727,7 @@ const touchpointCopy = {
     wechatDesc: '微信掃碼關注「賬大師」公眾號，了解 360 元/年政策與 7 天體驗，並在手機上開始記賬。',
     wechatNote: '微信掃一掃',
     webTitle: '網頁版立即使用',
-    webDesc: '填寫信息後跳轉產品登錄頁，電腦瀏覽器隨時隨地記賬報稅。',
+    webDesc: '無需填寫資料，直接進入賬大師產品站，按頁面指引登入或註冊。',
     webCta: '立即使用',
     macTitle: 'Mac 桌面端下載',
     macDesc: '適用於 Apple 芯片 Mac，集中處理財稅工作。',
@@ -786,12 +737,10 @@ const touchpointCopy = {
 
 function TouchpointsSection({
   site,
-  onTrial,
   dark = false,
   compact = false,
 }: {
   site: SiteContent
-  onTrial: () => void
   dark?: boolean
   compact?: boolean
 }) {
@@ -821,9 +770,9 @@ function TouchpointsSection({
           </FadeInSection>
           <FadeInSection delay={120} visibleOnLoad={compact}>
             <div className="px-6 pb-6 md:px-7 md:pb-0">
-              <button type="button" onClick={onTrial} className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:w-auto">
+              <a href={productAppUrl} className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:w-auto">
                 {t.webCta}<ArrowRight className="ml-2 size-4" />
-              </button>
+              </a>
             </div>
           </FadeInSection>
           <FadeInSection delay={160} visibleOnLoad={compact}>
@@ -882,8 +831,6 @@ type PartnerField = 'name' | 'phone' | 'company' | 'city' | 'role' | 'customerSc
 
 const requiredPartnerFields: PartnerField[] = ['name', 'phone', 'city']
 
-type TrialField = 'contactName' | 'contactPhone' | 'inviteCode'
-
 type OfficialPage = 'home' | 'product' | 'company' | 'partners' | 'join' | 'news' | 'newsDetail' | 'cases'
 
 type DisplayNewsArticle = NewsArticle | CmsLocaleArticle
@@ -912,7 +859,6 @@ export default function OfficialSite({
   const home = homeCopy[site.code]
   const articles = initialArticles ?? newsArticles[site.code]
   const article = initialArticle ?? (articleSlug ? getNewsArticle(site.code, articleSlug) : undefined)
-  const trial = trialCopy[site.code]
   const jobs = jobCopy[site.code]
   const ui = uiCopy[site.code]
   const mobileContent = mobileContentCopy[site.code]
@@ -928,13 +874,7 @@ export default function OfficialSite({
   const [activeCategory, setActiveCategory] = useState(news.all)
   const filteredArticles = activeCategory === news.all ? articles : articles.filter((item) => item.category === activeCategory)
 
-  const [trialOpen, setTrialOpen] = useState(false)
-  const [trialSubmitted, setTrialSubmitted] = useState(false)
-  const [trialSubmitting, setTrialSubmitting] = useState(false)
-  const [trialApiError, setTrialApiError] = useState('')
-  const [trialSuccessMessage, setTrialSuccessMessage] = useState('')
-  const [trialForm, setTrialForm] = useState({ contactName: '', contactPhone: '', inviteCode: '' })
-  const [trialErrors, setTrialErrors] = useState<Partial<Record<TrialField, string>>>({})
+  const [pricingCycle, setPricingCycle] = useState<'yearly' | 'lifetime'>('yearly')
   const [partnerSent, setPartnerSent] = useState(false)
   const [partnerSubmitting, setPartnerSubmitting] = useState(false)
   const [partnerApiError, setPartnerApiError] = useState('')
@@ -944,79 +884,17 @@ export default function OfficialSite({
   const [partnerErrors, setPartnerErrors] = useState<Partial<Record<PartnerField, string>>>({})
 
   useEffect(() => {
+    if (page !== 'partners') return
     const inviteCode = getInviteCodeFromSearch(window.location.search)
     if (inviteCode) {
       setPartnerForm((form) => ({ ...form, inviteCode }))
     }
-  }, [])
+  }, [page])
 
   function updatePartnerField(field: PartnerField, value: string) {
     setPartnerForm((form) => ({ ...form, [field]: value }))
     if (partnerApiError) setPartnerApiError('')
     if (partnerErrors[field]) setPartnerErrors((errors) => ({ ...errors, [field]: undefined }))
-  }
-
-  function updateTrialField(field: TrialField, value: string) {
-    setTrialForm((form) => ({ ...form, [field]: value }))
-    if (trialApiError) setTrialApiError('')
-    if (trialErrors[field]) setTrialErrors((errors) => ({ ...errors, [field]: undefined }))
-  }
-
-  function trialFieldClass(field: TrialField) {
-    return `rounded-xl border bg-card px-4 font-normal outline-none transition-colors focus:border-primary ${trialErrors[field] ? 'border-red-400' : 'border-border'}`
-  }
-
-  function trialFieldError(field: TrialField) {
-    return trialErrors[field] ? <p className="text-xs font-normal text-red-500">{trialErrors[field]}</p> : null
-  }
-
-  async function submitTrialForm(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const nextErrors: Partial<Record<TrialField, string>> = {}
-    const contactName = trialForm.contactName.trim()
-    const contactPhone = trialForm.contactPhone.trim()
-
-    if (!contactName) nextErrors.contactName = ui.requiredError
-    else if (contactName.length > trialContactNameMaxLength) nextErrors.contactName = ui.contactNameLengthError
-    if (!contactPhone) nextErrors.contactPhone = ui.requiredError
-    else if (contactPhone.length > trialContactPhoneMaxLength) nextErrors.contactPhone = ui.contactPhoneLengthError
-
-    if (Object.keys(nextErrors).length > 0) {
-      setTrialErrors(nextErrors)
-      return
-    }
-
-    setTrialErrors({})
-    setTrialApiError('')
-    setTrialSubmitting(true)
-
-    try {
-      const response = await fetch(trialLeadApiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contactName,
-          contactPhone,
-          ...(trialForm.inviteCode ? { referrerCode: trialForm.inviteCode } : {}),
-        }),
-      })
-      const result = await response.json().catch(() => ({}))
-      const message = result?.message || result?.msg || result?.detail
-
-      if (!response.ok) {
-        setTrialApiError(message || ui.submitError)
-        return
-      }
-
-      // 我方信息收集与传输机制不变；提交成功后跳转到产品登录页，立即开始使用
-      setTrialSuccessMessage(message || trial.successDesc)
-      window.location.href = site.loginUrl
-      return
-    } catch {
-      setTrialApiError(ui.submitError)
-    } finally {
-      setTrialSubmitting(false)
-    }
   }
 
   function fieldClass(field: PartnerField) {
@@ -1318,7 +1196,7 @@ export default function OfficialSite({
                     </div>
                     <p className="mt-3 text-sm leading-6 text-muted-foreground">{site.pricing.description}</p>
                   </div>
-                  <TrialButton onClick={() => setTrialOpen(true)}>{site.pricing.cta}</TrialButton>
+                  <TrialButton href={productAppUrl}>{site.pricing.cta}</TrialButton>
                 </div>
                 <div className="mt-6 grid gap-6 md:grid-cols-2">
                   <div>
@@ -1344,10 +1222,8 @@ export default function OfficialSite({
         </section>
       )
     }
-    const purchasePlans = pricing.plans.flatMap((plan) => [
-      { ...plan, purchase: 'yearly' as const, key: `${plan.name}-yearly` },
-      { ...plan, purchase: 'lifetime' as const, key: `${plan.name}-lifetime` },
-    ])
+    const cycleCopy = pricingCycleCopy[site.code]
+    const lifetime = pricingCycle === 'lifetime'
     return (
       <section id="pricing" className={`relative overflow-hidden px-6 py-20 ${dark ? 'bg-card' : ''}`}>
         {!visibleOnLoad && <div className="bg-grid absolute inset-0 -z-10" />}
@@ -1355,47 +1231,61 @@ export default function OfficialSite({
           <FadeInSection visibleOnLoad={visibleOnLoad}>
             <SectionHeading eyebrow={pricing.eyebrow} title={pricing.title} subtitle={pricing.subtitle} />
           </FadeInSection>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {purchasePlans.map((plan, index) => {
-              const lifetime = plan.purchase === 'lifetime'
+          <div className="mt-8 flex justify-center">
+            <div role="tablist" aria-label={cycleCopy.label} className="inline-grid grid-cols-2 rounded-2xl border border-border bg-card p-1 shadow-[0_10px_30px_rgba(24,36,61,.08)]">
+              {(['yearly', 'lifetime'] as const).map((cycle) => (
+                <button
+                  key={cycle}
+                  type="button"
+                  role="tab"
+                  aria-selected={pricingCycle === cycle}
+                  onClick={() => setPricingCycle(cycle)}
+                  className={`min-w-28 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${pricingCycle === cycle ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  {cycle === 'yearly' ? cycleCopy.yearly : cycleCopy.lifetime}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mx-auto mt-8 grid max-w-[920px] gap-5 md:grid-cols-2">
+            {pricing.plans.map((plan, index) => {
               const lifetimeCardTone = 'border-[#e2b64f] ring-1 ring-[#f7c65b]/25'
               const lifetimeSurfaceTone = 'border-[#f7c65b]/55 bg-[#fff8e6]'
               const lifetimeTextTone = 'text-[#9b6b06]'
               const lifetimeButtonTone = 'bg-[#f7c65b] text-[#251d08] shadow-lg shadow-[#f7c65b]/20 hover:-translate-y-0.5'
               return (
-              <FadeInSection key={plan.key} delay={index * 70} visibleOnLoad={visibleOnLoad}>
-                <div className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border bg-card p-6 ${visibleOnLoad ? '' : 'shadow-[0_16px_42px_rgba(20,64,78,.08)]'} ${lifetime ? lifetimeCardTone : 'border-border'}`}>
+                <FadeInSection key={`${plan.name}-${pricingCycle}`} delay={index * 70} visibleOnLoad={visibleOnLoad}>
+                  <div className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border bg-card p-6 ${visibleOnLoad ? '' : 'shadow-[0_16px_42px_rgba(20,64,78,.08)]'} ${lifetime ? lifetimeCardTone : 'border-border'}`}>
                   {lifetime && (
-                    <span className="absolute right-4 top-4 rounded-full bg-[#f7c65b] px-2.5 py-1 text-[11px] font-semibold text-[#251d08]">永久买断</span>
+                    <span className="absolute right-4 top-4 rounded-full bg-[#f7c65b] px-2.5 py-1 text-[11px] font-semibold text-[#251d08]">{cycleCopy.lifetimeBadge}</span>
                   )}
                   <p className="text-lg font-semibold">{plan.name}</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.audience}</p>
                   <div className={`mt-6 rounded-2xl border p-4 ${lifetime ? lifetimeSurfaceTone : 'border-border bg-secondary/50'}`}>
-                    <span className={`text-xs font-semibold tracking-[0.14em] ${lifetime ? lifetimeTextTone : 'text-primary'}`}>{lifetime ? '一次购买 · 长期使用' : '按年订阅 · 灵活开通'}</span>
+                    <span className={`text-xs font-semibold tracking-[0.14em] ${lifetime ? lifetimeTextTone : 'text-primary'}`}>{lifetime ? cycleCopy.lifetimePlan : cycleCopy.yearlyPlan}</span>
                     <div className="mt-2 flex items-end gap-2">
                       <span className={`text-4xl font-bold tracking-tight ${lifetime ? lifetimeTextTone : 'text-foreground'}`}>{lifetime ? plan.lifetime : plan.yearly}</span>
                       <span className={`pb-1.5 text-sm font-semibold ${lifetime ? lifetimeTextTone : 'text-muted-foreground'}`}>{lifetime ? plan.lifetimeNote : plan.yearlyNote}</span>
                     </div>
                   </div>
                   <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span>{lifetime ? <>年付也可选：<span className="font-semibold text-foreground">{plan.yearly}</span> {plan.yearlyNote}</> : <>长期方案：<span className="font-semibold text-[#9b6b06]">{plan.lifetime}</span> {plan.lifetimeNote}</>}</span>
-                    {plan.perDay && <span className="rounded-full bg-secondary px-3 py-1 font-medium text-primary">{plan.perDay}</span>}
+                    <span>{lifetime ? <>{cycleCopy.lifetimeAlternative}：<span className="font-semibold text-foreground">{plan.yearly}</span> {plan.yearlyNote}</> : <>{cycleCopy.yearlyAlternative}：<span className="font-semibold text-[#9b6b06]">{plan.lifetime}</span> {plan.lifetimeNote}</>}</span>
+                    {!lifetime && plan.perDay && <span className="rounded-full bg-secondary px-3 py-1 font-medium text-primary">{plan.perDay}</span>}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setTrialOpen(true)}
+                  <a
+                    href={productAppUrl}
                     className={`mt-6 inline-flex h-12 w-full items-center justify-center rounded-xl px-5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${lifetime ? lifetimeButtonTone : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
                   >
                     {plan.cta}
                     <ArrowRight className="ml-2 size-4" />
-                  </button>
+                  </a>
                   <ul className="mt-6 space-y-3 border-t border-border pt-6">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex gap-3 text-sm leading-6 text-muted-foreground"><CheckCircle2 className="mt-0.5 size-5 shrink-0 text-status-online" />{feature}</li>
                     ))}
                   </ul>
-                </div>
-              </FadeInSection>
+                  </div>
+                </FadeInSection>
               )
             })}
           </div>
@@ -1574,7 +1464,7 @@ export default function OfficialSite({
               <p className="mt-4 max-w-2xl text-base leading-7 text-white/70">{site.finalCta.description}</p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-              <TrialButton onClick={() => setTrialOpen(true)} variant="dark">
+              <TrialButton href={productAppUrl} variant="dark">
                 {site.finalCta.primary}
                 <ArrowRight className="ml-2 size-4" />
               </TrialButton>
@@ -1587,7 +1477,7 @@ export default function OfficialSite({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar site={site} onTrialClick={() => setTrialOpen(true)} />
+      <Navbar site={site} trialHref={productAppUrl} />
 
       <main className={page === 'home' ? 'official-main home-trust' : 'official-main'}>
         {page === 'home' && (
@@ -1605,10 +1495,10 @@ export default function OfficialSite({
                     </h1>
                     <p className="mt-6 max-w-xl text-base leading-8 text-muted-foreground md:text-lg">{site.hero.description}</p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                      <button type="button" onClick={() => setTrialOpen(true)} className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                      <a href={productAppUrl} className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                         {site.hero.primaryCta}
                         <ArrowRight className="ml-2 size-4" />
-                      </button>
+                      </a>
                       <a href="#start" className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card px-6 text-sm font-semibold text-foreground transition-colors hover:border-primary/35 hover:bg-primary/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                         <MessageSquareText className="mr-2 size-4" />
                         {home.followWechat}
@@ -1643,7 +1533,7 @@ export default function OfficialSite({
               </div>
             </section>
 
-            <TouchpointsSection site={site} onTrial={() => setTrialOpen(true)} compact />
+            <TouchpointsSection site={site} compact />
 
             {/* 定价（卡片；完整对比表在产品页） */}
             {renderPricing()}
@@ -1757,10 +1647,10 @@ export default function OfficialSite({
                     </h1>
                     <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">{site.hero.description}</p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                      <button type="button" onClick={() => setTrialOpen(true)} className="inline-flex h-12 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-6 text-sm font-semibold text-white shadow-[0_10px_36px_rgba(79,123,255,.5)] transition-transform hover:-translate-y-0.5">
+                      <a href={productAppUrl} className="inline-flex h-12 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-6 text-sm font-semibold text-white shadow-[0_10px_36px_rgba(79,123,255,.5)] transition-transform hover:-translate-y-0.5">
                         {site.hero.primaryCta}
                         <ArrowRight className="ml-2 size-4" />
-                      </button>
+                      </a>
                       <a href="#pricing" className="glass-dark inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-semibold text-foreground transition-colors hover:bg-primary/10">
                         {home.seePricing}
                       </a>
@@ -1930,7 +1820,7 @@ export default function OfficialSite({
               </div>
             </section>
 
-            <TouchpointsSection site={site} onTrial={() => setTrialOpen(true)} />
+            <TouchpointsSection site={site} />
             {renderFinalCta()}
           </>
         )}
@@ -1952,7 +1842,7 @@ export default function OfficialSite({
             </section>
 
             {renderCases()}
-            <TouchpointsSection site={site} onTrial={() => setTrialOpen(true)} />
+            <TouchpointsSection site={site} />
             {renderFinalCta()}
           </>
         )}
@@ -2296,69 +2186,6 @@ export default function OfficialSite({
           </section>
         )}
       </main>
-
-      {trialOpen && (
-        <div className="fixed inset-0 z-[80] flex min-h-[100dvh] items-start justify-center overflow-y-auto overscroll-contain bg-[#18243D]/45 px-3 py-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
-          <div role="dialog" aria-modal="true" aria-labelledby="trial-dialog-title" className="w-full max-w-[620px] overflow-y-auto rounded-3xl bg-card p-5 shadow-[0_24px_80px_rgba(24,36,61,.24)] sm:max-h-[calc(100dvh-3rem)] sm:rounded-[28px] sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-primary">{trial.eyebrow}</p>
-                <h3 id="trial-dialog-title" className="mt-2 text-xl font-semibold leading-tight sm:text-2xl">{trial.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground sm:leading-7">{trial.desc}</p>
-              </div>
-              <button type="button" onClick={() => { setTrialOpen(false); setTrialSubmitted(false); setTrialApiError(''); setTrialSuccessMessage('') }} className="rounded-full p-2 text-muted-foreground hover:bg-muted" aria-label="关闭">
-                <X className="size-5" />
-              </button>
-            </div>
-
-            {trialSubmitted ? (
-              <div className="mt-6 rounded-3xl bg-background p-6 text-center">
-                <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary"><CheckCircle2 className="size-6" /></div>
-                <h4 className="mt-4 text-xl font-semibold">{trial.successTitle}</h4>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground">{trialSuccessMessage || trial.successDesc}</p>
-              </div>
-            ) : (
-              <>
-                <div className="mt-5 grid gap-2 sm:mt-6 sm:gap-3">
-                  {trial.steps.map(([index, title, desc]) => (
-                    <div key={index} className="flex gap-3 rounded-2xl bg-background p-3 sm:p-4">
-                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">{index}</span>
-                      <div>
-                        <p className="font-semibold">{title}</p>
-                        <p className="mt-1 text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">{desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <form noValidate onSubmit={submitTrialForm} className="mt-5 grid gap-4 sm:mt-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="grid gap-2 text-sm font-medium">
-                      <span className="inline-flex w-fit items-baseline gap-1 whitespace-nowrap">{trial.contactName}<span className="text-red-500">*</span></span>
-                      <input value={trialForm.contactName} onChange={(event) => updateTrialField('contactName', event.target.value)} className={`h-12 text-base sm:text-sm ${trialFieldClass('contactName')}`} placeholder={trial.contactNamePlaceholder} maxLength={trialContactNameMaxLength} />
-                      {trialFieldError('contactName')}
-                    </label>
-                    <label className="grid gap-2 text-sm font-medium">
-                      <span className="inline-flex w-fit items-baseline gap-1 whitespace-nowrap">{trial.contactPhone}<span className="text-red-500">*</span></span>
-                      <input value={trialForm.contactPhone} onChange={(event) => updateTrialField('contactPhone', event.target.value)} className={`h-12 text-base sm:text-sm ${trialFieldClass('contactPhone')}`} placeholder={trial.contactPhonePlaceholder} maxLength={trialContactPhoneMaxLength} />
-                      {trialFieldError('contactPhone')}
-                    </label>
-                  </div>
-                  <label className="grid gap-2 text-sm font-medium">
-                    {trial.inviteCode}
-                    <input value={trialForm.inviteCode} onChange={(event) => updateTrialField('inviteCode', event.target.value)} className={`h-12 text-base sm:text-sm ${trialFieldClass('inviteCode')}`} placeholder={trial.inviteCodePlaceholder} />
-                  </label>
-                  {trialApiError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm leading-6 text-red-600">{trialApiError}</p>}
-                  <button type="submit" disabled={trialSubmitting} className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] px-6 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm">
-                    {trialSubmitting ? ui.submitting : trial.submit}
-                    <Send className="ml-2 size-4" />
-                  </button>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       {partnerSent && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#18243D]/45 px-4 backdrop-blur-sm">

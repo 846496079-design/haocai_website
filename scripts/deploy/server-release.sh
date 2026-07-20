@@ -142,6 +142,39 @@ verify_site() {
   rm -rf "$work_dir"
 }
 
+verify_public_matches_backend() {
+  local work_dir
+  local encoding
+  local curl_encoding=()
+  work_dir="$(mktemp -d)"
+
+  if ! curl -fsS -H 'Host: zhangdashi.ai' -H 'Accept-Encoding: identity' \
+    -o "$work_dir/backend.html" 'http://127.0.0.1:3000/cn/product/' \
+    || ! curl -fsS -H 'Host: zhangdashi.ai' -H 'RSC: 1' -H 'Accept-Encoding: identity' \
+      -o "$work_dir/backend.rsc" 'http://127.0.0.1:3000/cn/product/'; then
+    rm -rf "$work_dir"
+    return 1
+  fi
+
+  for encoding in identity gzip br; do
+    curl_encoding=(-H "Accept-Encoding: $encoding")
+    if [[ "$encoding" != identity ]]; then
+      curl_encoding=(--compressed -H "Accept-Encoding: $encoding")
+    fi
+    if ! curl -fsS "${curl_encoding[@]}" -H 'Host: zhangdashi.ai' \
+      -o "$work_dir/public-$encoding.html" 'http://127.0.0.1/cn/product/' \
+      || ! cmp -s "$work_dir/backend.html" "$work_dir/public-$encoding.html" \
+      || ! curl -fsS "${curl_encoding[@]}" -H 'Host: zhangdashi.ai' -H 'RSC: 1' \
+        -o "$work_dir/public-$encoding.rsc" 'http://127.0.0.1/cn/product/' \
+      || ! cmp -s "$work_dir/backend.rsc" "$work_dir/public-$encoding.rsc"; then
+      rm -rf "$work_dir"
+      return 1
+    fi
+  done
+
+  rm -rf "$work_dir"
+}
+
 find_preflight_port() {
   local port
   for port in $(seq 3100 3199); do
@@ -261,6 +294,7 @@ wait_for_production() {
   for attempt in $(seq 1 45); do
     if verify_site 'http://127.0.0.1:3000' \
       && verify_site 'http://127.0.0.1' 'zhangdashi.ai' true \
+      && verify_public_matches_backend \
       && verify_lead_worker; then
       return 0
     fi

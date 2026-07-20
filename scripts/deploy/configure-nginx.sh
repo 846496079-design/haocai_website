@@ -47,6 +47,12 @@ map $request_uri $zhangdashi_response_cache_control {
     default $upstream_http_cache_control;
     ~^/(cn|jp|hk)(?:/|$) "no-store, max-age=0";
 }
+
+# 宝塔全局 proxy_cache 会早于响应头覆盖复用旧页面，因此公开站点必须同时绕过代理缓存。
+map $request_uri $zhangdashi_bypass_proxy_cache {
+    default 0;
+    ~^/(cn|jp|hk)(?:/|$) 1;
+}
 EOF
 chmod 0644 "$map_config"
 
@@ -54,8 +60,16 @@ if ! grep -Fq 'add_header Cache-Control $zhangdashi_response_cache_control alway
   sed -i '/^[[:space:]]*proxy_pass http:\/\/127\.0\.0\.1:3000;$/a\        proxy_hide_header Cache-Control;\n        add_header Cache-Control $zhangdashi_response_cache_control always;' "$site_config"
 fi
 
+if ! grep -Fq 'proxy_cache_bypass $zhangdashi_bypass_proxy_cache;' "$site_config"; then
+  sed -i '/^[[:space:]]*proxy_pass http:\/\/127\.0\.0\.1:3000;$/a\        proxy_cache_bypass $zhangdashi_bypass_proxy_cache;' "$site_config"
+fi
+
+if ! grep -Fq 'proxy_no_cache $zhangdashi_bypass_proxy_cache;' "$site_config"; then
+  sed -i '/^[[:space:]]*proxy_pass http:\/\/127\.0\.0\.1:3000;$/a\        proxy_no_cache $zhangdashi_bypass_proxy_cache;' "$site_config"
+fi
+
 /www/server/nginx/sbin/nginx -t
 /www/server/nginx/sbin/nginx -s reload
 trap - ERR
 
-echo "Nginx 静态资源与公开页面无缓存策略配置完成。"
+echo "Nginx 静态资源与公开页面代理缓存绕过策略配置完成。"

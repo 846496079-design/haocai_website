@@ -13,6 +13,14 @@ const pageResponse = await fetchRequired(target)
 const html = await pageResponse.text()
 const pageCacheControl = pageResponse.headers.get('cache-control') || ''
 
+function assetSignature(documentHtml) {
+  const css = [...documentHtml.matchAll(/href=["']([^"']+\.css(?:\?[^"']*)?)["']/gi)]
+    .map((match) => match[1].replaceAll('&amp;', '&'))
+  const scripts = [...documentHtml.matchAll(/<script[^>]+src=["']([^"']+\.js(?:\?[^"']*)?)["']/gi)]
+    .map((match) => match[1].replaceAll('&amp;', '&'))
+  return JSON.stringify({ css: [...new Set(css)].sort(), scripts: [...new Set(scripts)].sort() })
+}
+
 function assertPublicNoStore(cacheControl, resourceName) {
   if (!/(?:^|,)\s*no-store(?:\s*(?:,|$))/i.test(cacheControl)) {
     throw new Error(`${resourceName} 未声明禁止缓存：${cacheControl || '缺少 Cache-Control'}`)
@@ -31,6 +39,24 @@ function assertPublicNoStore(cacheControl, resourceName) {
 assertPublicNoStore(pageCacheControl, 'HTML')
 
 if (!pageResponse.headers.get('etag')) throw new Error('HTML 缺少 ETag 内容版本标识。')
+
+const probeUrl = new URL(target)
+probeUrl.searchParams.set('__zds_release_probe', `${Date.now()}`)
+const probeResponse = await fetchRequired(probeUrl.toString(), { 'accept-encoding': 'identity' })
+const probeHtml = await probeResponse.text()
+const currentAssetSignature = assetSignature(probeHtml)
+if (currentAssetSignature === JSON.stringify({ css: [], scripts: [] })) {
+  throw new Error('版本探针页面中没有找到 CSS 或 JavaScript 引用。')
+}
+
+for (const encoding of ['identity', 'gzip', 'br']) {
+  const variantResponse = await fetchRequired(target, { 'accept-encoding': encoding })
+  assertPublicNoStore(variantResponse.headers.get('cache-control') || '', `${encoding} HTML`)
+  const variantHtml = await variantResponse.text()
+  if (assetSignature(variantHtml) !== currentAssetSignature) {
+    throw new Error(`${encoding} HTML 仍引用旧 release 静态资源，服务器代理缓存未正确绕过。`)
+  }
+}
 
 const rscResponse = await fetchRequired(target, { rsc: '1' })
 const rscContentType = rscResponse.headers.get('content-type') || ''

@@ -4,7 +4,8 @@ import { neon } from '@neondatabase/serverless'
 import { createHash } from 'node:crypto'
 import type { SiteCode } from '@/lib/site-content'
 import { prepareCmsContent } from './publication-server'
-import { areAllLocalesReadyForPublication, createEmptyContent, isContentComplete, isLocaleContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult, type CmsLocaleArticle } from './types'
+import { areAllLocalesReadyForPublication, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult, type CmsLocaleArticle } from './types'
+import { assertCmsLocaleReadyForPublish } from './publish-validation'
 import { requireCmsDatabaseUrl } from './config'
 
 type ArticleRow = Record<string, unknown>
@@ -214,9 +215,9 @@ export async function publishCmsArticle(id: number, adminId: number, reviewed: b
   if (!row) throw new Error('新闻草稿不存在。')
   if (text(row.status) === 'TRASH') throw new Error('回收站稿件不能发布，请先恢复为草稿。')
   if (!row.draft_version_id || numeric(row.selected_version_id) !== numeric(row.draft_version_id)) throw new Error('没有可发布的草稿版本，请先保存草稿。')
-  if (!row.previewed_at) throw new Error('请先预览当前草稿。')
   const draft = content(row.content_json)
-  if (!isLocaleContentComplete(draft.cn)) throw new Error('中文内容、封面和正文必须完整后才能发布。')
+  assertCmsLocaleReadyForPublish(draft.cn)
+  if (!row.previewed_at) throw new Error('请先预览当前草稿。')
   const publishedLocalesComplete = areAllLocalesReadyForPublication(draft, text(row.translation_status) as CmsArticleRecord['translationStatus'])
   const rows = await atomic(`
     WITH target AS (

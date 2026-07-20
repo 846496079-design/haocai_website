@@ -4,6 +4,7 @@ export type CmsEditorWorkflowState = {
   translating: boolean
   uploading: boolean
   saving: boolean
+  publishing: boolean
   chineseComplete: boolean
   dirty: boolean
   hasCurrentPreview: boolean
@@ -19,6 +20,13 @@ export type CmsEditorWorkflowGuide = {
 }
 
 export function getCmsEditorWorkflowGuide(state: CmsEditorWorkflowState): CmsEditorWorkflowGuide {
+  if (state.publishing) {
+    return {
+      action: 'wait',
+      title: '正在发布',
+      message: '请等待发布完成，期间不要重复提交。',
+    }
+  }
   if (state.translating) {
     return {
       action: 'wait',

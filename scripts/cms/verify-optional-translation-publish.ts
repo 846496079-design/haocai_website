@@ -52,13 +52,14 @@ const selfHosting = readFileSync(resolve(root, 'docs/cms/self-hosting-runbook.md
 const neonVerifier = readFileSync(resolve(root, 'scripts/cms/verify-neon.mjs'), 'utf8')
 
 for (const source of [sqliteStore, postgresStore]) {
-  assert.match(source, /isLocaleContentComplete\([^)]*\.cn\)/, '双存储发布门禁都必须只要求中文完整。')
+  assert.match(source, /assertCmsLocaleReadyForPublish\([^)]*\.cn\)/, '双存储发布门禁都必须只要求中文完整。')
   assert.match(source, /published_locales_complete/, '双存储都必须固化外语公开状态。')
   assert.match(source, /areAllLocalesReadyForPublication/, '双存储必须共用同一外语公开判定。')
 }
 assert.match(sqliteStore, /locale !== 'cn' && !row\.published_locales_complete/, 'SQLite 的 JP/HK 公开读取必须过滤未翻译稿。')
 assert.match(postgresStore, /\$1::text = 'cn' OR a\.published_locales_complete = TRUE/, 'PostgreSQL 的 JP/HK 公开读取必须过滤未翻译稿。')
-assert.match(editor, /!chineseComplete \|\| dirty \|\| !hasCurrentPreview/, '发布按钮必须只使用中文完整度作为内容门禁。')
+assert.match(editor, /getMissingLocaleRequiredFields\(content\.cn\)/, '发布点击必须只使用中文必填项作为内容门禁。')
+assert.match(editor, /onClick=\{\(\) => void publish\(\)\} disabled=\{operationPending\}/, '发布按钮只能在操作请求进行中禁用。')
 assert.doesNotMatch(editor, /disabled=\{saving \|\| uploading \|\| !complete/, '发布按钮不能继续被三语完整度禁用。')
 assert.match(translation, /process\.env\.CMS_TRANSLATION_API_KEY/, '翻译密钥必须由服务端环境读取。')
 assert.doesNotMatch(translation, /NEXT_PUBLIC_/, '翻译实现不得读取公开环境变量。')

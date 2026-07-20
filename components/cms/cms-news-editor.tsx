@@ -7,13 +7,16 @@ import type { SiteCode } from "@/lib/site-content";
 import {
   CMS_LOCALES,
   areAllLocalesReadyForPublication,
-  isLocaleContentComplete,
+  getMissingLocaleRequiredFields,
+  isCmsRequiredField,
+  requiredFieldLabels,
   type CmsArticleContent,
   type CmsArticleRecord,
   type CmsAuditLog as CmsAuditLogRecord,
   type CmsLocaleArticle,
   type CmsPublicationAsset,
   type CmsPublicationBody,
+  type CmsRequiredField,
 } from "@/lib/cms/types";
 import { getCmsEditorWorkflowGuide } from "@/lib/cms/editor-workflow";
 import CmsAuditLog from "@/components/cms/cms-audit-log";
@@ -107,6 +110,8 @@ export default function CmsNewsEditor({
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
   const [translating, setTranslating] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [missingRequiredFields, setMissingRequiredFields] = useState<CmsRequiredField[]>([]);
   const [journeySignal, setJourneySignal] = useState<"translated" | "preview-opened" | null>(null);
   const savingRef = useRef(false);
   const allowTranslationReloadRef = useRef(false);
@@ -114,6 +119,12 @@ export default function CmsNewsEditor({
   const workflowGuideRef = useRef<HTMLDivElement>(null);
   const reviewCheckboxRef = useRef<HTMLInputElement>(null);
   const noticeRef = useRef<HTMLParagraphElement>(null);
+  const categoryRef = useRef<HTMLSelectElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const summaryRef = useRef<HTMLTextAreaElement>(null);
+  const coverButtonRef = useRef<HTMLButtonElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const bodyFieldRef = useRef<HTMLDivElement>(null);
   const [serverVersionId, setServerVersionId] = useState(initial.versionId);
   const [serverUpdatedAt, setServerUpdatedAt] = useState(initial.updatedAt);
   const [dirty, setDirty] = useState(false);
@@ -123,22 +134,24 @@ export default function CmsNewsEditor({
   const [translationMode, setTranslationMode] = useState<"overwrite" | "fill-missing">("fill-missing");
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const article = content[locale];
-  const chineseComplete = useMemo(() => isLocaleContentComplete(content.cn), [content]);
+  const currentMissingRequiredFields = useMemo(() => getMissingLocaleRequiredFields(content.cn), [content]);
+  const chineseComplete = currentMissingRequiredFields.length === 0;
   const allLocalesReady = useMemo(() => areAllLocalesReadyForPublication(content, translationStatus), [content, translationStatus]);
-  const operationPending = saving || uploading || translating;
+  const operationPending = saving || uploading || translating || publishing;
   const recoveryKey = `cms-richtext-draft-${initial.id}`;
   const translationJourneyKey = `cms-translation-journey-${initial.id}`;
   const workflowGuide = useMemo(() => getCmsEditorWorkflowGuide({
     translating,
     uploading,
     saving,
+    publishing,
     chineseComplete,
     dirty,
     hasCurrentPreview,
     reviewed,
     translationCompleted: journeySignal === "translated",
     previewOpened: journeySignal === "preview-opened",
-  }), [chineseComplete, dirty, hasCurrentPreview, journeySignal, reviewed, saving, translating, uploading]);
+  }), [chineseComplete, dirty, hasCurrentPreview, journeySignal, publishing, reviewed, saving, translating, uploading]);
 
   useEffect(() => {
     void fetch("/api/cms/categories").then(async (response) => {
@@ -173,6 +186,13 @@ export default function CmsNewsEditor({
     if (!notice || translating || journeySignal) return;
     noticeRef.current?.focus();
   }, [journeySignal, notice, translating]);
+
+  useEffect(() => {
+    setMissingRequiredFields((current) => {
+      const next = current.filter((field) => currentMissingRequiredFields.includes(field));
+      return next.length === current.length ? current : next;
+    });
+  }, [currentMissingRequiredFields]);
 
   useEffect(() => {
     if (!translating) return;
@@ -229,6 +249,36 @@ export default function CmsNewsEditor({
 
   function updateBody(body: CmsPublicationBody) {
     updateArticle({ body });
+  }
+
+  function focusRequiredField(field: CmsRequiredField) {
+    setLocale("cn");
+    window.requestAnimationFrame(() => {
+      const target = field === "category"
+        ? categoryRef.current
+        : field === "title"
+          ? titleRef.current
+          : field === "summary"
+            ? summaryRef.current
+            : field === "cover"
+              ? coverButtonRef.current
+              : bodyFieldRef.current;
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+      target?.focus({ preventScroll: true });
+    });
+  }
+
+  function revealMissingRequiredFields(fields: CmsRequiredField[]) {
+    setMissingRequiredFields(fields);
+    setNotice(`请补全：${requiredFieldLabels(fields).join("、")}。已为你定位到第一项。`);
+    if (fields[0]) focusRequiredField(fields[0]);
+  }
+
+  function focusWorkflowGuide() {
+    window.requestAnimationFrame(() => {
+      workflowGuideRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      workflowGuideRef.current?.focus({ preventScroll: true });
+    });
   }
 
   async function saveDraft(silent = false): Promise<CmsArticleContent | undefined> {
@@ -382,15 +432,45 @@ export default function CmsNewsEditor({
   }
 
   async function publish() {
-    if (!reviewed) return setNotice("请先勾选人工审核确认。");
-    if (dirty || !hasCurrentPreview) return setNotice("当前内容尚未完成预览，请先预览当前保存版本。");
-    const response = await fetch(`/api/cms/news/${initial.id}/publish`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reviewed: true }),
-    });
-    const data = (await response.json()) as { message?: string };
-    setNotice(response.ok ? "正式发布成功，公开新闻页已更新。" : (data.message ?? "发布失败。"));
+    const missing = getMissingLocaleRequiredFields(content.cn);
+    if (missing.length) return revealMissingRequiredFields(missing);
+    setMissingRequiredFields([]);
+    if (dirty) {
+      setNotice("当前有未保存修改。请先保存草稿，再预览当前版本。");
+      focusWorkflowGuide();
+      return;
+    }
+    if (!hasCurrentPreview) {
+      setNotice("当前保存版本尚未预览。请先预览官网效果。");
+      focusWorkflowGuide();
+      return;
+    }
+    if (!reviewed) {
+      setNotice("请勾选人工审核确认后再发布。");
+      window.requestAnimationFrame(() => {
+        reviewCheckboxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        reviewCheckboxRef.current?.focus({ preventScroll: true });
+      });
+      return;
+    }
+    setPublishing(true);
+    try {
+      const response = await fetch(`/api/cms/news/${initial.id}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewed: true }),
+      });
+      const data = (await response.json()) as { message?: string; code?: string; fields?: unknown[] };
+      if (!response.ok && data.code === "MISSING_REQUIRED_FIELDS") {
+        const serverMissing = (data.fields ?? []).filter(isCmsRequiredField);
+        if (serverMissing.length) return revealMissingRequiredFields(serverMissing);
+      }
+      setNotice(response.ok ? "正式发布成功，公开新闻页已更新。" : (data.message ?? "发布失败。"));
+    } catch {
+      setNotice("发布失败，请检查网络后重试。");
+    } finally {
+      setPublishing(false);
+    }
   }
 
   async function offline() {
@@ -405,7 +485,7 @@ export default function CmsNewsEditor({
   }
 
   return (
-    <main aria-busy={translating} className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 md:px-8">
+    <main aria-busy={operationPending} className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 md:px-8">
       {translating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-5 backdrop-blur-sm">
           <div
@@ -449,27 +529,31 @@ export default function CmsNewsEditor({
                 <button key={code} type="button" onClick={() => setLocale(code)} disabled={translating} className={`rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 ${locale === code ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>{localeNames[code]}</button>
               ))}
             </div>
+            {locale === "cn" && <p className="mt-4 text-sm text-slate-600"><span className="font-bold text-red-600">*</span> 为中文发布必填；发布日期、作者、标签选填。</p>}
+            {locale === "cn" && missingRequiredFields.length > 0 && <div role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">请补全：{requiredFieldLabels(missingRequiredFields).join("、")}。已定位第一项，补全后可再次确认发布。</div>}
 
             <div className="mt-6 space-y-5">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Field label="发布日期"><input aria-label="发布日期" type="date" value={article.date.replaceAll(".", "-")} onChange={(event) => updateArticle({ date: event.target.value.replaceAll("-", ".") })} /></Field>
-                <Field label="分类"><select aria-label="新闻分类" value={article.category} onChange={(event) => updateArticle({ category: event.target.value })}><option value="">请选择分类</option>{categories.map((name) => <option key={name} value={name}>{name}</option>)}</select></Field>
-                <Field label="作者"><input value={article.author} onChange={(event) => updateArticle({ author: event.target.value })} /></Field>
+                <Field label="发布日期" htmlFor="cms-date"><input id="cms-date" aria-label="发布日期" type="date" value={article.date.replaceAll(".", "-")} onChange={(event) => updateArticle({ date: event.target.value.replaceAll("-", ".") })} /></Field>
+                <Field label="分类" htmlFor="cms-category" required={locale === "cn"} errorId="cms-category-error" error={locale === "cn" && missingRequiredFields.includes("category") ? "请选择分类" : undefined}><select ref={categoryRef} id="cms-category" aria-label="新闻分类" required={locale === "cn"} aria-invalid={locale === "cn" && missingRequiredFields.includes("category")} aria-describedby={locale === "cn" && missingRequiredFields.includes("category") ? "cms-category-error" : undefined} value={article.category} onChange={(event) => updateArticle({ category: event.target.value })}><option value="">请选择分类</option>{categories.map((name) => <option key={name} value={name}>{name}</option>)}</select></Field>
+                <Field label="作者" htmlFor="cms-author"><input id="cms-author" aria-label="作者" value={article.author} onChange={(event) => updateArticle({ author: event.target.value })} /></Field>
               </div>
-              <Field label="新闻标题"><input value={article.title} onChange={(event) => updateArticle({ title: event.target.value })} /></Field>
-              <Field label="摘要"><textarea value={article.summary} onChange={(event) => updateArticle({ summary: event.target.value })} rows={3} /></Field>
-              <Field label="标签（用英文逗号分隔）"><input value={article.tags.join(", ")} onChange={(event) => updateArticle({ tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} /></Field>
-              <Field label="新闻封面">
+              <Field label="新闻标题" htmlFor="cms-title" required={locale === "cn"} errorId="cms-title-error" error={locale === "cn" && missingRequiredFields.includes("title") ? "请填写新闻标题" : undefined}><input ref={titleRef} id="cms-title" required={locale === "cn"} aria-invalid={locale === "cn" && missingRequiredFields.includes("title")} aria-describedby={locale === "cn" && missingRequiredFields.includes("title") ? "cms-title-error" : undefined} value={article.title} onChange={(event) => updateArticle({ title: event.target.value })} /></Field>
+              <Field label="摘要" htmlFor="cms-summary" required={locale === "cn"} errorId="cms-summary-error" error={locale === "cn" && missingRequiredFields.includes("summary") ? "请填写摘要" : undefined}><textarea ref={summaryRef} id="cms-summary" required={locale === "cn"} aria-invalid={locale === "cn" && missingRequiredFields.includes("summary")} aria-describedby={locale === "cn" && missingRequiredFields.includes("summary") ? "cms-summary-error" : undefined} value={article.summary} onChange={(event) => updateArticle({ summary: event.target.value })} rows={3} /></Field>
+              <Field label="标签（用英文逗号分隔）" htmlFor="cms-tags"><input id="cms-tags" aria-label="标签" value={article.tags.join(", ")} onChange={(event) => updateArticle({ tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} /></Field>
+              <Field label="新闻封面" required={locale === "cn"} errorId="cms-cover-error" error={locale === "cn" && missingRequiredFields.includes("cover") ? "请选择新闻封面" : undefined}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   {article.cover && <img src={article.cover} alt="封面预览" className="h-24 w-40 rounded-lg border border-slate-200 object-cover" />}
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ImagePlus className="size-4" />{uploading ? "上传中" : "选择封面"}<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={operationPending} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadCover(file); event.target.value = ""; }} /></label>
+                  <button ref={coverButtonRef} type="button" aria-label={locale === "cn" ? "选择新闻封面，中文发布必填" : "选择新闻封面"} aria-invalid={locale === "cn" && missingRequiredFields.includes("cover")} aria-describedby={locale === "cn" && missingRequiredFields.includes("cover") ? "cms-cover-error" : undefined} onClick={() => coverInputRef.current?.click()} disabled={operationPending} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 ${locale === "cn" && missingRequiredFields.includes("cover") ? "border-red-500" : "border-slate-300"}`}><ImagePlus className="size-4" />{uploading ? "上传中" : "选择封面"}</button>
+                  <input ref={coverInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={operationPending} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadCover(file); event.target.value = ""; }} />
                 </div>
               </Field>
 
-              <div className="border-t border-slate-200 pt-5">
+              <div ref={bodyFieldRef} tabIndex={-1} role="group" aria-label="正文内容" aria-required={locale === "cn"} aria-invalid={locale === "cn" && missingRequiredFields.includes("body")} aria-describedby={locale === "cn" && missingRequiredFields.includes("body") ? "cms-body-error" : undefined} className={`border-t pt-5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 ${locale === "cn" && missingRequiredFields.includes("body") ? "border-red-500" : "border-slate-200"}`}>
                 <div className="mb-4">
-                  <h2 className="text-lg font-semibold">正文内容</h2>
+                  <h2 className="text-lg font-semibold">正文内容{locale === "cn" && <span className="ml-1 text-red-600" aria-hidden="true">*</span>}</h2>
                   <p className="mt-1 text-sm text-slate-600">这里仅接收外部富文本内容；保存时由服务端净化并生成官网和公众号共用的发布 HTML。</p>
+                  {locale === "cn" && missingRequiredFields.includes("body") && <p id="cms-body-error" role="alert" className="mt-2 text-sm font-medium text-red-700">请填写正文内容</p>}
                 </div>
                 <CmsRichTextEditor
                   key={locale}
@@ -511,7 +595,7 @@ export default function CmsNewsEditor({
             </div>
 
             <label className="mt-5 flex cursor-pointer gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950"><input ref={reviewCheckboxRef} type="checkbox" checked={reviewed} disabled={operationPending || dirty || !hasCurrentPreview} onChange={(event) => setReviewed(event.target.checked)} className="mt-1" />我已人工审核中文必填内容、封面、当前发布快照和已填写的外语内容。</label>
-            <button type="button" onClick={() => void publish()} disabled={operationPending || !chineseComplete || dirty || !hasCurrentPreview || !reviewed} className="mt-3 w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">确认发布</button>
+            <button type="button" onClick={() => void publish()} disabled={operationPending} className="mt-3 w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">{publishing ? "正在发布" : "确认发布"}</button>
             {initial.status === "PUBLISHED" && <button type="button" onClick={() => void offline()} disabled={operationPending} className="mt-3 w-full rounded-lg border border-red-300 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">下线新闻</button>}
             {notice && <p ref={noticeRef} role="status" aria-live="polite" tabIndex={-1} className="mt-4 rounded-lg bg-slate-100 p-3 text-sm leading-6 text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-indigo-600">{notice}</p>}
             <CmsAuditLog articleId={initial.id} initialItems={initialAuditItems} />
@@ -522,13 +606,14 @@ export default function CmsNewsEditor({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, htmlFor, required = false, errorId, error, children }: { label: string; htmlFor?: string; required?: boolean; errorId?: string; error?: string; children: React.ReactNode }) {
   return (
-    <label className="block text-sm font-medium text-slate-700">
-      <span>{label}</span>
-      <div className="mt-2 [&>input]:w-full [&>input]:rounded-lg [&>input]:border [&>input]:border-slate-300 [&>input]:px-3 [&>input]:py-2.5 [&>input]:outline-none [&>input]:ring-indigo-500 [&>input:focus]:ring-2 [&>select]:w-full [&>select]:rounded-lg [&>select]:border [&>select]:border-slate-300 [&>select]:px-3 [&>select]:py-2.5 [&>select]:outline-none [&>select]:ring-indigo-500 [&>select:focus]:ring-2 [&>textarea]:w-full [&>textarea]:rounded-lg [&>textarea]:border [&>textarea]:border-slate-300 [&>textarea]:px-3 [&>textarea]:py-2.5 [&>textarea]:outline-none [&>textarea]:ring-indigo-500 [&>textarea:focus]:ring-2">
+    <div className="block text-sm font-medium text-slate-700">
+      <label htmlFor={htmlFor}>{label}{required && <><span className="ml-1 font-bold text-red-600" aria-hidden="true">*</span><span className="sr-only">（中文发布必填）</span></>}</label>
+      <div className={`mt-2 [&>input]:w-full [&>input]:rounded-lg [&>input]:border [&>input]:px-3 [&>input]:py-2.5 [&>input]:outline-none [&>input]:ring-indigo-500 [&>input:focus]:ring-2 [&>select]:w-full [&>select]:rounded-lg [&>select]:border [&>select]:px-3 [&>select]:py-2.5 [&>select]:outline-none [&>select]:ring-indigo-500 [&>select:focus]:ring-2 [&>textarea]:w-full [&>textarea]:rounded-lg [&>textarea]:border [&>textarea]:px-3 [&>textarea]:py-2.5 [&>textarea]:outline-none [&>textarea]:ring-indigo-500 [&>textarea:focus]:ring-2 ${error ? "[&>input]:border-red-500 [&>select]:border-red-500 [&>textarea]:border-red-500" : "[&>input]:border-slate-300 [&>select]:border-slate-300 [&>textarea]:border-slate-300"}`}>
         {children}
       </div>
-    </label>
+      {error && <p id={errorId} role="alert" className="mt-2 text-sm font-medium text-red-700">{error}</p>}
+    </div>
   );
 }

@@ -6,7 +6,8 @@ import { basename, dirname, extname, join } from 'node:path'
 import { newsArticles } from '@/lib/news-content'
 import type { SiteCode } from '@/lib/site-content'
 import { prepareCmsContent } from './publication-server'
-import { CMS_LOCALES, areAllLocalesReadyForPublication, createEmptyContent, isContentComplete, isLocaleContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult, type CmsLocaleArticle } from './types'
+import { CMS_LOCALES, areAllLocalesReadyForPublication, createEmptyContent, isContentComplete, type CmsArticleContent, type CmsArticleRecord, type CmsArticleStatus, type CmsArticleSummary, type CmsAssetInput, type CmsAuditLog, type CmsCategory, type CmsImportResult, type CmsLocaleArticle } from './types'
+import { assertCmsLocaleReadyForPublish } from './publish-validation'
 import * as postgresStore from './store-postgres'
 import { usesPostgres } from './config'
 
@@ -420,8 +421,8 @@ export function publishCmsArticle(id: number, adminId: number, reviewed: boolean
   if (row.status === 'TRASH') throw new Error('回收站稿件不能发布，请先恢复为草稿。')
   if (!row.draft_version_id || version.id !== row.draft_version_id) throw new Error('没有可发布的草稿版本，请先保存草稿。')
   const content = parseContent(version.content_json)
+  assertCmsLocaleReadyForPublish(content.cn)
   if (!version.previewed_at) throw new Error('请先预览当前草稿。')
-  if (!isLocaleContentComplete(content.cn)) throw new Error('中文内容、封面和正文必须完整后才能发布。')
   const publishedLocalesComplete = areAllLocalesReadyForPublication(content, row.translation_status)
   const timestamp = now()
   const operation = database.transaction(() => {

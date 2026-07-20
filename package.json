@@ -18,6 +18,7 @@
     "cms:verify-optional-translation": "tsx scripts/cms/verify-optional-translation-publish.ts",
     "cms:verify-optional-translation-runtime": "node scripts/cms/verify-optional-translation-runtime.mjs",
     "cms:verify-translation-workflow": "tsx scripts/cms/verify-translation-guided-workflow.ts",
+    "cms:verify-required-guidance": "tsx scripts/cms/verify-required-field-publish-guidance.ts",
     "cms:verify-receiver": "tsx scripts/cms/verify-receiver-workbench.ts",
     "cms:verify-runtime-news": "tsx scripts/cms/verify-runtime-news.ts",
     "cms:verify-wechat-compat": "tsx scripts/cms/verify-wechat-compat.ts",

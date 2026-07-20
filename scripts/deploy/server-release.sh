@@ -14,8 +14,12 @@ legacy_root="/www/wwwroot/zhangdashi.ai/website_promotion_zds"
 pm2_name="zds-website"
 lead_worker_name="zds-lead-worker"
 release_id="${1:-}"
+operation="release"
 
-if [[ ! "$release_id" =~ ^[0-9a-f]{40}$ ]]; then
+if [[ "$release_id" == "--restart-current" ]]; then
+  operation="restart-current"
+  release_id=""
+elif [[ ! "$release_id" =~ ^[0-9a-f]{40}$ ]]; then
   echo "release id 必须是 40 位小写 Git commit。" >&2
   exit 1
 fi
@@ -193,8 +197,8 @@ preflight_release() {
   port="$(find_preflight_port)" || return 1
   (
     cd "$dir"
-    HOSTNAME=127.0.0.1 PORT="$port" NODE_ENV=production node server.js > "$logs_root/preflight-$release_id.log" 2>&1
-  ) &
+    exec env HOSTNAME=127.0.0.1 PORT="$port" NODE_ENV=production node server.js
+  ) > "$logs_root/preflight-$release_id.log" 2>&1 &
   pid=$!
 
   for _ in $(seq 1 30); do
@@ -229,8 +233,9 @@ switch_current() {
 start_current() {
   pm2 delete "$pm2_name" >/dev/null 2>&1 || true
   pm2 delete "$lead_worker_name" >/dev/null 2>&1 || true
-  HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=production \
-    pm2 start "$current_link/server.js" --name "$pm2_name" --cwd "$current_link" --time
+  pm2 start /usr/bin/bash --name "$pm2_name" --cwd "$current_link" --time -- \
+    -c 'exec env HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=production node "$1"' \
+    _ "$current_link/server.js"
   if [[ -f "$current_link/scripts/leads/worker.mjs" ]]; then
     NODE_ENV=production \
       pm2 start "$current_link/scripts/leads/worker.mjs" --name "$lead_worker_name" --cwd "$current_link" --time
@@ -313,6 +318,21 @@ cleanup_releases() {
     fi
   done
 }
+
+if [[ "$operation" == "restart-current" ]]; then
+  [[ -f "$current_link/server.js" ]] || {
+    echo "当前 release 缺少 server.js，拒绝重启。" >&2
+    exit 1
+  }
+  ensure_shared_environment
+  start_current
+  if ! wait_for_production; then
+    echo "当前 release 重启后健康检查失败。" >&2
+    exit 1
+  fi
+  echo "当前 release 重启成功：$(basename "$(readlink -f "$current_link")")"
+  exit 0
+fi
 
 [[ -d "$incoming_dir" ]] || { echo "没有找到上传目录：$incoming_dir" >&2; exit 1; }
 require_release_files "$incoming_dir"

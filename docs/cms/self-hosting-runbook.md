@@ -120,7 +120,7 @@ npm run start -- -H 127.0.0.1 -p 3000
 - 不缓存 `/cms/` 和 `/api/cms/`。
 - 对外只开放 80/443，应用端口不直接暴露公网。
 
-standalone release 由发布脚本使用 `HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=production node server.js` 托管到 PM2；线索调度器使用同一 release 中的 `scripts/leads/worker.mjs`，只调用回环地址上的受保护内部接口。不要把数据库迁移、seed 或生产数据写入加入 PM2 启动命令。
+standalone release 由发布脚本把 `HOSTNAME=127.0.0.1 PORT=3000 NODE_ENV=production node server.js` 固化为 PM2 保存的启动命令，确保 PM2 自动重启后仍监听回环地址，而不是继承服务器 `HOSTNAME` 对应的 IPv6 地址；线索调度器使用同一 release 中的 `scripts/leads/worker.mjs`，只调用回环地址上的受保护内部接口。不要把数据库迁移、seed 或生产数据写入加入 PM2 启动命令。
 
 Nginx 缓存边界：
 
@@ -149,6 +149,7 @@ Nginx 缓存边界：
 - 发布：只需向 `codex/official-home-trust-redesign` 推送 commit。CNB 构建后 rsync 到 `incoming/<commit>`，服务器预启动检查通过才原子切换 `current`。
 - 自动回滚：切换后的首页、实际 CSS 或缓存头检查失败时，发布脚本恢复上一 `current` 并重启；新版本仍以失败结束。
 - 手工回滚：root 在宝塔终端把 `current` 原子改回 `/www/zhangdashi-deploy/releases/<上一提交>`，按发布脚本逻辑重建 PM2 `zds-website` 和该版本存在的 `zds-lead-worker`，再验证三站首页和实际 CSS；不执行数据库恢复。
+- 当前版本恢复：只需重新启动当前 `current` 时，由 `deploy` 用户执行 `sudo /usr/local/sbin/zhangdashi-release --restart-current`；该入口不切换 release、不改生产数据，重建两个 PM2 进程并完成回环地址、Nginx、多编码内容和线索 worker 健康检查。
 - release 保留：最近 5 个完整版本；`shared/next-static` 中仍被保留 release 使用的哈希文件不得删除。
 - 数据恢复：仅确认数据库被错误写入时按 [data-operations.md](./data-operations.md) 执行。
 - 扩容：多个实例共用 Neon 和 Blob；所有实例必须使用完全一致的服务端变量。
